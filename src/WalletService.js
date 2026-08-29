@@ -33,7 +33,7 @@ export class WalletService {
       await s.applyAccount(uid, { avail: -amount });
       await s.applyLedger({ plat: fee, pending: arrive });
       const wd = {
-        withdrawId: s.nextId('withdraw', 'W'), uid, amount, fee, arrive,
+        withdrawId: await s.nextId('withdraw', 'W'), uid, amount, fee, arrive,
         toWallet: toWallet ?? u.wallet, state: 'pending', txhash: null,
       };
       await s.insertWithdraw(wd);

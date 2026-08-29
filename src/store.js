@@ -32,7 +32,7 @@ export class MemoryStore {
   // -------- 用户 / 账户 --------
   async createUser({ wallet, inviterUid = null, createdAt = 0 }) {
     if (await this.getUserByWallet(wallet)) throw new GameError(Codes.ALREADY_EXISTS, '该钱包已注册');
-    const uid = this.nextId('user', 'U');
+    const uid = await this.nextId('user', 'U');
     const user = { uid, wallet, inviterUid, insSwitch: false, createdAt };
     this.users.set(uid, user);
     this.accounts.set(uid, { available: 0n, frozen: 0n, premium: 0n, lossAccum: 0n });
@@ -117,7 +117,7 @@ export class MemoryStore {
     return { total, activeInvitees: invitees.size };
   }
   async addFlow(uid, bizType, amount, ref = {}) {
-    const id = this.nextId('flow', 'F');
+    const id = await this.nextId('flow', 'F');
     this.flows.push({ id, uid, bizType, amount, ref, at: ref.at ?? Date.now() });
     return id;
   }

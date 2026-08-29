@@ -55,7 +55,7 @@ export class InsuranceService {
       await s.applyAccount(uid, { premium: -cfg.nodePremium, loss: -cfg.nodeThreshold });
       await s.applyLedger({ ins: cfg.nodePremium }); // 20 枚保费进保险池
       const node = {
-        nodeId: s.nextId('node', 'N'), uid, total: cfg.nodeTotal, periodN: 0, paidAmount: 0n,
+        nodeId: await s.nextId('node', 'N'), uid, total: cfg.nodeTotal, periodN: 0, paidAmount: 0n,
         paidToUserAmount: 0n, forfeitedAmount: 0n, state: 'active', createdAtSec: atSec, batchSeq: batchSeqAt(atSec, cfg),
       };
       await s.insertNode(node);
@@ -85,7 +85,7 @@ export class InsuranceService {
       }
       const ledger = await s.getLedger();
       if (dueTotal > 0n && ledger.insurancePool < dueTotal) {
-        await s.addPayoutBatch({ batchId: s.nextId('batch', 'B'), seq: currentSeq, state: 'deferred', dueTotal, at: currentSec });
+        await s.addPayoutBatch({ batchId: await s.nextId('batch', 'B'), seq: currentSeq, state: 'deferred', dueTotal, at: currentSec });
         return { status: 'deferred', currentSeq, dueTotal, insurancePool: ledger.insurancePool };
       }
       const newestSeq = new Map();
@@ -110,7 +110,7 @@ export class InsuranceService {
         await s.updateNode(n.nodeId, { periodN: n.periodN + 1, paidAmount: n.paidAmount + due, state: n.periodN + 1 >= 100 ? 'done' : 'active' });
         await s.addNodeLog({ nodeId: n.nodeId, uid: n.uid, periodN: n.periodN + 1, due, dest: alive ? 'user' : 'forfeit', seq: currentSeq });
       }
-      await s.addPayoutBatch({ batchId: s.nextId('batch', 'B'), seq: currentSeq, state: 'paid', dueTotal, paidToUser, forfeited, at: currentSec });
+      await s.addPayoutBatch({ batchId: await s.nextId('batch', 'B'), seq: currentSeq, state: 'paid', dueTotal, paidToUser, forfeited, at: currentSec });
       return { status: 'paid', currentSeq, paidToUser, forfeited, dueTotal };
     }, 'runPayoutBatch');
   }

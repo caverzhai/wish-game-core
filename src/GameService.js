@@ -32,7 +32,7 @@ export class GameService {
       if (!round) {
         const start = atSec; // H：首笔才开局
         round = {
-          roundId: s.nextId('round', 'R'),
+          roundId: await s.nextId('round', 'R'),
           startAt: start, lockAt: start + cfg.lockAfterSec, settleAt: start + cfg.settleAfterSec,
           state: 'active', redTotal: 0n, greenTotal: 0n, sumPick: 0, result: null,
         };
@@ -46,7 +46,7 @@ export class GameService {
       if (a.available < amount) throw new GameError(Codes.INSUFFICIENT_BALANCE, '可用余额不足');
       await s.applyAccount(uid, { avail: -amount, frozen: amount });
       await s.insertBet({
-        betId: s.nextId('bet', 'BT'), roundId: round.roundId, uid, side, amount, pick, atSec,
+        betId: await s.nextId('bet', 'BT'), roundId: round.roundId, uid, side, amount, pick, atSec,
         winCredit: 0n, insCut: 0n, settled: false,
       });
       await s.updateRound(round.roundId, {

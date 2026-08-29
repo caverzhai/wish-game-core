@@ -1,0 +1,21 @@
+// 统一业务错误，带错误码，便于前端按码提示
+export class GameError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = 'GameError';
+    this.code = code;
+  }
+}
+
+export const Codes = {
+  NOT_FOUND: 'NOT_FOUND',
+  ALREADY_EXISTS: 'ALREADY_EXISTS',
+  BAD_INPUT: 'BAD_INPUT',
+  ROUND_LOCKED: 'ROUND_LOCKED',
+  ROUND_NOT_SETTLABLE: 'ROUND_NOT_SETTLABLE',
+  INSUFFICIENT_BALANCE: 'INSUFFICIENT_BALANCE',
+  INSURANCE_NOT_ACTIVE: 'INSURANCE_NOT_ACTIVE',
+  WITHDRAW_RANGE: 'WITHDRAW_RANGE',
+  LEDGER_UNBALANCED: 'LEDGER_UNBALANCED',
+  POOL_EMPTY_DEFER: 'POOL_EMPTY_DEFER',
+};

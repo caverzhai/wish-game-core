@@ -28,6 +28,24 @@ export class InsuranceService {
     }, 'depositPremium');
   }
 
+  /**
+   * 保费提回可用余额：仅在「保险开关关闭」时允许（避免一边承保一边抽走保费）。
+   * amountInner 不传则提回全部保费；用户内部账户 available/premium 互转，总账守恒。
+   */
+  async withdrawPremium(uid, amountInner = null) {
+    return await this.store.transaction(async () => {
+      const u = await this.store.getUser(uid);
+      if (u.insSwitch) throw new GameError(Codes.BAD_INPUT, '请先关闭保险开关，才能把保费提回余额');
+      const a = await this.store.getAccount(uid);
+      const amount = amountInner == null ? a.premium : BigInt(amountInner);
+      if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, '没有可提回的保费');
+      if (amount > a.premium) throw new GameError(Codes.BAD_INPUT, '提回金额超过保费余额');
+      const after = await this.store.applyAccount(uid, { avail: amount, premium: -amount });
+      await this.store.addFlow(uid, 'PREMIUM_OUT', amount);
+      return after;
+    }, 'withdrawPremium');
+  }
+
   /** 邀请人名下「生成过节点的去重直邀人数」 */
   async countDistinctNodeInvitees(inviterUid) {
     const nodes = await this.store.listNodes({});

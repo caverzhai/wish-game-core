@@ -66,3 +66,29 @@ test('链上掉单补录幂等：同一 txHash 只入账一次，重复提交返
   assert.equal((await app.store.getAccount(U)).available, toInner('4.7')); // 不重复入账
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
+
+test('保费提回：保险开启时拒绝，关闭后可提回余额，用户总账守恒', async () => {
+  const app = await mk();
+  const U = (await app.game.register('0xP')).uid;
+  await app.wallet.issueInner(U, coin(50), 'INIT');
+  await app.insurance.depositPremium(U, coin(30)); // available 20 / premium 30
+  await app.insurance.setSwitch(U, true);
+  await assert.rejects(() => app.insurance.withdrawPremium(U), /关闭/);
+  await app.insurance.setSwitch(U, false);
+  await app.insurance.withdrawPremium(U); // 留空=全部提回
+  const a = await app.store.getAccount(U);
+  assert.equal(a.premium, 0n);
+  assert.equal(a.available, coin(50));
+  assert.equal(await app.store.totalInside(), await app.store.totalSource());
+});
+
+test('resetAll：清空全部用户/账户业务数据，ledger 归零', async () => {
+  const app = await mk();
+  await app.game.register('0xR1');
+  await app.game.register('0xR2');
+  assert.equal((await app.store.listUsers()).length, 2);
+  await app.store.resetAll();
+  assert.equal((await app.store.listUsers()).length, 0);
+  const led = await app.store.getLedger();
+  assert.equal(led.insurancePool + led.platform + led.pendingWithdraw, 0n);
+});

@@ -161,6 +161,17 @@ export class MemoryStore {
     return true;
   }
 
+  // —— 管理员清空全部业务数据（保留屏蔽词配置）——
+  async resetAll() {
+    this.users.clear(); this.accounts.clear(); this.rounds.clear();
+    this.bets.length = 0; this.nodes.length = 0; this.nodeLogs.length = 0;
+    this.payoutBatches.length = 0; this.referralLogs.length = 0; this.flows.length = 0;
+    this.withdraws.length = 0; this.posts.length = 0; this.replies.length = 0;
+    this.chainTxs.clear();
+    this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
+    this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0 };
+  }
+
   // -------- 守恒 --------
   async totalInside() {
     let userSum = 0n;

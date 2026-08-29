@@ -60,7 +60,6 @@ route('POST', '/login', async (b) => {
   return { ...u, isAdmin: isAdminWallet(u.wallet) };
 });
 route('POST', '/register', (b) => game.register(b.wallet, b.inviterUid ?? null, now()));
-route('POST', '/faucet', (b) => wallet.issue(b.uid, Number(b.amount ?? 100), 'FAUCET'));
 route('GET', /^\/user\/(.+)$/, async (b, m) => {
   const uid = m[1];
   const user = await store.getUser(uid);
@@ -79,8 +78,32 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
 route('POST', '/insurance/switch', (b) => insurance.setSwitch(b.uid, !!b.on));
 route('POST', '/insurance/deposit', (b) => insurance.depositPremium(b.uid, coin(Number(b.amount))));
 route('GET', '/insurance/pool', () => insurance.poolPublic());
-// —— 对局（站内余额模式）——
-route('POST', '/issue', (b) => wallet.issue(b.uid, Number(b.amount)));
+// 保费链上补差：站内余额优先并精确用尽，不足由钱包补，随后 available->premium
+route('POST', '/insurance/deposit/onchain', async (b) => {
+  await assertNotBanned(b.uid);
+  const total = Number(b.totalAmount ?? b.amount);
+  if (!Number.isInteger(total) || total <= 0) throw new GameError(Codes.BAD_INPUT, '保费必须为正整数（枚）');
+  const totalInner = coin(total);
+  const acc = await store.getAccount(b.uid);
+  const needInner = needTopUp(acc.available, totalInner);
+  const txKey = String(b.txHash || '').toLowerCase();
+  if (needInner > 0n) {
+    if (!txKey) throw new GameError(Codes.BAD_INPUT, '站内余额不足，需要链上钱包补齐，但缺少交易哈希');
+    if (!(await store.isChainTxUsed(txKey))) {
+      const u = await store.getUser(b.uid);
+      await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner });
+      await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT');
+      await store.markChainTxUsed(txKey, b.uid, needInner);
+    }
+  }
+  return await insurance.depositPremium(b.uid, totalInner);
+});
+// 保险关闭状态下，把保费提回可用余额（amount 不传=全部）
+route('POST', '/insurance/premium/withdraw', async (b) => {
+  await assertNotBanned(b.uid);
+  return await insurance.withdrawPremium(b.uid, b.amount == null ? null : coin(Number(b.amount)));
+});
+// —— 对局 ——
 route('POST', '/bet', async (b) => { await assertNotBanned(b.uid); return game.bet(b.uid, b.side, Number(b.amount), Number(b.pick), now()); });
 // —— 对局（混合支付）：站内余额优先并「精确用尽」，不足部分由链上钱包补齐，余额精确清零 ——
 // totalAmount=许愿总额（整数枚）；以后端站内可用余额为准重算补差额 needInner（6位定点，允许小数），
@@ -139,6 +162,13 @@ route('POST', '/admin/word/remove', async (b) => { await requireAdmin(b.uid); re
 route('POST', '/admin/post/delete', async (b) => { await requireAdmin(b.uid); return social.deletePost(b.uid, b.postId); });
 route('POST', '/admin/user/ban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, b.banned !== false) }; });
 route('POST', '/admin/user/unban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, false) }; });
+// 管理员一键清空全部业务数据（账号/对局/流水/节点/帖子等），保留屏蔽词配置；必须显式 confirm
+route('POST', '/admin/reset', async (b) => {
+  await requireAdmin(b.uid);
+  if (b.confirm !== true) throw new GameError(Codes.BAD_INPUT, '请显式确认清空（confirm=true）');
+  await store.resetAll();
+  return { ok: true, resetAt: now() };
+});
 // —— 链配置（公开，不含私钥）——
 route('GET', '/chain/config', () => chain.publicConfig());
 // —— 提现：配置了代付私钥则自动链上打款，否则生成待处理单 ——

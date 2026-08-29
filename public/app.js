@@ -25,7 +25,10 @@ const I18N = {
     invRule: 'Tier by direct invites who ever generated a node, on wish volume: 1→0.1% / 5→0.2% / 10→0.3% / 20→0.4% / 50+→0.5%.',
     bbsTitle: 'Board (plain text, up to 100 chars)', bbsPlaceholder: 'Say something (max 100 chars)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
     adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words',
-    avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', faucet: 'Claim 100 test 枚', flows: 'Transactions',
+    avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', flows: 'Transactions',
+    wdOk: 'Withdrawal sent. Arrived:', wdPending: 'Submitted, pending platform processing.',
+    premiumWithdraw: 'Premium → balance (insurance OFF)', premiumOutPh: 'Blank = withdraw all', premiumNeed: 'Enter a positive integer amount',
+    resetData: 'Reset ALL data', confirmReset1: 'Reset ALL accounts, rounds and records?', confirmReset2: 'This CANNOT be undone. Confirm again?', resetDone: 'All data cleared.',
     chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
     pendingTitle: 'Pending on-chain payments', pendingVerify: 'Verify & credit now', chainWillCredit: 'Paid on-chain. It is credited automatically once confirmed; you can also tap Verify under Me.', chainCreditedRedo: 'Your on-chain payment has been credited to balance, please place the wish again.',
     manualCredit: 'Credit by hash', manualTxPh: 'Paste 0x… tx hash to credit', manualOk: 'Credited to balance', manualAlready: 'This tx was already credited', manualBadHash: 'Invalid tx hash',
@@ -53,7 +56,10 @@ const I18N = {
     invRule: '名下有「生成過賠付節點」的直邀好友數決定檔位，按下注流水返傭：1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
     bbsTitle: '廣場（100字以內純文字）', bbsPlaceholder: '說點什麼吧（最多100字）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
     adminModeration: '管理員治理', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
-    avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', faucet: '測試領幣100枚', flows: '收支流水',
+    avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', flows: '收支流水',
+    wdOk: '提現已發送，到帳：', wdPending: '已提交，待平台處理。',
+    premiumWithdraw: '保費提回餘額（需先關閉保險）', premiumOutPh: '留空＝全部提回', premiumNeed: '請輸入正整數金額',
+    resetData: '清空全部資料', confirmReset1: '確定清空所有帳號、對局與記錄嗎？', confirmReset2: '此操作無法復原，再次確認？', resetDone: '全部資料已清空。',
     chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
     pendingTitle: '待核驗的鏈上支付', pendingVerify: '重新核驗並入帳', chainWillCredit: '鏈上已支付，確認後會自動補入餘額，也可到「我的」手動核驗。', chainCreditedRedo: '鏈上支付已補入餘額，請重新許願。',
     manualCredit: '貼哈希補入帳', manualTxPh: '貼上 0x… 交易哈希補錄入帳', manualOk: '已補入餘額', manualAlready: '此交易先前已入帳', manualBadHash: '交易哈希格式不正確',
@@ -81,7 +87,10 @@ const I18N = {
     invRule: 'ノードを生成した直招待人数で率が決定（投入額ベース）: 1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
     bbsTitle: '広場（100文字以内のテキスト）', bbsPlaceholder: 'ひとこと（最大100文字）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
     adminModeration: 'モデレーション', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
-    avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', faucet: 'テスト100枚受取', flows: '取引履歴',
+    avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', flows: '取引履歴',
+    wdOk: '送金しました。着金：', wdPending: '送信済み。プラットフォーム処理待ち。',
+    premiumWithdraw: '保険料を残高へ戻す（保険OFF時）', premiumOutPh: '空欄＝全額戻す', premiumNeed: '正の整数を入力してください',
+    resetData: '全データを消去', confirmReset1: 'すべてのアカウント・対局・記録を消去しますか？', confirmReset2: '元に戻せません。再度確認してください。', resetDone: '全データを消去しました。',
     chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
     pendingTitle: '未確認のオンチェーン支払い', pendingVerify: '再確認して入金', chainWillCredit: 'オンチェーンで支払い済み。承認後に自動入金されます。マイで手動確認も可能です。', chainCreditedRedo: 'オンチェーン支払いを残高に入金しました。もう一度願いを入力してください。',
     manualCredit: 'ハッシュで入金', manualTxPh: '0x… トランザクションハッシュを貼って入金', manualOk: '残高に入金しました', manualAlready: 'この取引は入金済みです', manualBadHash: 'トランザクションハッシュ形式が不正です',
@@ -108,6 +117,7 @@ function applyI18n() {
   $('bbsInput').placeholder = t('bbsPlaceholder');
   $('wordInput').placeholder = t('wordPh');
   $('manualTxInput').placeholder = t('manualTxPh');
+  $('premiumOutInput').placeholder = t('premiumOutPh');
 }
 async function api(url, body) {
   const opt = body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {};
@@ -196,6 +206,8 @@ function renderRound() {
   const dots = state.recent.filter((x) => x.state === 'settled').slice(0, 100).map((x) => `<span class="dot ${x.result && x.result.winSide}" title="${x.roundId}"></span>`).join('');
   $('histDots').innerHTML = dots || '<span class="muted">—</span>';
 }
+// 链上核验「暂时性错误」白名单：节点超时/无响应/尚未索引/等待确认 → 持续重试
+const CHAIN_RETRY = /尚未|確認|确认|稍後|稍后|無響應|无响应|未找到|查到|等待|中$|waiting|confirm|pending|timeout|no response|receipt|not found|indexed/i;
 // inner6 = 站内 6 位定点最小单位；链上代币多为 18 位，需乘 10^(decimals-6)
 function erc20TransferData(to, inner6, decimals) {
   const addr = to.toLowerCase().replace('0x', '').padStart(64, '0');
@@ -242,7 +254,6 @@ async function submitWish() {
     $('playMsg').textContent = t('chainPending');
     // 链上已广播就先登记待核验：哪怕随后下注接口没成功，也能凭此把钱补入余额，绝不丢
     addPending({ txHash, ts: Date.now(), totalAmount: amount, side, pick, chainInner });
-    const RETRY = /尚未|確認|确认|稍後|稍后|無響應|无响应|未找到|查到|等待|中$|waiting|confirm|pending|timeout|no response|receipt|not found|indexed/i;
     let lastErr = '';
     for (let i = 0; i < 15; i++) {
       await sleep(4000);
@@ -252,7 +263,7 @@ async function submitWish() {
         $('playMsg').textContent = '✓'; $('amountInput').value = ''; return refresh();
       } catch (e) {
         lastErr = e.message || String(e);
-        if (!RETRY.test(lastErr)) break; // 确定性硬错误不再空转，交给下面的补录兜底
+        if (!CHAIN_RETRY.test(lastErr)) break; // 确定性硬错误不再空转，交给下面的补录兜底
       }
     }
     // 下注未成功：立刻尝试凭交易哈希把链上实收补入余额（钱不丢）
@@ -337,6 +348,7 @@ function syncAdmin(isAdmin) {
   if (isAdmin === undefined) isAdmin = state.isAdmin;
   state.isAdmin = !!isAdmin;
   $('adminPanel').classList.toggle('hide', !state.isAdmin);
+  $('adminResetWrap').classList.toggle('hide', !state.isAdmin);
   if (state.isAdmin) loadAdminWords();
 }
 
@@ -414,19 +426,85 @@ async function postBbs() {
 
 // ---------------- 动作 ----------------
 async function switchIns() { const me = state.me; await api('/insurance/switch', { uid: state.uid, on: !me.user.insSwitch }); refresh(); }
-async function depositPremium() { const v = Number($('premiumInput').value); if (!v) return; await api('/insurance/deposit', { uid: state.uid, amount: v }); $('premiumInput').value = ''; refresh(); }
+
+// 保费存入：与许愿相同的混合支付——站内余额优先并精确用尽，不足由外部钱包补齐
+async function depositPremium() {
+  const amount = Number($('premiumInput').value);
+  const msg = $('premiumMsg'); msg.className = 'msg'; msg.textContent = '';
+  if (!Number.isInteger(amount) || amount <= 0) { msg.textContent = t('premiumNeed'); return; }
+  const btn = $('premiumBtn'), S6 = 1_000_000;
+  const availInner = state.me ? Math.round(Number(state.me.account.available) * S6) : 0;
+  const totalInner = amount * S6;
+  const chainInner = totalInner - Math.min(availInner, totalInner);
+  try {
+    btn.disabled = true;
+    if (chainInner <= 0) {
+      await api('/insurance/deposit', { uid: state.uid, amount });
+      $('premiumInput').value = ''; await refresh(); return;
+    }
+    if (!(state.chainCfg && state.chainCfg.enabled)) { msg.textContent = `${t('offchainShort')} ${fmt(chainInner / S6)} 枚)`; return; }
+    if (!window.ethereum) { msg.textContent = t('noWalletGap'); return; }
+    const dec = state.chainCfg.decimals, diff = dec - 6;
+    if (diff < 0) { msg.textContent = 'Token decimals < 6, unsupported'; return; }
+    const needWei = BigInt(chainInner) * (10n ** BigInt(diff));
+    const wbal = await walletTokenWei();
+    if (wbal < needWei) { const s = Number(needWei - wbal) / (10 ** diff); msg.textContent = `${t('walletShort')} ${fmt(s / S6)} 枚`; return; }
+    const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
+    let txHash;
+    try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
+    catch (e) { msg.textContent = e.message || String(e); return; }
+    msg.textContent = t('chainPending');
+    addPending({ txHash, ts: Date.now(), totalAmount: amount, chainInner, kind: 'premium' });
+    let lastErr = '';
+    for (let i = 0; i < 15; i++) {
+      await sleep(4000);
+      try {
+        await api('/insurance/deposit/onchain', { uid: state.uid, totalAmount: amount, chainInner, txHash });
+        removePending(txHash); msg.textContent = '✓'; $('premiumInput').value = ''; return refresh();
+      } catch (e) { lastErr = e.message || String(e); if (!CHAIN_RETRY.test(lastErr)) break; }
+    }
+    await creditPending();
+    const still = loadPending().some((x) => x.txHash === txHash);
+    msg.textContent = still ? `${lastErr ? lastErr + ' · ' : ''}${t('chainWillCredit')} (${shortAddr(txHash)})` : t('chainCreditedRedo');
+  } catch (e) { msg.textContent = e.message; }
+  finally { btn.disabled = false; }
+}
+
+// 保险关闭时，把保费提回可用余额（输入框留空=全部提回）
+async function withdrawPremium() {
+  const raw = $('premiumOutInput').value.trim();
+  const body = { uid: state.uid };
+  if (raw !== '') { const n = Number(raw); if (!Number.isInteger(n) || n <= 0) { alert(t('premiumNeed')); return; } body.amount = n; }
+  try { await api('/insurance/premium/withdraw', body); $('premiumOutInput').value = ''; await refresh(); }
+  catch (e) { alert(e.message); }
+}
+
 async function withdraw() {
   const v = Number($('wdInput').value);
   if (!v) return;
   const btn = $('wdBtn'); btn.disabled = true; btn.textContent = t('withdrawing');
   try {
     const r = await api('/withdraw', { uid: state.uid, amount: v });
-    if (r.paid === false) alert(((r.broadcast ? '⚠ ' : '') + (r.payoutError || 'pending') + (r.txHash ? `\n${r.txHash}` : '')));
+    if (r.paid === true) alert(`${t('wdOk')} ${fmt(r.arrive)} 枚\n${r.txHash || r.txhash || ''}`);
+    else if (r.paid === false) alert(((r.broadcast ? '⚠ ' : '') + (r.payoutError || 'pending') + (r.txHash ? `\n${r.txHash}` : '')));
+    else alert(t('wdPending'));
     $('wdInput').value = ''; refresh();
   } catch (e) { alert(e.message); }
   finally { btn.disabled = false; btn.textContent = t('withdraw'); }
 }
-async function faucet() { try { await api('/faucet', { uid: state.uid, amount: 100 }); refresh(); } catch (e) { alert(e.message); } }
+
+// 管理员一键清空全部业务数据（二次确认）
+async function adminResetAll() {
+  if (!confirm(t('confirmReset1'))) return;
+  if (!confirm(t('confirmReset2'))) return;
+  const btn = $('adminResetBtn'); btn.disabled = true;
+  try {
+    await api('/admin/reset', { uid: state.uid, confirm: true });
+    alert(t('resetDone'));
+    localStorage.removeItem('pendingTxs');
+    location.reload();
+  } catch (e) { alert(e.message); btn.disabled = false; }
+}
 
 // —— 链上掉单补录：钱包已支付就一定能凭交易哈希入账，绝不丢钱 ——
 function loadPending() { try { return JSON.parse(localStorage.getItem('pendingTxs') || '[]'); } catch { return []; } }
@@ -469,7 +547,9 @@ function init() {
   $('betBtn').onclick = submitWish;
   document.querySelectorAll('.dock-item').forEach((d) => d.onclick = () => switchDock(d.dataset.dock));
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
-  $('wdBtn').onclick = withdraw; $('faucetBtn').onclick = faucet;
+  $('premiumOutBtn').onclick = withdrawPremium;
+  $('wdBtn').onclick = withdraw;
+  $('adminResetBtn').onclick = adminResetAll;
   $('pendingVerifyBtn').onclick = async () => { $('pendingVerifyBtn').disabled = true; try { await creditPending(); } finally { $('pendingVerifyBtn').disabled = false; renderPending(); } };
   $('manualTxBtn').onclick = async () => {
     const txHash = $('manualTxInput').value.trim();

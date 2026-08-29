@@ -188,9 +188,10 @@ function renderRound() {
   const dots = state.recent.filter((x) => x.state === 'settled').slice(0, 100).map((x) => `<span class="dot ${x.result && x.result.winSide}" title="${x.roundId}"></span>`).join('');
   $('histDots').innerHTML = dots || '<span class="muted">—</span>';
 }
-function erc20TransferData(to, amountCoin, decimals) {
+// inner6 = 站内 6 位定点最小单位；链上代币多为 18 位，需乘 10^(decimals-6)
+function erc20TransferData(to, inner6, decimals) {
   const addr = to.toLowerCase().replace('0x', '').padStart(64, '0');
-  const v = BigInt(amountCoin) * (10n ** BigInt(decimals || 18));
+  const v = BigInt(inner6) * (10n ** BigInt((decimals || 18) - 6));
   return '0x' + 'a9059cbb' + addr + v.toString(16).padStart(64, '0');
 }
 async function walletTokenWei() {
@@ -205,25 +206,28 @@ async function submitWish() {
   if (state.pick === null) { $('playMsg').textContent = t('needPick'); return; }
   if (!Number.isInteger(amount) || amount < 1 || amount > 99) { $('playMsg').textContent = t('needAmount'); return; }
   const side = state.side, pick = state.pick, uid = state.uid, btn = $('betBtn');
-  const availCoin = state.me ? Math.floor(Number(state.me.account.available)) : 0;
-  const balancePart = Math.min(availCoin, amount);
-  const chainPart = amount - balancePart;
+  const S6 = 1_000_000;
+  const availInner = state.me ? Math.round(Number(state.me.account.available) * S6) : 0; // 站内可用（最小单位，round 消除浮点）
+  const totalInner = amount * S6;
+  const useInner = Math.min(availInner, totalInner); // 站内动用：用尽全部可用余额（含小数零头）
+  const chainInner = totalInner - useInner;          // 链上补齐的精确差额（最小单位）
   try {
     btn.disabled = true;
-    if (chainPart <= 0) {
+    if (chainInner <= 0) {
       await api('/bet', { uid, side, amount, pick });
       $('amountInput').value = ''; await refresh(); return;
     }
-    if (!(state.chainCfg && state.chainCfg.enabled)) { $('playMsg').textContent = `${t('offchainShort')} ${chainPart} 枚)`; return; }
+    if (!(state.chainCfg && state.chainCfg.enabled)) { $('playMsg').textContent = `${t('offchainShort')} ${fmt(chainInner / S6)} 枚)`; return; }
     if (!window.ethereum) { $('playMsg').textContent = t('noWalletGap'); return; }
-    const dec = state.chainCfg.decimals;
+    const dec = state.chainCfg.decimals, diff = dec - 6;
+    if (diff < 0) { $('playMsg').textContent = 'Token decimals < 6, unsupported'; return; }
+    const needWei = BigInt(chainInner) * (10n ** BigInt(diff)); // 站内6位 → 链上最小单位
     const wbal = await walletTokenWei();
-    const needWei = BigInt(chainPart) * (10n ** BigInt(dec));
     if (wbal < needWei) {
-      const shortCoin = Number(needWei - wbal) / (10 ** dec);
-      $('playMsg').textContent = `${t('walletShort')} ${fmt(shortCoin)} 枚`; return;
+      const shortInner = Number(needWei - wbal) / (10 ** diff); // 链上最小单位 → 站内6位
+      $('playMsg').textContent = `${t('walletShort')} ${fmt(shortInner / S6)} 枚`; return;
     }
-    const data = erc20TransferData(state.chainCfg.platformAddress, chainPart, dec);
+    const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
     let txHash;
     try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
     catch (e) { $('playMsg').textContent = e.message || String(e); return; }
@@ -231,7 +235,7 @@ async function submitWish() {
     for (let i = 0; i < 12; i++) {
       await sleep(4000);
       try {
-        await api('/bet/onchain', { uid, side, pick, totalAmount: amount, chainAmount: chainPart, txHash });
+        await api('/bet/onchain', { uid, side, pick, totalAmount: amount, chainInner, txHash });
         $('playMsg').textContent = '✓'; $('amountInput').value = ''; return refresh();
       } catch (e) { if (!/确认|查到|尚未|停止|confirm|waiting|承認|確認/.test(e.message)) { $('playMsg').textContent = e.message; return; } }
     }

@@ -20,6 +20,19 @@ export class WalletService {
     }, 'issue');
   }
 
+  /** 按站内最小单位（6位定点 BigInt）入账，允许非整数枚（链上补差用，精确清零） */
+  async issueInner(uid, inner, note = 'CHAIN_DEPOSIT') {
+    const amount = BigInt(inner);
+    if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, '入账金额必须为正');
+    return await this.store.transaction(async () => {
+      await this.store.getUser(uid);
+      const a = await this.store.applyAccount(uid, { avail: amount });
+      await this.store.applyLedger({ issued: amount });
+      await this.store.addFlow(uid, note, amount);
+      return a.available;
+    }, 'issueInner');
+  }
+
   async withdraw(uid, amountCoin, toWallet) {
     const cfg = this.cfg, s = this.store;
     if (!Number.isInteger(amountCoin)) throw new GameError(Codes.BAD_INPUT, '提现数量必须为整数（枚）');

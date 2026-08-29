@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
-import { coin, SCALE } from './money.js';
+import { coin, SCALE, needTopUp } from './money.js';
 import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
@@ -82,18 +82,23 @@ route('GET', '/insurance/pool', () => insurance.poolPublic());
 // —— 对局（站内余额模式）——
 route('POST', '/issue', (b) => wallet.issue(b.uid, Number(b.amount)));
 route('POST', '/bet', async (b) => { await assertNotBanned(b.uid); return game.bet(b.uid, b.side, Number(b.amount), Number(b.pick), now()); });
-// —— 对局（混合支付）：站内余额优先，不足部分由链上钱包转入补齐 ——
-// totalAmount=许愿总额；chainAmount=本次链上实转的差额（=总额-站内可用余额），可为 0
+// —— 对局（混合支付）：站内余额优先并「精确用尽」，不足部分由链上钱包补齐，余额精确清零 ——
+// totalAmount=许愿总额（整数枚）；以后端站内可用余额为准重算补差额 needInner（6位定点，允许小数），
+// 链上必须恰好转入 needInner，入账后再冻结全额，避免前端取整导致余额残留/多扣。
 route('POST', '/bet/onchain', async (b) => {
   await assertNotBanned(b.uid);
-  const total = Number(b.totalAmount ?? b.amount), chainAmount = Number(b.chainAmount ?? total), pick = Number(b.pick);
-  if (!Number.isInteger(chainAmount) || chainAmount < 0 || chainAmount > total) throw new Error('链上补差额不合法');
-  const u = await store.getUser(b.uid);
-  if (chainAmount > 0) {
-    await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: coin(chainAmount) });
-    await wallet.issue(b.uid, chainAmount, 'CHAIN_DEPOSIT'); // 差额转入平台钱包，作为站内资产来源
+  const total = Number(b.totalAmount ?? b.amount), pick = Number(b.pick);
+  if (!Number.isInteger(total) || total < 1 || total > 99) throw new GameError(Codes.BAD_INPUT, '许愿金必须为 1-99 的正整数（枚）');
+  const totalInner = coin(total);
+  const acc = await store.getAccount(b.uid);
+  const needInner = needTopUp(acc.available, totalInner); // 真正还差多少（内部最小单位，精确到 6 位小数）
+  if (needInner > 0n) {
+    if (!b.txHash) throw new GameError(Codes.BAD_INPUT, '站内余额不足，需要链上钱包补齐，但缺少交易哈希');
+    const u = await store.getUser(b.uid);
+    await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner }); // 链上实转必须恰为差额
+    await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT'); // 差额入账，此刻可用余额恰为 total
   }
-  return await game.bet(b.uid, b.side, total, pick, now()); // bet 会冻结全额（站内余额 + 刚入账差额）
+  return await game.bet(b.uid, b.side, total, pick, now()); // 冻结全额后，原站内余额被精确用尽 → 清零
 });
 route('POST', '/settle', (b) => game.settle(b.atSec ?? now()));
 route('POST', '/payout', (b) => insurance.runPayoutBatch(b.atSec ?? now()));

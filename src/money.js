@@ -44,6 +44,12 @@ export function toCoin(inner) {
   return (neg ? '-' : '') + s + ' 枚';
 }
 
+/** 混合支付：站内可用(内部单位)不足以覆盖下注总额(内部单位)时，链上需补的差额(内部单位, ≥0) */
+export function needTopUp(availableInner, totalInner) {
+  const a = BigInt(availableInner), t = BigInt(totalInner);
+  return t > a ? t - a : 0n;
+}
+
 /** floor(a*b/c)，非负 BigInt 比例运算（按比例分奖用，无浮点、无溢出） */
 export function mulDivFloor(a, b, c) {
   if (c === 0n) throw new Error('比例运算除零');

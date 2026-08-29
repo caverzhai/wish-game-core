@@ -12,7 +12,7 @@ const jstr = (o) => JSON.stringify(o, (k, v) => (typeof v === 'bigint' ? v.toStr
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(16) UNIQUE, wallet VARCHAR(128) UNIQUE,
-  inviter_uid VARCHAR(16) NULL, ins_switch TINYINT DEFAULT 0, created_at BIGINT DEFAULT 0
+  inviter_uid VARCHAR(16) NULL, ins_switch TINYINT DEFAULT 0, banned TINYINT DEFAULT 0, created_at BIGINT DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS accounts (
   uid VARCHAR(16) PRIMARY KEY,
@@ -67,6 +67,9 @@ CREATE TABLE IF NOT EXISTS ledger (
 );
 INSERT IGNORE INTO ledger(id,insurance_pool,platform,pending_withdraw,issued,withdrawn)
   VALUES (1,0,0,0,0,0);
+CREATE TABLE IF NOT EXISTS blocked_words (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, word VARCHAR(64) UNIQUE
+);
 `;
 
 export class MysqlStore {
@@ -99,6 +102,10 @@ export class MysqlStore {
     for (const stmt of SCHEMA.split(';').map((s) => s.trim()).filter(Boolean)) {
       await this.pool.query(stmt);
     }
+    // 老库幂等迁移：补齐后加的列（列已存在时数据库报错，忽略即可）
+    for (const alter of ['ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0']) {
+      try { await this.pool.query(alter); } catch { /* 列已存在 */ }
+    }
   }
 
   _c() { return this.tx.getStore() || this.pool; }
@@ -129,7 +136,7 @@ export class MysqlStore {
     return `${prefix}${rows[0].val}`;
   }
 
-  _userRow(r) { return r && { uid: r.uid, wallet: r.wallet, inviterUid: r.inviter_uid, insSwitch: !!r.ins_switch, createdAt: Number(r.created_at) }; }
+  _userRow(r) { return r && { uid: r.uid, wallet: r.wallet, inviterUid: r.inviter_uid, insSwitch: !!r.ins_switch, banned: !!r.banned, createdAt: Number(r.created_at) }; }
   _acctRow(r) { return r && { available: B(r.available), frozen: B(r.frozen), premium: B(r.premium), lossAccum: B(r.loss_accum) }; }
   _roundRow(r) {
     return r && { roundId: r.round_id, startAt: Number(r.start_at), lockAt: Number(r.lock_at), settleAt: Number(r.settle_at),
@@ -150,6 +157,11 @@ export class MysqlStore {
   async getUser(uid) { const r = await this.exec('SELECT * FROM users WHERE uid=? LIMIT 1', [uid]); if (!r[0]) throw new GameError(Codes.NOT_FOUND, '用户不存在'); return this._userRow(r[0]); }
   async listUsers() { return (await this.exec('SELECT * FROM users ORDER BY id')).map((r) => this._userRow(r)); }
   async setUserSwitch(uid, on) { await this.exec('UPDATE users SET ins_switch=? WHERE uid=?', [on ? 1 : 0, uid]); return on; }
+  async setBanned(uid, banned) {
+    await this.getUser(uid);
+    await this.exec('UPDATE users SET banned=? WHERE uid=?', [banned ? 1 : 0, uid]);
+    return banned;
+  }
 
   async getAccount(uid) {
     const forUpdate = this.tx.getStore() ? ' FOR UPDATE' : '';
@@ -269,6 +281,23 @@ export class MysqlStore {
     return (await this.exec('SELECT r.reply_id reply_id,r.post_id post_id,r.uid uid,r.content content,r.at at,u.wallet wallet FROM replies r LEFT JOIN users u ON u.uid=r.uid ORDER BY r.id'))
       .map((r) => ({ replyId: r.reply_id, postId: r.post_id, uid: r.uid, content: r.content, at: Number(r.at), wallet: r.wallet }));
   }
+  async deletePost(postId) {
+    const r = await this.exec('DELETE FROM posts WHERE post_id=?', [postId]);
+    await this.exec('DELETE FROM replies WHERE post_id=?', [postId]);
+    return r.affectedRows > 0;
+  }
+  // —— 屏蔽词 ——
+  async seedBlockedWords(words = []) {
+    for (const w of words) { const x = String(w || '').trim().toLowerCase(); if (x) { try { await this.exec('INSERT IGNORE INTO blocked_words(word) VALUES(?)', [x]); } catch { /* 重复忽略 */ } } }
+    return this.listBlockedWords();
+  }
+  async addBlockedWord(w) {
+    const x = String(w ?? '').trim().toLowerCase();
+    if (x) { try { await this.exec('INSERT IGNORE INTO blocked_words(word) VALUES(?)', [x]); } catch { /* */ } }
+    return this.listBlockedWords();
+  }
+  async removeBlockedWord(w) { await this.exec('DELETE FROM blocked_words WHERE word=?', [String(w ?? '').trim().toLowerCase()]); return this.listBlockedWords(); }
+  async listBlockedWords() { return (await this.exec('SELECT word FROM blocked_words ORDER BY id')).map((r) => r.word); }
 
   async totalInside() {
     const a = (await this.exec('SELECT COALESCE(SUM(available+frozen+premium),0) s FROM accounts'))[0].s;

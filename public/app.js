@@ -1,6 +1,6 @@
 // =============================================================
 // app.js —— English / 繁體 / 日本語；底部Dock：首页(许愿+历史)/广场/保险/我的
-// 支付顺序：先用站内余额，不足的差额才调外部钱包；发起前先查钱包余额，不足给提示
+// 支付：站内余额优先，不足差额调外部钱包；BBS 含管理员删帖/封号/屏蔽词治理
 // =============================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -24,13 +24,14 @@ const I18N = {
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
     invRule: 'Tier by direct invites who ever generated a node, on wish volume: 1→0.1% / 5→0.2% / 10→0.3% / 20→0.4% / 50+→0.5%.',
     bbsTitle: 'Board (plain text, up to 100 chars)', bbsPlaceholder: 'Say something (max 100 chars)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
+    adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words',
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', faucet: 'Claim 100 test 枚', flows: 'Transactions',
     chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
     stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red', winGreen: 'Green',
     nodeProgress: 'Progress', nodePeriod: 'Periods', pickNum: 'Pick', stake: 'Amount', detail: 'Detail', close: 'Close',
     needPick: 'Please pick a number 0-9 first', needAmount: 'Enter an integer 1-99 (枚)', copyOk: 'Copied', noWallet: 'No wallet extension detected',
     walletShort: 'Wallet balance short by', noWalletGap: 'Balance not enough and no wallet detected', offchainShort: 'Balance not enough, claim test 枚 first (short',
-    reply: 'Reply', sendReply: 'Send', replyPh: 'Write a reply (max 100 chars)', replies: 'replies',
+    reply: 'Reply', sendReply: 'Send', replyPh: 'Write a reply (max 100 chars)', replies: 'replies', confirmDelPost: 'Delete this post and its replies?',
     flow_BET_FROZEN: 'Wish placed', flow_WIN_CREDIT: 'Win credited', flow_INS_WIN_CUT: 'Insured 10% to pool', flow_CANCEL_REFUND: 'Void refund',
     flow_REFERRAL: 'Referral reward', flow_PREMIUM_IN: 'Premium deposit', flow_NODE_PREMIUM_OUT: 'Node premium', flow_NODE_PAYOUT: 'Node payout', flow_NODE_FORFEIT: 'Lapsed to pool',
     flow_WITHDRAW_FEE: 'Withdraw fee', flow_WITHDRAW_PENDING: 'Withdraw in transit', flow_WITHDRAW_PAID: 'Withdraw paid', flow_WITHDRAW_REFUND: 'Withdraw refunded',
@@ -49,13 +50,14 @@ const I18N = {
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
     invRule: '名下有「生成過賠付節點」的直邀好友數決定檔位，按下注流水返傭：1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
     bbsTitle: '廣場（100字以內純文字）', bbsPlaceholder: '說點什麼吧（最多100字）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
+    adminModeration: '管理員治理', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', faucet: '測試領幣100枚', flows: '收支流水',
     chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
     stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅勝', winGreen: '綠勝',
     nodeProgress: '進度', nodePeriod: '已釋放期數', pickNum: '選號', stake: '投入', detail: '明細', close: '收起',
     needPick: '請先選擇 0-9 的數字', needAmount: '請輸入 1-99 的正整數（枚）', copyOk: '已複製', noWallet: '未檢測到錢包插件',
     walletShort: '錢包餘額不足，還差', noWalletGap: '站內餘額不足，且未檢測到錢包', offchainShort: '站內餘額不足，請先測試領幣（差',
-    reply: '回覆', sendReply: '送出', replyPh: '寫下回覆（最多100字）', replies: '則回覆',
+    reply: '回覆', sendReply: '送出', replyPh: '寫下回覆（最多100字）', replies: '則回覆', confirmDelPost: '確定刪除該帖及其全部回覆？',
     flow_BET_FROZEN: '許願投入', flow_WIN_CREDIT: '中獎到帳', flow_INS_WIN_CUT: '保險贏家扣10%', flow_CANCEL_REFUND: '對局退款',
     flow_REFERRAL: '邀請返傭', flow_PREMIUM_IN: '存入保費', flow_NODE_PREMIUM_OUT: '節點扣保費', flow_NODE_PAYOUT: '節點賠付', flow_NODE_FORFEIT: '斷保當期充公',
     flow_WITHDRAW_FEE: '提現手續費', flow_WITHDRAW_PENDING: '提現在途', flow_WITHDRAW_PAID: '提現到帳', flow_WITHDRAW_REFUND: '提現退回',
@@ -74,13 +76,14 @@ const I18N = {
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
     invRule: 'ノードを生成した直招待人数で率が決定（投入額ベース）: 1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
     bbsTitle: '広場（100文字以内のテキスト）', bbsPlaceholder: 'ひとこと（最大100文字）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
+    adminModeration: 'モデレーション', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', faucet: 'テスト100枚受取', flows: '取引履歴',
     chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
     stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤勝ち', winGreen: '緑勝ち',
     nodeProgress: '進捗', nodePeriod: '解放済期', pickNum: '数字', stake: '投入', detail: '詳細', close: '閉じる',
     needPick: '先に0-9の数字を選んでください', needAmount: '1-99の整数（枚）を入力', copyOk: 'コピーしました', noWallet: 'ウォレット拡張が未検出',
     walletShort: 'ウォレット残高不足（あと', noWalletGap: '残高不足でウォレットも未検出', offchainShort: '残高不足。テスト受取してください（不足',
-    reply: '返信', sendReply: '送信', replyPh: '返信を書く（最大100文字）', replies: '件',
+    reply: '返信', sendReply: '送信', replyPh: '返信を書く（最大100文字）', replies: '件', confirmDelPost: 'この投稿と返信を削除しますか？',
     flow_BET_FROZEN: '願い投入', flow_WIN_CREDIT: '当選入金', flow_INS_WIN_CUT: '保険勝者10%', flow_CANCEL_REFUND: '不成立返金',
     flow_REFERRAL: '招待報酬', flow_PREMIUM_IN: '保険料投入', flow_NODE_PREMIUM_OUT: 'ノード保険料', flow_NODE_PAYOUT: 'ノード返還', flow_NODE_FORFEIT: '失効分を保険池へ',
     flow_WITHDRAW_FEE: '出金手数料', flow_WITHDRAW_PENDING: '出金保留', flow_WITHDRAW_PAID: '出金完了', flow_WITHDRAW_REFUND: '出金差戻し',
@@ -88,7 +91,7 @@ const I18N = {
   },
 };
 
-const state = { uid: null, wallet: null, lang: localStorage.getItem('lang') || 'en', side: 'red', pick: null, chainCfg: null, me: null, round: null, recent: [], pool: null };
+const state = { uid: null, wallet: null, isAdmin: false, lang: localStorage.getItem('lang') || 'en', side: 'red', pick: null, chainCfg: null, me: null, round: null, recent: [], pool: null, words: [] };
 if (state.lang === 'zh-CN') state.lang = 'en';
 
 function t(k) { return (I18N[state.lang] && I18N[state.lang][k]) || I18N.en[k] || k; }
@@ -97,6 +100,7 @@ function applyI18n() {
   document.title = t('appTitle');
   document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
   $('bbsInput').placeholder = t('bbsPlaceholder');
+  $('wordInput').placeholder = t('wordPh');
 }
 async function api(url, body) {
   const opt = body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {};
@@ -110,7 +114,7 @@ function randomDemoAddr() { let h = ''; while (h.length < 40) h += Math.random()
 async function doLogin(addr) {
   const ref = new URLSearchParams(location.search).get('ref');
   const u = await api('/login', { wallet: addr, inviterUid: ref || undefined });
-  state.uid = u.uid; state.wallet = u.wallet;
+  state.uid = u.uid; state.wallet = u.wallet; state.isAdmin = !!u.isAdmin;
   localStorage.setItem('uid', u.uid); localStorage.setItem('wallet', u.wallet);
   state.chainCfg = await api('/chain/config');
   enterMain();
@@ -132,7 +136,7 @@ function enterMain() {
   $('who').classList.remove('hide'); $('logoutBtn').classList.remove('hide');
   buildNumGrid(); renderInviteLink(); switchDock('home');
   refresh(); setInterval(refresh, 1500); setInterval(tickCountdown, 1000);
-  setInterval(loadBbs, 5000);
+  setInterval(() => loadBbs(true), 10000);
 }
 function logout() { localStorage.clear(); location.reload(); }
 
@@ -189,10 +193,9 @@ function erc20TransferData(to, amountCoin, decimals) {
   const v = BigInt(amountCoin) * (10n ** BigInt(decimals || 18));
   return '0x' + 'a9059cbb' + addr + v.toString(16).padStart(64, '0');
 }
-/** 读取外部钱包里平台代币余额（最小单位 BigInt） */
 async function walletTokenWei() {
   const cfg = state.chainCfg;
-  const data = '0x70a08231' + state.wallet.toLowerCase().replace('0x', '').padStart(64, '0'); // balanceOf
+  const data = '0x70a08231' + state.wallet.toLowerCase().replace('0x', '').padStart(64, '0');
   const hex = await window.ethereum.request({ method: 'eth_call', params: [{ to: cfg.tokenContract, data }, 'latest'] });
   return BigInt(hex || '0x0');
 }
@@ -204,10 +207,10 @@ async function submitWish() {
   const side = state.side, pick = state.pick, uid = state.uid, btn = $('betBtn');
   const availCoin = state.me ? Math.floor(Number(state.me.account.available)) : 0;
   const balancePart = Math.min(availCoin, amount);
-  const chainPart = amount - balancePart; // 需外部钱包补的差额
+  const chainPart = amount - balancePart;
   try {
     btn.disabled = true;
-    if (chainPart <= 0) { // 余额足够，全程站内
+    if (chainPart <= 0) {
       await api('/bet', { uid, side, amount, pick });
       $('amountInput').value = ''; await refresh(); return;
     }
@@ -302,36 +305,79 @@ function renderMe() {
   $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} 枚</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
   const tip = $('chainModeTip');
   tip.classList.remove('hide'); tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
+  syncAdmin(me.isAdmin);
 }
 function renderInviteLink() { $('inviteLink').value = `${location.origin}${location.pathname}?ref=${state.uid}`; }
+function syncAdmin(isAdmin) {
+  if (isAdmin === undefined) isAdmin = state.isAdmin;
+  state.isAdmin = !!isAdmin;
+  $('adminPanel').classList.toggle('hide', !state.isAdmin);
+  if (state.isAdmin) loadAdminWords();
+}
 
-// ---------------- 广场（发帖 + 回复，按最后活跃排序） ----------------
-async function loadBbs() {
+// ---------------- 广场（发帖 / 回复 / 管理员治理） ----------------
+async function loadBbs(auto = false) {
   if (!$('tab-bbs').classList.contains('active')) return;
+  // 自动轮询时保护正在进行的输入：有展开的回复框、焦点在输入框、或主输入框有草稿，就跳过本次重绘
+  if (auto && (document.querySelector('.reply-box:not(.hide)') || document.querySelector('#tab-bbs textarea:focus') || $('bbsInput').value)) return;
   const posts = await api('/bbs/list');
   $('bbsList').innerHTML = posts.length ? posts.map((p) => `
     <div class="bbs-item">
-      <div class="bbs-head"><b>${shortAddr(p.wallet || p.uid)}</b><small>${new Date(p.lastActiveAt).toLocaleString()}</small></div>
+      <div class="bbs-head"><b>${shortAddr(p.wallet || p.uid)}${p.banned ? ` <span class="banned-tag">${t('bannedTag')}</span>` : ''}</b><small>${new Date(p.lastActiveAt).toLocaleString()}</small></div>
       <div class="bbs-text">${escapeHtml(p.content)}</div>
       <div class="replies">${(p.replies || []).map((r) => `<div class="reply-line"><b>${shortAddr(r.wallet || r.uid)}</b><span>${escapeHtml(r.content)}</span><small>${new Date(r.at).toLocaleString()}</small></div>`).join('')}</div>
       <div class="reply-box hide" id="rb-${p.postId}">
         <textarea rows="2" maxlength="200" placeholder="${t('replyPh')}"></textarea>
         <button class="btn-mini" data-replysend="${p.postId}">${t('sendReply')}</button>
       </div>
-      <div class="bbs-actions"><button class="btn-mini" data-replyto="${p.postId}">${t('reply')}${p.replyCount ? ` (${p.replyCount})` : ''}</button></div>
+      <div class="bbs-actions">
+        <button class="btn-mini" data-replyto="${p.postId}">${t('reply')}${p.replyCount ? ` (${p.replyCount})` : ''}</button>
+        ${state.isAdmin ? `<button class="btn-mini btn-danger" data-delpost="${p.postId}">${t('deletePost')}</button>
+          <button class="btn-mini btn-danger" data-ban="${p.uid}" data-isbanned="${p.banned ? 1 : 0}">${p.banned ? t('unbanUser') : t('banUser')}</button>` : ''}
+      </div>
     </div>`).join('') : `<p class="muted">${t('bbsEmpty')}</p>`;
+
   $('bbsList').querySelectorAll('[data-replyto]').forEach((b) => b.onclick = () => {
     const box = $('rb-' + b.dataset.replyto);
     box.classList.toggle('hide');
     if (!box.classList.contains('hide')) box.querySelector('textarea').focus();
   });
   $('bbsList').querySelectorAll('[data-replysend]').forEach((b) => b.onclick = async () => {
-    const postId = b.dataset.replysend, ta = $('rb-' + postId).querySelector('textarea'), content = ta.value.trim();
-    if (codeLen(content) < 1 || codeLen(content) > 100) return;
+    const postId = b.dataset.replysend, box = $('rb-' + postId), ta = box.querySelector('textarea'), content = ta.value.trim();
+    if (codeLen(content) < 1 || codeLen(content) > 100) { ta.focus(); return; }
     b.disabled = true;
-    try { await api('/bbs/reply', { uid: state.uid, postId, content }); await loadBbs(); }
-    catch (e) { alert(e.message); b.disabled = false; }
+    try {
+      await api('/bbs/reply', { uid: state.uid, postId, content });
+      await loadBbs(); // 成功后整体重绘，新回复直接出现在该帖下方
+    } catch (e) { alert(e.message); b.disabled = false; }
   });
+  $('bbsList').querySelectorAll('[data-delpost]').forEach((b) => b.onclick = async () => {
+    if (!window.confirm(t('confirmDelPost'))) return;
+    try { await api('/admin/post/delete', { uid: state.uid, postId: b.dataset.delpost }); await loadBbs(); }
+    catch (e) { alert(e.message); }
+  });
+  $('bbsList').querySelectorAll('[data-ban]').forEach((b) => b.onclick = async () => {
+    const target = b.dataset.ban, wasBanned = b.dataset.isbanned === '1';
+    try { await api(wasBanned ? '/admin/user/unban' : '/admin/user/ban', { uid: state.uid, targetUid: target, banned: !wasBanned }); await loadBbs(); }
+    catch (e) { alert(e.message); }
+  });
+}
+async function loadAdminWords() {
+  try {
+    state.words = await api('/admin/words');
+    $('wordTags').innerHTML = state.words.length
+      ? state.words.map((w) => `<span class="word-tag">${escapeHtml(w)}<button data-wordrm="${escapeHtml(w)}">×</button></span>`).join('')
+      : `<span class="muted">${t('noBlocked')}</span>`;
+    $('wordTags').querySelectorAll('[data-wordrm]').forEach((b) => b.onclick = async () => {
+      await api('/admin/word/remove', { uid: state.uid, word: b.dataset.wordrm }); loadAdminWords();
+    });
+  } catch (e) { /* 非管理员或网络抖动，忽略 */ }
+}
+async function adminAddWord() {
+  const w = $('wordInput').value.trim();
+  if (!w) return;
+  try { await api('/admin/word/add', { uid: state.uid, word: w }); $('wordInput').value = ''; loadAdminWords(); }
+  catch (e) { alert(e.message); }
 }
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 async function postBbs() {
@@ -350,9 +396,7 @@ async function withdraw() {
   const btn = $('wdBtn'); btn.disabled = true; btn.textContent = t('withdrawing');
   try {
     const r = await api('/withdraw', { uid: state.uid, amount: v });
-    if (r.paid === false) {
-      alert(((r.broadcast ? '⚠ ' : '') + (r.payoutError || 'pending') + (r.txHash ? `\n${r.txHash}` : '')));
-    }
+    if (r.paid === false) alert(((r.broadcast ? '⚠ ' : '') + (r.payoutError || 'pending') + (r.txHash ? `\n${r.txHash}` : '')));
     $('wdInput').value = ''; refresh();
   } catch (e) { alert(e.message); }
   finally { btn.disabled = false; btn.textContent = t('withdraw'); }
@@ -379,6 +423,7 @@ function init() {
   document.querySelectorAll('.dock-item').forEach((d) => d.onclick = () => switchDock(d.dataset.dock));
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
   $('wdBtn').onclick = withdraw; $('faucetBtn').onclick = faucet;
+  $('wordAddBtn').onclick = adminAddWord;
   $('copyInvBtn').onclick = () => { navigator.clipboard?.writeText($('inviteLink').value); alert(t('copyOk')); };
   $('bbsSend').onclick = postBbs;
   $('bbsInput').oninput = () => { $('bbsChar').textContent = codeLen($('bbsInput').value) + '/100'; };

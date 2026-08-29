@@ -19,6 +19,7 @@ export class MemoryStore {
     this.withdraws = [];
     this.posts = [];
     this.replies = [];
+    this.blockedWords = new Set();
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
     this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0 };
   }
@@ -35,7 +36,7 @@ export class MemoryStore {
   async createUser({ wallet, inviterUid = null, createdAt = 0 }) {
     if (await this.getUserByWallet(wallet)) throw new GameError(Codes.ALREADY_EXISTS, '该钱包已注册');
     const uid = await this.nextId('user', 'U');
-    const user = { uid, wallet, inviterUid, insSwitch: false, createdAt };
+    const user = { uid, wallet, inviterUid, insSwitch: false, banned: false, createdAt };
     this.users.set(uid, user);
     this.accounts.set(uid, { available: 0n, frozen: 0n, premium: 0n, lossAccum: 0n });
     return { ...user };
@@ -51,6 +52,7 @@ export class MemoryStore {
   }
   async listUsers() { return [...this.users.values()].map((u) => ({ ...u })); }
   async setUserSwitch(uid, on) { const u = this.users.get(uid); u.insSwitch = !!on; return u.insSwitch; }
+  async setBanned(uid, banned) { const u = this.users.get(uid); if (!u) throw new GameError(Codes.NOT_FOUND, '用户不存在'); u.banned = !!banned; return u.banned; }
 
   async getAccount(uid) {
     const a = this.accounts.get(uid);
@@ -137,6 +139,17 @@ export class MemoryStore {
   async getPost(postId) { const p = this.posts.find((x) => x.postId === postId); return p ? { ...p } : null; }
   async addReply(r) { this.replies.push({ ...r }); }
   async listRepliesAll() { return this.replies.map((r) => ({ ...r })); }
+  async deletePost(postId) {
+    const before = this.posts.length;
+    this.posts = this.posts.filter((p) => p.postId !== postId);
+    this.replies = this.replies.filter((r) => r.postId !== postId);
+    return before !== this.posts.length;
+  }
+  // —— 屏蔽词 ——
+  async seedBlockedWords(words = []) { for (const w of words) if (w) this.blockedWords.add(String(w).trim().toLowerCase()); return [...this.blockedWords]; }
+  async addBlockedWord(w) { const x = String(w ?? '').trim().toLowerCase(); if (x) this.blockedWords.add(x); return [...this.blockedWords]; }
+  async removeBlockedWord(w) { this.blockedWords.delete(String(w ?? '').trim().toLowerCase()); return [...this.blockedWords]; }
+  async listBlockedWords() { return [...this.blockedWords]; }
 
   // -------- 守恒 --------
   async totalInside() {

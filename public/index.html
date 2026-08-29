@@ -76,6 +76,15 @@
     <!-- 广场 -->
     <section id="tab-bbs" class="panel">
       <h3 data-i18n="bbsTitle">Board (plain text, up to 100 chars)</h3>
+      <!-- 管理员治理面板（仅管理员钱包可见） -->
+      <div id="adminPanel" class="admin-panel hide">
+        <div class="admin-title" data-i18n="adminModeration">Moderation</div>
+        <div class="row">
+          <input id="wordInput" maxlength="32" placeholder="" />
+          <button id="wordAddBtn" class="btn-primary" data-i18n="addBlockedWord">Block word</button>
+        </div>
+        <div id="wordTags" class="word-tags"></div>
+      </div>
       <div class="bbs-post">
         <textarea id="bbsInput" maxlength="200" rows="3" placeholder=""></textarea>
         <div class="bbs-bar">

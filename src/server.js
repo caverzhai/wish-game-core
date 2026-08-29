@@ -11,6 +11,7 @@ import { createApp } from './app.js';
 import { coin, SCALE } from './money.js';
 import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
+import { GameError, Codes } from './errors.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -31,14 +32,32 @@ const { game, wallet, insurance, social, chain, store, cfg } = app;
 const scheduler = new Scheduler(app);
 setInterval(() => { scheduler.tick(now()).catch((e) => console.error('[tick]', e.message)); }, 2000);
 
+// —— BBS 治理：管理员钱包（环境变量 ADMIN_WALLETS，逗号分隔）+ 初始屏蔽词 ——
+const ADMIN_WALLETS = new Set((process.env.ADMIN_WALLETS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
+const isAdminWallet = (w) => !!w && ADMIN_WALLETS.has(String(w).toLowerCase());
+async function requireAdmin(uid) {
+  const u = await store.getUser(uid);
+  if (!isAdminWallet(u.wallet)) throw new GameError(Codes.FORBIDDEN, '需要管理员权限');
+  return u;
+}
+async function assertNotBanned(uid) {
+  const u = await store.getUser(uid);
+  if (u.banned) throw new GameError(Codes.BANNED, '账号已被封禁');
+  return u;
+}
+// 环境变量 BBS_BLOCKED_WORDS（逗号分隔）幂等灌入，后续可由管理员在站内动态增删
+if (typeof store.seedBlockedWords === 'function') {
+  store.seedBlockedWords((process.env.BBS_BLOCKED_WORDS || '').split(',').map((s) => s.trim()).filter(Boolean)).catch((e) => console.error('[seedWords]', e.message));
+}
+
 const routes = [];
 const route = (method, p, h) => routes.push({ method, p, h });
 
 // —— 账号 ——
 route('POST', '/login', async (b) => {
   const ex = await store.getUserByWallet(b.wallet);
-  if (ex) return ex;
-  return await game.register(b.wallet, b.inviterUid ?? null, now());
+  const u = ex || await game.register(b.wallet, b.inviterUid ?? null, now());
+  return { ...u, isAdmin: isAdminWallet(u.wallet) };
 });
 route('POST', '/register', (b) => game.register(b.wallet, b.inviterUid ?? null, now()));
 route('POST', '/faucet', (b) => wallet.issue(b.uid, Number(b.amount ?? 100), 'FAUCET'));
@@ -51,7 +70,7 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
   const referral = await store.referralSummary(uid);
   const flows = await store.listFlows(uid, 50);
   return {
-    user, account, nodes,
+    user, account, nodes, isAdmin: isAdminWallet(user.wallet),
     invite: { code: uid, perMille: Number(referralPerMille(cfg, nodeInviteeCount)), nodeInviteeCount, rewardTotal: referral.total, rewardedInvitees: referral.activeInvitees },
     flows,
   };
@@ -62,10 +81,11 @@ route('POST', '/insurance/deposit', (b) => insurance.depositPremium(b.uid, coin(
 route('GET', '/insurance/pool', () => insurance.poolPublic());
 // —— 对局（站内余额模式）——
 route('POST', '/issue', (b) => wallet.issue(b.uid, Number(b.amount)));
-route('POST', '/bet', (b) => game.bet(b.uid, b.side, Number(b.amount), Number(b.pick), now()));
+route('POST', '/bet', async (b) => { await assertNotBanned(b.uid); return game.bet(b.uid, b.side, Number(b.amount), Number(b.pick), now()); });
 // —— 对局（混合支付）：站内余额优先，不足部分由链上钱包转入补齐 ——
 // totalAmount=许愿总额；chainAmount=本次链上实转的差额（=总额-站内可用余额），可为 0
 route('POST', '/bet/onchain', async (b) => {
+  await assertNotBanned(b.uid);
   const total = Number(b.totalAmount ?? b.amount), chainAmount = Number(b.chainAmount ?? total), pick = Number(b.pick);
   if (!Number.isInteger(chainAmount) || chainAmount < 0 || chainAmount > total) throw new Error('链上补差额不合法');
   const u = await store.getUser(b.uid);
@@ -84,11 +104,19 @@ route('GET', '/recent', () => game.recentRounds(100));
 route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
 route('POST', '/bbs/reply', (b) => social.reply(b.uid, b.postId, b.content));
 route('GET', '/bbs/list', () => social.list());
+// —— BBS 治理（仅 ADMIN_WALLETS 中的管理员钱包可操作）——
+route('GET', '/admin/words', () => store.listBlockedWords());
+route('POST', '/admin/word/add', async (b) => { await requireAdmin(b.uid); return { words: await store.addBlockedWord(b.word) }; });
+route('POST', '/admin/word/remove', async (b) => { await requireAdmin(b.uid); return { words: await store.removeBlockedWord(b.word) }; });
+route('POST', '/admin/post/delete', async (b) => { await requireAdmin(b.uid); return social.deletePost(b.uid, b.postId); });
+route('POST', '/admin/user/ban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, b.banned !== false) }; });
+route('POST', '/admin/user/unban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, false) }; });
 // —— 链配置（公开，不含私钥）——
 route('GET', '/chain/config', () => chain.publicConfig());
 // —— 提现：配置了代付私钥则自动链上打款，否则生成待处理单 ——
 route('POST', '/withdraw/reap', (b) => wallet.reapUnbroadcast(b.uid));
 route('POST', '/withdraw', async (b) => {
+  await assertNotBanned(b.uid);
   if (chain.canPayout) await wallet.reapUnbroadcast(b.uid); // 先把上笔未广播成功的在途单退回，避免钱卡住
   const wd = await wallet.withdraw(b.uid, Number(b.amount));
   if (chain.canPayout) {
@@ -138,7 +166,7 @@ const server = http.createServer(async (req, res) => {
     let file = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
     const fp = path.join(PUBLIC_DIR, file);
     if (fp.startsWith(PUBLIC_DIR) && fs.existsSync(fp) && fs.statSync(fp).isFile()) {
-      res.writeHead(200, { 'content-type': MIME[path.extname(fp)] || 'application/octet-stream' });
+      res.writeHead(200, { 'content-type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-cache, must-revalidate' });
       return res.end(fs.readFileSync(fp));
     }
     res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' }).end(jstr({ error: 'not found' }));

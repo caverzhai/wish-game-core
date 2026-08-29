@@ -133,6 +133,7 @@ textarea { resize: vertical; }
 .pending-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
 .pending-line { display: flex; justify-content: space-between; font-size: 12px; background: var(--card2); border-radius: 8px; padding: 4px 8px; }
 .pending-line small { color: var(--muted); }
+.manual-tx { margin-top: 8px; }
 .chain-tip { font-size: 12px; color: var(--gold); background: rgba(230,180,80,.1); border: 1px solid rgba(230,180,80,.3); border-radius: 8px; padding: 8px; margin-bottom: 10px; }
 
 /* 底部 Dock */

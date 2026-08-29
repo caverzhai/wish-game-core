@@ -43,8 +43,7 @@ export class ChainService {
     this.pk = env.PAYOUT_PRIVATE_KEY || '';
     this.decimals = Number(env.TOKEN_DECIMALS || 18);
     this.needConfirm = Number(env.CONFIRM_BLOCKS ?? 1);
-    this._provider = null;
-    this._usedTx = new Set(); // 单实例内交易哈希防重；生产应在 DB 对 tx_hash 加唯一索引
+    this._providerInstance = null; // 缓存的 ethers Provider（不可与方法 _provider() 同名，否则遮蔽方法）
   }
 
   get enabled() { return !!(this.rpc && this.token && this.platform); }
@@ -60,12 +59,12 @@ export class ChainService {
   }
   async _provider() {
     if (!this.enabled) throw new GameError(Codes.BAD_INPUT, '尚未配置链参数（RPC_URL / TOKEN_CONTRACT / PLATFORM_WALLET_ADDRESS）');
-    if (!this._provider) {
+    if (!this._providerInstance) {
       const { JsonRpcProvider } = await this._ethers();
       // staticNetwork：信任固定链，跳过 ethers 每次的网络探测；requestTimeout：单次请求硬超时，防止挂死
-      this._provider = new JsonRpcProvider(this.rpc, undefined, { staticNetwork: true, requestTimeout: SEND_TIMEOUT_MS, pollingInterval: 3000 });
+      this._providerInstance = new JsonRpcProvider(this.rpc, undefined, { staticNetwork: true, requestTimeout: SEND_TIMEOUT_MS, pollingInterval: 3000 });
     }
-    return this._provider;
+    return this._providerInstance;
   }
 
   _diff() { const d = this.decimals - 6; if (d < 0) throw new GameError(Codes.BAD_INPUT, '代币精度不能小于站内 6 位'); return BigInt(d); }
@@ -74,11 +73,16 @@ export class ChainService {
   /** 链上最小单位 -> 站内 6 位金额（整除截尾） */
   toInner(chain) { return BigInt(chain) / (10n ** this._diff()); }
 
-  /** 核验一笔「用户 -> 平台钱包」的代币转账，用于链上直接下注 */
-  async verifyIncoming({ txHash, fromAddress, expectInner }) {
+  /**
+   * 核验一笔「用户 -> 平台钱包」的代币转账。
+   *  - 传 expectInner：严格比对金额（链上直接下注，要求恰好等于补差）；
+   *  - 不传 expectInner：不比对金额，按链上实收金额返回（掉单补录 /wallet/credit 用）。
+   * 返回 hit.inner = 实收的站内 6 位金额。去重由持久层 chain_txs 负责，本方法不做内存去重，
+   * 这样下注失败后同一笔交易仍可用于补录入账，保证「钱已转出就不会丢」。
+   */
+  async verifyIncoming({ txHash, fromAddress, expectInner = null }) {
     const key = String(txHash || '').toLowerCase();
     if (!key.startsWith('0x')) throw new GameError(Codes.BAD_INPUT, '交易哈希格式不正确');
-    if (this._usedTx.has(key)) throw new GameError(Codes.BAD_INPUT, '该链上交易已使用，请勿重复提交');
     const p = await this._provider();
     const [receipt, tx] = await withTimeout(
       Promise.all([p.getTransactionReceipt(txHash), p.getTransaction(txHash)]),
@@ -89,7 +93,7 @@ export class ChainService {
     if (!tx.to || tx.to.toLowerCase() !== this.token.toLowerCase()) throw new GameError(Codes.BAD_INPUT, '交易目标不是平台指定的代币合约');
     if (fromAddress && receipt.from.toLowerCase() !== String(fromAddress).toLowerCase()) throw new GameError(Codes.BAD_INPUT, '交易发起地址与当前连接钱包不一致');
 
-    const expectChain = this.toChain(BigInt(expectInner));
+    const expectChain = expectInner == null ? null : this.toChain(BigInt(expectInner));
     let hit = null;
     for (const log of receipt.logs) {
       if (log.address.toLowerCase() !== this.token.toLowerCase()) continue;
@@ -98,15 +102,14 @@ export class ChainService {
       const to = '0x' + log.topics[2].slice(26);
       const value = BigInt(log.data);
       if (to.toLowerCase() === this.platform.toLowerCase()) {
-        if (value !== expectChain) throw new GameError(Codes.BAD_INPUT, `转账金额不符：应转 ${expectChain}，实转 ${value}`);
-        hit = { from, to, value, blockNumber: receipt.blockNumber };
+        if (expectChain != null && value !== expectChain) throw new GameError(Codes.BAD_INPUT, `转账金额不符：应转 ${expectChain}，实转 ${value}`);
+        hit = { from, to, value, inner: this.toInner(value), blockNumber: receipt.blockNumber };
       }
     }
-    if (!hit) throw new GameError(Codes.BAD_INPUT, '未找到转入平台钱包的代币 Transfer 记录');
+    if (!hit) throw new GameError(Codes.BAD_INPUT, '未找到转入平台钱包的代币 Transfer 记录，请稍后再试');
 
     const head = await withTimeout(p.getBlockNumber(), SEND_TIMEOUT_MS, '链上节点无响应，请稍后再试');
     if (head - receipt.blockNumber < this.needConfirm) throw new GameError(Codes.BAD_INPUT, `仍在确认中（${head - receipt.blockNumber}/${this.needConfirm} 块），请稍后`);
-    this._usedTx.add(key);
     return hit;
   }
 

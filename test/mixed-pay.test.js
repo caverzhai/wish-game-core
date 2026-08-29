@@ -46,3 +46,23 @@ test('混合支付：站内余额足够则不补链上，下注后仅扣下注�
   assert.equal(after.frozen, coin(10));
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
+
+test('链上掉单补录幂等：同一 txHash 只入账一次，重复提交返回 already 且余额不翻倍', async () => {
+  const app = await mk();
+  const U = (await app.game.register('0xC')).uid;
+  app.chain.verifyIncoming = async () => ({ inner: toInner('4.7') }); // stub：链上实收 4.7 枚
+  const tx = '0xabc';
+  // 与 /wallet/credit 路由相同的编排：已入账则幂等返回，否则核验→入账→登记
+  const creditOnce = async () => {
+    if (await app.store.isChainTxUsed(tx)) return 'already';
+    const hit = await app.chain.verifyIncoming({ txHash: tx });
+    await app.wallet.issueInner(U, hit.inner, 'CHAIN_DEPOSIT');
+    await app.store.markChainTxUsed(tx, U, hit.inner);
+    return 'credited';
+  };
+  assert.equal(await creditOnce(), 'credited');
+  assert.equal((await app.store.getAccount(U)).available, toInner('4.7'));
+  assert.equal(await creditOnce(), 'already');
+  assert.equal((await app.store.getAccount(U)).available, toInner('4.7')); // 不重复入账
+  assert.equal(await app.store.totalInside(), await app.store.totalSource());
+});

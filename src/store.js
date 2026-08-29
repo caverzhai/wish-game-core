@@ -20,6 +20,7 @@ export class MemoryStore {
     this.posts = [];
     this.replies = [];
     this.blockedWords = new Set();
+    this.chainTxs = new Map(); // 已入账的链上交易哈希 -> {uid,inner,at}，幂等去重（重启内存版会丢，生产用 MySQL）
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
     this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0 };
   }
@@ -150,6 +151,15 @@ export class MemoryStore {
   async addBlockedWord(w) { const x = String(w ?? '').trim().toLowerCase(); if (x) this.blockedWords.add(x); return [...this.blockedWords]; }
   async removeBlockedWord(w) { this.blockedWords.delete(String(w ?? '').trim().toLowerCase()); return [...this.blockedWords]; }
   async listBlockedWords() { return [...this.blockedWords]; }
+
+  // —— 链上入账交易幂等去重 ——
+  async isChainTxUsed(tx) { return this.chainTxs.has(String(tx ?? '').toLowerCase()); }
+  async markChainTxUsed(tx, uid, inner) {
+    const k = String(tx ?? '').toLowerCase();
+    if (this.chainTxs.has(k)) return false;
+    this.chainTxs.set(k, { uid, inner: BigInt(inner), at: Date.now() });
+    return true;
+  }
 
   // -------- 守恒 --------
   async totalInside() {

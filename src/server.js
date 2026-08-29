@@ -92,13 +92,36 @@ route('POST', '/bet/onchain', async (b) => {
   const totalInner = coin(total);
   const acc = await store.getAccount(b.uid);
   const needInner = needTopUp(acc.available, totalInner); // 真正还差多少（内部最小单位，精确到 6 位小数）
+  const txKey = String(b.txHash || '').toLowerCase();
   if (needInner > 0n) {
-    if (!b.txHash) throw new GameError(Codes.BAD_INPUT, '站内余额不足，需要链上钱包补齐，但缺少交易哈希');
-    const u = await store.getUser(b.uid);
-    await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner }); // 链上实转必须恰为差额
-    await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT'); // 差额入账，此刻可用余额恰为 total
+    if (!txKey) throw new GameError(Codes.BAD_INPUT, '站内余额不足，需要链上钱包补齐，但缺少交易哈希');
+    const already = await store.isChainTxUsed(txKey);
+    if (!already) {
+      const u = await store.getUser(b.uid);
+      await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner }); // 链上实转必须恰为差额
+      await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT'); // 差额先入账（独立事务，即使随后下注失败，钱也留在余额，不丢）
+      await store.markChainTxUsed(txKey, b.uid, needInner);       // 入账成功才登记，幂等防重
+    }
   }
   return await game.bet(b.uid, b.side, total, pick, now()); // 冻结全额后，原站内余额被精确用尽 → 清零
+});
+// —— 掉单补录：链上已支付但下注未成功时，凭 txHash 把「链上实收金额」补入站内余额，幂等 ——
+route('POST', '/wallet/credit', async (b) => {
+  await assertNotBanned(b.uid);
+  const txKey = String(b.txHash || '').toLowerCase();
+  if (!txKey.startsWith('0x')) throw new GameError(Codes.BAD_INPUT, '交易哈希格式不正确');
+  if (await store.isChainTxUsed(txKey)) { // 已入账：幂等返回当前余额，前端可安全清掉待补记录
+    const a = await store.getAccount(b.uid);
+    return { already: true, credited: 0, available: a.available };
+  }
+  const u = await store.getUser(b.uid);
+  const hit = await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet }); // 不校验固定金额，按实收
+  const inner = BigInt(hit.inner);
+  if (inner <= 0n) throw new GameError(Codes.BAD_INPUT, '该交易没有转入平台钱包的有效金额');
+  await wallet.issueInner(b.uid, inner, 'CHAIN_DEPOSIT');
+  await store.markChainTxUsed(txKey, b.uid, inner);
+  const a = await store.getAccount(b.uid);
+  return { already: false, credited: inner, available: a.available, txHash: b.txHash };
 });
 route('POST', '/settle', (b) => game.settle(b.atSec ?? now()));
 route('POST', '/payout', (b) => insurance.runPayoutBatch(b.atSec ?? now()));

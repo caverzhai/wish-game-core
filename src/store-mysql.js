@@ -70,6 +70,9 @@ INSERT IGNORE INTO ledger(id,insurance_pool,platform,pending_withdraw,issued,wit
 CREATE TABLE IF NOT EXISTS blocked_words (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, word VARCHAR(64) UNIQUE
 );
+CREATE TABLE IF NOT EXISTS chain_txs (
+  tx_hash VARCHAR(80) PRIMARY KEY, uid VARCHAR(16), amount BIGINT, at BIGINT
+);
 `;
 
 export class MysqlStore {
@@ -298,6 +301,17 @@ export class MysqlStore {
   }
   async removeBlockedWord(w) { await this.exec('DELETE FROM blocked_words WHERE word=?', [String(w ?? '').trim().toLowerCase()]); return this.listBlockedWords(); }
   async listBlockedWords() { return (await this.exec('SELECT word FROM blocked_words ORDER BY id')).map((r) => r.word); }
+
+  // —— 链上入账交易幂等去重（tx_hash 主键，INSERT IGNORE 防重复入账）——
+  async isChainTxUsed(tx) {
+    const r = await this.exec('SELECT 1 x FROM chain_txs WHERE tx_hash=? LIMIT 1', [String(tx ?? '').toLowerCase()]);
+    return r.length > 0;
+  }
+  async markChainTxUsed(tx, uid, inner) {
+    await this.exec('INSERT IGNORE INTO chain_txs(tx_hash,uid,amount,at) VALUES(?,?,?,?)',
+      [String(tx ?? '').toLowerCase(), uid, BigInt(inner), Date.now()]);
+    return true;
+  }
 
   async totalInside() {
     const a = (await this.exec('SELECT COALESCE(SUM(available+frozen+premium),0) s FROM accounts'))[0].s;

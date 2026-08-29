@@ -122,6 +122,11 @@
     <section id="tab-me" class="panel">
       <h3 data-i18n="meWallet">Wallet</h3>
       <div id="chainModeTip" class="chain-tip hide"></div>
+      <div id="pendingBox" class="pending-box hide">
+        <div class="pending-head"><b data-i18n="pendingTitle">Pending on-chain payments</b><span id="pendingCount"></span></div>
+        <div id="pendingList" class="pending-list"></div>
+        <button id="pendingVerifyBtn" class="btn-ghost" data-i18n="pendingVerify">Verify &amp; credit now</button>
+      </div>
       <div class="grid3">
         <div class="mini-card"><span data-i18n="avail">Available</span><b id="availBal">0</b></div>
         <div class="mini-card"><span data-i18n="frozen">Frozen</span><b id="frozenBal">0</b></div>

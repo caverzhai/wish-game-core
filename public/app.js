@@ -27,6 +27,7 @@ const I18N = {
     adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words',
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', faucet: 'Claim 100 test 枚', flows: 'Transactions',
     chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
+    pendingTitle: 'Pending on-chain payments', pendingVerify: 'Verify & credit now', chainWillCredit: 'Paid on-chain. It is credited automatically once confirmed; you can also tap Verify under Me.', chainCreditedRedo: 'Your on-chain payment has been credited to balance, please place the wish again.',
     stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red', winGreen: 'Green',
     nodeProgress: 'Progress', nodePeriod: 'Periods', pickNum: 'Pick', stake: 'Amount', detail: 'Detail', close: 'Close',
     needPick: 'Please pick a number 0-9 first', needAmount: 'Enter an integer 1-99 (枚)', copyOk: 'Copied', noWallet: 'No wallet extension detected',
@@ -53,6 +54,7 @@ const I18N = {
     adminModeration: '管理員治理', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', faucet: '測試領幣100枚', flows: '收支流水',
     chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
+    pendingTitle: '待核驗的鏈上支付', pendingVerify: '重新核驗並入帳', chainWillCredit: '鏈上已支付，確認後會自動補入餘額，也可到「我的」手動核驗。', chainCreditedRedo: '鏈上支付已補入餘額，請重新許願。',
     stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅勝', winGreen: '綠勝',
     nodeProgress: '進度', nodePeriod: '已釋放期數', pickNum: '選號', stake: '投入', detail: '明細', close: '收起',
     needPick: '請先選擇 0-9 的數字', needAmount: '請輸入 1-99 的正整數（枚）', copyOk: '已複製', noWallet: '未檢測到錢包插件',
@@ -79,6 +81,7 @@ const I18N = {
     adminModeration: 'モデレーション', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', faucet: 'テスト100枚受取', flows: '取引履歴',
     chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
+    pendingTitle: '未確認のオンチェーン支払い', pendingVerify: '再確認して入金', chainWillCredit: 'オンチェーンで支払い済み。承認後に自動入金されます。マイで手動確認も可能です。', chainCreditedRedo: 'オンチェーン支払いを残高に入金しました。もう一度願いを入力してください。',
     stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤勝ち', winGreen: '緑勝ち',
     nodeProgress: '進捗', nodePeriod: '解放済期', pickNum: '数字', stake: '投入', detail: '詳細', close: '閉じる',
     needPick: '先に0-9の数字を選んでください', needAmount: '1-99の整数（枚）を入力', copyOk: 'コピーしました', noWallet: 'ウォレット拡張が未検出',
@@ -134,9 +137,10 @@ function enterMain() {
   $('loginMask').classList.add('hide'); $('main').classList.remove('hide'); $('dock').classList.remove('hide');
   $('who').textContent = `${state.uid} · ${shortAddr(state.wallet)}`;
   $('who').classList.remove('hide'); $('logoutBtn').classList.remove('hide');
-  buildNumGrid(); renderInviteLink(); switchDock('home');
+  buildNumGrid(); renderInviteLink(); renderPending(); switchDock('home');
   refresh(); setInterval(refresh, 1500); setInterval(tickCountdown, 1000);
   setInterval(() => loadBbs(true), 10000);
+  creditPending(); setInterval(creditPending, 12000); // 自动补录掉单
 }
 function logout() { localStorage.clear(); location.reload(); }
 
@@ -148,7 +152,7 @@ function switchDock(name) {
   if (name === 'home') renderHistory();
   if (name === 'bbs') loadBbs();
   if (name === 'insurance') updatePoolCountdown();
-  if (name === 'me' && state.uid) api('/withdraw/reap', { uid: state.uid }).then(refresh).catch(() => {});
+  if (name === 'me' && state.uid) { renderPending(); creditPending(); api('/withdraw/reap', { uid: state.uid }).then(refresh).catch(() => {}); }
 }
 
 // ---------------- 许愿 ----------------
@@ -232,14 +236,27 @@ async function submitWish() {
     try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
     catch (e) { $('playMsg').textContent = e.message || String(e); return; }
     $('playMsg').textContent = t('chainPending');
-    for (let i = 0; i < 12; i++) {
+    // 链上已广播就先登记待核验：哪怕随后下注接口没成功，也能凭此把钱补入余额，绝不丢
+    addPending({ txHash, ts: Date.now(), totalAmount: amount, side, pick, chainInner });
+    const RETRY = /尚未|確認|确认|稍後|稍后|無響應|无响应|未找到|查到|等待|中$|waiting|confirm|pending|timeout|no response|receipt|not found|indexed/i;
+    let lastErr = '';
+    for (let i = 0; i < 15; i++) {
       await sleep(4000);
       try {
         await api('/bet/onchain', { uid, side, pick, totalAmount: amount, chainInner, txHash });
+        removePending(txHash);
         $('playMsg').textContent = '✓'; $('amountInput').value = ''; return refresh();
-      } catch (e) { if (!/确认|查到|尚未|停止|confirm|waiting|承認|確認/.test(e.message)) { $('playMsg').textContent = e.message; return; } }
+      } catch (e) {
+        lastErr = e.message || String(e);
+        if (!RETRY.test(lastErr)) break; // 确定性硬错误不再空转，交给下面的补录兜底
+      }
     }
-    $('playMsg').textContent = 'tx: ' + shortAddr(txHash);
+    // 下注未成功：立刻尝试凭交易哈希把链上实收补入余额（钱不丢）
+    await creditPending();
+    const stillPending = loadPending().some((x) => x.txHash === txHash);
+    $('playMsg').textContent = stillPending
+      ? `${lastErr ? lastErr + ' · ' : ''}${t('chainWillCredit')} (${shortAddr(txHash)})`
+      : t('chainCreditedRedo');
   } catch (e) { $('playMsg').textContent = e.message; }
   finally { btn.disabled = false; }
 }
@@ -407,6 +424,28 @@ async function withdraw() {
 }
 async function faucet() { try { await api('/faucet', { uid: state.uid, amount: 100 }); refresh(); } catch (e) { alert(e.message); } }
 
+// —— 链上掉单补录：钱包已支付就一定能凭交易哈希入账，绝不丢钱 ——
+function loadPending() { try { return JSON.parse(localStorage.getItem('pendingTxs') || '[]'); } catch { return []; } }
+function savePending(list) { localStorage.setItem('pendingTxs', JSON.stringify(list)); renderPending(); }
+function addPending(item) { const l = loadPending(); if (!l.some((x) => x.txHash === item.txHash)) l.unshift(item); savePending(l); }
+function removePending(hash) { savePending(loadPending().filter((x) => x.txHash !== hash)); }
+function renderPending() {
+  const box = $('pendingBox'); if (!box) return;
+  const list = loadPending();
+  box.classList.toggle('hide', list.length === 0);
+  $('pendingCount').textContent = list.length ? `(${list.length})` : '';
+  $('pendingList').innerHTML = list.map((x) => `<div class="pending-line"><span>${shortAddr(x.txHash)}</span><small>${new Date(x.ts).toLocaleString()}</small></div>`).join('');
+}
+async function creditPending() {
+  const list = loadPending(); if (!list.length || !state.uid) return;
+  for (const item of [...list]) {
+    try {
+      await api('/wallet/credit', { uid: state.uid, txHash: item.txHash });
+      removePending(item.txHash); await refresh();
+    } catch (e) { /* 链上尚未确认 / 节点超时：保留，下轮自动再补 */ }
+  }
+}
+
 async function refresh() {
   if (!state.uid) return;
   try {
@@ -427,6 +466,7 @@ function init() {
   document.querySelectorAll('.dock-item').forEach((d) => d.onclick = () => switchDock(d.dataset.dock));
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
   $('wdBtn').onclick = withdraw; $('faucetBtn').onclick = faucet;
+  $('pendingVerifyBtn').onclick = async () => { $('pendingVerifyBtn').disabled = true; try { await creditPending(); } finally { $('pendingVerifyBtn').disabled = false; renderPending(); } };
   $('wordAddBtn').onclick = adminAddWord;
   $('copyInvBtn').onclick = () => { navigator.clipboard?.writeText($('inviteLink').value); alert(t('copyOk')); };
   $('bbsSend').onclick = postBbs;

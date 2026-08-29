@@ -1,6 +1,6 @@
 // =============================================================
-// GameService.js —— 对局主服务：注册 / 下注 / 封盘 / 结算 / 历史（全 async）
-// 180s 固定连续开局：上一局 settleAt 即下一局 start，空局流局也自动续开
+// GameService.js —— 对局主服务：注册 / 许愿 / 停止许愿 / 结算 / 历史（全 async）
+// 开局规则：一局结束后不自动续开，直到出现第一笔许愿，才以该时刻为起点开新局（180s）
 // atSec 显式传入（秒），便于虚拟时钟测试与回放
 // =============================================================
 import { GameError, Codes } from './errors.js';
@@ -21,25 +21,9 @@ export class GameService {
     return await this.store.createUser({ wallet, inviterUid, createdAt: atSec });
   }
 
-  /** 永远保证存在进行中的局：上一局 settleAt 即下一局 start，180s 连续；首局以当前开满 */
-  async ensureOpenRound(nowSecArg) {
-    const cfg = this.cfg, s = this.store;
-    const ex = await s.findOpenRound();
-    if (ex) return ex;
-    const recent = (await s.listRecentRounds(1))[0];
-    const start = recent ? recent.settleAt : nowSecArg;
-    const r = {
-      roundId: await s.nextId('round', 'R'),
-      startAt: start, lockAt: start + cfg.lockAfterSec, settleAt: start + cfg.settleAfterSec,
-      state: 'active', redTotal: 0n, greenTotal: 0n, sumPick: 0, result: null,
-    };
-    await s.insertRound(r);
-    return r;
-  }
-
   async bet(uid, side, amountCoin, pick, atSec = nowSec()) {
     const cfg = this.cfg, s = this.store;
-    if (side !== 'red' && side !== 'green') throw new GameError(Codes.BAD_INPUT, '只能选红或绿');
+    if (side !== 'red' && side !== 'green') throw new GameError(Codes.BAD_INPUT, '只能选红愿池或绿愿池');
     if (!Number.isInteger(amountCoin)) throw new GameError(Codes.BAD_INPUT, '许愿金必须是正整数（枚）');
     const amount = coin(amountCoin);
     if (amount < cfg.betMin || amount > cfg.betMax) throw new GameError(Codes.BAD_INPUT, '单笔许愿金为 1-99 枚');
@@ -47,10 +31,20 @@ export class GameService {
     await s.getUser(uid);
 
     return await s.transaction(async () => {
-      const round = await this.ensureOpenRound(atSec);
+      let round = await s.findOpenRound();
+      if (!round) {
+        // 首笔许愿才开局：以本笔时刻为 start，满 180s
+        const start = atSec;
+        round = {
+          roundId: await s.nextId('round', 'R'),
+          startAt: start, lockAt: start + cfg.lockAfterSec, settleAt: start + cfg.settleAfterSec,
+          state: 'active', redTotal: 0n, greenTotal: 0n, sumPick: 0, result: null,
+        };
+        await s.insertRound(round);
+      }
       if (atSec >= round.lockAt) {
         await s.updateRound(round.roundId, { state: 'locked' });
-        throw new GameError(Codes.ROUND_LOCKED, '已封盘，本局不可再许愿');
+        throw new GameError(Codes.ROUND_LOCKED, '本局已停止许愿，请等下一局');
       }
       const a = await s.getAccount(uid);
       if (a.available < amount) throw new GameError(Codes.INSUFFICIENT_BALANCE, '可用余额不足');
@@ -132,12 +126,13 @@ export class GameService {
     }, 'settle');
   }
 
-  async currentRound(nowSecArg = nowSec()) {
-    // 连续开局：没有进行中的局就立即补一个，前端永远看得到 180s 倒计时
-    const r = await this.ensureOpenRound(nowSecArg);
+  /** 当前局；没有进行中的局时返回 null（等待第一笔许愿才开新局） */
+  async currentRound() {
+    const r = await this.store.findOpenRound();
+    if (!r) return null;
     r.betCount = await this.store.countBetsOfRound(r.roundId);
     if (r.state === 'active' || r.state === 'locked') {
-      // 规则 F：过程只公开匿名笔数，不公开任何人的投入与选号
+      // 过程只公开匿名笔数，不公开任何人的投入与选号
       return { roundId: r.roundId, startAt: r.startAt, lockAt: r.lockAt, settleAt: r.settleAt, state: r.state, betCount: r.betCount, redTotal: null, greenTotal: null, sumPick: null, result: null };
     }
     return r;

@@ -216,6 +216,6 @@ test('提现：2-500 枚、费 1 归平台；越界报错；成功/失败回写�
 test('封盘后不可下注；未到 180 秒不可开奖', async () => {
   const { app, A } = await twoSidedGame();
   await app.game.bet(A, 'red', 10, 1, 10);
-  await assert.rejects(app.game.bet(A, 'red', 10, 1, 160), /封盘/);
+  await assert.rejects(app.game.bet(A, 'red', 10, 1, 160), /停止许愿/);
   await assert.rejects(app.game.settle(170), /开奖时间/);
 });

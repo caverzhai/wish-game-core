@@ -59,6 +59,7 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
 // —— 保险 ——
 route('POST', '/insurance/switch', (b) => insurance.setSwitch(b.uid, !!b.on));
 route('POST', '/insurance/deposit', (b) => insurance.depositPremium(b.uid, coin(Number(b.amount))));
+route('GET', '/insurance/pool', () => insurance.poolPublic());
 // —— 对局（站内余额模式）——
 route('POST', '/issue', (b) => wallet.issue(b.uid, Number(b.amount)));
 route('POST', '/bet', (b) => game.bet(b.uid, b.side, Number(b.amount), Number(b.pick), now()));

@@ -114,4 +114,28 @@ export class InsuranceService {
       return { status: 'paid', currentSeq, paidToUser, forfeited, dueTotal };
     }, 'runPayoutBatch');
   }
+
+  /** 保险池公示：总资金 + 下一批次应释放总额 + 差额对比（每次请求实时计算，全员看到同一结果） */
+  async poolPublic(nowSec = Math.floor(Date.now() / 1000)) {
+    const s = this.store, cfg = this.cfg;
+    const ledger = await s.getLedger();
+    const active = await s.listNodes({ active: true });
+    let nextDueTotal = 0n;
+    let nextPayNodeCount = 0;
+    for (const n of active) {
+      const due = nextDue(n, cfg);
+      if (due != null) { nextDueTotal += due; nextPayNodeCount++; }
+    }
+    const seq = batchSeqAt(nowSec, cfg);
+    return {
+      poolBalance: ledger.insurancePool,
+      nextBatchSeq: seq,
+      nextBatchAt: (seq + 1) * cfg.payoutEverySec, // 下一个 3/9/15/21 点(UTC)
+      nextDueTotal,
+      activeNodeCount: active.length,
+      nextPayNodeCount,
+      gap: ledger.insurancePool - nextDueTotal,
+      sufficient: ledger.insurancePool >= nextDueTotal,
+    };
+  }
 }

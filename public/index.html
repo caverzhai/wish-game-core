@@ -1,154 +1,152 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>3分钟愿望实现 · 快爽180</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Three-Minute Wish Pool</title>
 <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
 <div id="app">
   <header class="topbar">
-    <div class="brand"><span class="logo">✦</span><span data-i18n="appTitle">3分钟愿望实现</span><span class="ver">快爽180</span></div>
+    <div class="brand"><span class="logo">✦</span><span data-i18n="appTitle">Three-Minute Wish Pool</span></div>
     <div class="top-right">
       <select id="langSel" class="lang-sel">
-        <option value="zh-CN">简体</option>
-        <option value="zh-TW">繁體</option>
         <option value="en">EN</option>
+        <option value="zh-TW">繁體</option>
         <option value="ja">日本語</option>
       </select>
       <span id="who" class="who hide"></span>
-      <button id="logoutBtn" class="btn-mini hide" data-i18n="logout">退出</button>
+      <button id="logoutBtn" class="btn-mini hide" data-i18n="logout">Sign out</button>
     </div>
   </header>
 
-  <!-- 登录遮罩：连接钱包即用，不手输地址 -->
+  <!-- 登录：连接钱包即用 -->
   <div id="loginMask" class="mask">
     <div class="login-card">
       <div class="login-logo">✦</div>
-      <h2 data-i18n="appTitle">3分钟愿望实现</h2>
-      <p class="muted" data-i18n="loginTip">连接钱包即可开始，邀请链接自动绑定推荐关系</p>
-      <button id="connectBtn" class="btn-primary big" data-i18n="connectWallet">连接钱包</button>
-      <button id="demoBtn" class="btn-ghost" data-i18n="demoEnter">未装钱包？以演示身份进入</button>
+      <h2 data-i18n="appTitle">Three-Minute Wish Pool</h2>
+      <p class="muted" data-i18n="loginTip">Connect a wallet to start. Invite links bind referrers automatically.</p>
+      <button id="connectBtn" class="btn-primary big" data-i18n="connectWallet">Connect Wallet</button>
+      <button id="demoBtn" class="btn-ghost" data-i18n="demoEnter">No wallet? Enter as demo</button>
       <p id="loginErr" class="err"></p>
     </div>
   </div>
 
   <main id="main" class="hide">
-    <nav class="tabs" id="tabs">
-      <button data-tab="play" class="tab active" data-i18n="tabPlay">对局</button>
-      <button data-tab="history" class="tab" data-i18n="tabHistory">历史</button>
-      <button data-tab="insurance" class="tab" data-i18n="tabIns">保险</button>
-      <button data-tab="invite" class="tab" data-i18n="tabInvite">邀请</button>
-      <button data-tab="bbs" class="tab" data-i18n="tabBbs">广场</button>
-      <button data-tab="wallet" class="tab" data-i18n="tabWallet">钱包</button>
-    </nav>
-
-    <!-- 对局 -->
-    <section id="tab-play" class="panel active">
+    <!-- 首页：对局 + 历史 -->
+    <section id="tab-home" class="panel active">
       <div class="round-card">
-        <div class="hist-strip" id="histDots" title="近100场"></div>
+        <div class="hist-strip" id="histDots"></div>
         <div class="round-meta">
           <span id="roundNo" class="round-no">—</span>
           <span id="roundState" class="round-state"></span>
         </div>
-        <div class="countdown" id="countdown">180</div>
-        <div class="cd-label"><span data-i18n="remainSec">剩余秒数</span> · <span data-i18n="lockAt">150秒封盘</span></div>
-        <div class="bet-count"><span data-i18n="betCount">参与笔数</span>：<b id="betCount">0</b></div>
+        <div class="countdown" id="countdown">—</div>
+        <div class="cd-label"><span data-i18n="remainSec">seconds left</span> · <span data-i18n="lockAt">closed at 150s</span></div>
+        <div class="bet-count"><span data-i18n="betCount">Wishes</span>：<b id="betCount">0</b></div>
       </div>
 
       <div class="pools">
-        <button id="sideRed" class="pool red"><span class="pool-name" data-i18n="redPool">红愿池</span><small data-i18n="oddWin">选号总和为单 → 红胜</small></button>
-        <button id="sideGreen" class="pool green"><span class="pool-name" data-i18n="greenPool">绿愿池</span><small data-i18n="evenWin">选号总和为双 → 绿胜</small></button>
+        <button id="sideRed" class="pool red"><span class="pool-name" data-i18n="redPool">Red Pool</span><small data-i18n="oddWin">Odd sum → Red</small></button>
+        <button id="sideGreen" class="pool green"><span class="pool-name" data-i18n="greenPool">Green Pool</span><small data-i18n="evenWin">Even sum → Green</small></button>
       </div>
 
       <div class="pick-card">
-        <div class="pick-label" data-i18n="pickLabel">选择一个数字（0-9）</div>
+        <div class="pick-label" data-i18n="pickLabel">Pick a number (0-9)</div>
         <div class="num-grid" id="numGrid"></div>
       </div>
 
       <div class="amount-card">
-        <label data-i18n="amountLabel">许愿金（1-99 枚，正整数）</label>
+        <label data-i18n="amountLabel">Wish amount (1-99 枚, integer)</label>
         <input id="amountInput" type="number" min="1" max="99" step="1" inputmode="numeric" placeholder="1-99" />
       </div>
 
-      <button id="betBtn" class="btn-primary big" data-i18n="confirmWish">确认许愿</button>
+      <button id="betBtn" class="btn-primary big" data-i18n="confirmWish">Confirm Wish</button>
       <div id="playMsg" class="msg"></div>
-      <div id="lastResult" class="last-result hide"></div>
-    </section>
 
-    <!-- 历史 -->
-    <section id="tab-history" class="panel">
-      <h3 data-i18n="recent100">近100场（开奖后全员投入与选号全公开）</h3>
+      <!-- 精简保险池公示（人人可见、动态） -->
+      <div class="pool-public-mini" id="poolPublicMini"></div>
+
+      <!-- 历史记录（确认许愿下方） -->
+      <h4 class="hist-title" data-i18n="historyTitle">Past rounds</h4>
       <div id="historyList" class="history-list"></div>
     </section>
 
-    <!-- 保险 -->
-    <section id="tab-insurance" class="panel">
-      <h3 data-i18n="insTitle">愿望保险</h3>
-      <div class="ins-status">
-        <span data-i18n="insSwitch">保险开关</span>：<b id="insSwitchState"></b>
-        <button id="insSwitchBtn" class="btn-mini"></button>
-      </div>
-      <div class="grid2">
-        <div class="mini-card"><span data-i18n="premium">保费余额</span><b id="premiumBal">0</b></div>
-        <div class="mini-card"><span data-i18n="lossAccum">净亏累计</span><b id="lossAccum">0</b></div>
-      </div>
-      <div class="row">
-        <input id="premiumInput" type="number" min="20" step="1" placeholder="≥20" inputmode="numeric" />
-        <button id="premiumBtn" class="btn-primary" data-i18n="depositPremium">存入保费</button>
-      </div>
-      <p class="muted" data-i18n="insRule">开关开且保费≥20枚才生效；生效赢家收益再扣10%入保池；净亏每满100枚生成一个赔付节点并扣20枚保费，节点分100期返还。</p>
-      <h4 data-i18n="myNodes">我的赔付节点</h4>
-      <div id="nodeList" class="node-list"></div>
-    </section>
-
-    <!-- 邀请 -->
-    <section id="tab-invite" class="panel">
-      <h3 data-i18n="invTitle">邀请返佣</h3>
-      <p class="muted" data-i18n="invRule">名下有「生成过赔付节点」的直邀好友数决定档位，按下注流水返佣：1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。</p>
-      <div class="row">
-        <input id="inviteLink" readonly />
-        <button id="copyInvBtn" class="btn-primary" data-i18n="copy">复制</button>
-      </div>
-      <div class="grid3">
-        <div class="mini-card"><span data-i18n="qualifiedInvitees">达标好友</span><b id="invCount">0</b></div>
-        <div class="mini-card"><span data-i18n="curRate">当前返佣率</span><b id="invRate">0%</b></div>
-        <div class="mini-card"><span data-i18n="invTotal">累计返佣</span><b id="invTotal">0</b></div>
-      </div>
-    </section>
-
-    <!-- 广场 BBS -->
+    <!-- 广场 -->
     <section id="tab-bbs" class="panel">
-      <h3 data-i18n="bbsTitle">广场（100字以内纯文字）</h3>
+      <h3 data-i18n="bbsTitle">Board (plain text, up to 100 chars)</h3>
       <div class="bbs-post">
         <textarea id="bbsInput" maxlength="200" rows="3" placeholder=""></textarea>
         <div class="bbs-bar">
           <span id="bbsChar">0/100</span>
-          <button id="bbsSend" class="btn-primary" data-i18n="bbsSend">发布</button>
+          <button id="bbsSend" class="btn-primary" data-i18n="bbsSend">Post</button>
         </div>
       </div>
       <div id="bbsList" class="bbs-list"></div>
     </section>
 
-    <!-- 钱包 -->
-    <section id="tab-wallet" class="panel">
-      <h3 data-i18n="walletTitle">我的钱包</h3>
+    <!-- 保险 -->
+    <section id="tab-insurance" class="panel">
+      <h3 data-i18n="insTitle">Wish Insurance</h3>
+      <!-- 保险池总资金 / 下次应释放 公示（动态对比） -->
+      <div class="pool-public" id="poolPublicCard"></div>
+
+      <div class="ins-status">
+        <span data-i18n="insSwitch">Insurance</span>：<b id="insSwitchState"></b>
+        <button id="insSwitchBtn" class="btn-mini"></button>
+      </div>
+      <div class="grid2">
+        <div class="mini-card"><span data-i18n="premium">Premium</span><b id="premiumBal">0</b></div>
+        <div class="mini-card"><span data-i18n="lossAccum">Net loss</span><b id="lossAccum">0</b></div>
+      </div>
+      <div class="row">
+        <input id="premiumInput" type="number" min="20" step="1" placeholder="≥20" inputmode="numeric" />
+        <button id="premiumBtn" class="btn-primary" data-i18n="depositPremium">Deposit</button>
+      </div>
+      <p class="muted" data-i18n="insRule"></p>
+      <h4 data-i18n="myNodes">My payout nodes</h4>
+      <div id="nodeList" class="node-list"></div>
+    </section>
+
+    <!-- 我的：钱包 + 邀请 -->
+    <section id="tab-me" class="panel">
+      <h3 data-i18n="meWallet">Wallet</h3>
       <div id="chainModeTip" class="chain-tip hide"></div>
       <div class="grid3">
-        <div class="mini-card"><span data-i18n="avail">可用</span><b id="availBal">0</b></div>
-        <div class="mini-card"><span data-i18n="frozen">冻结</span><b id="frozenBal">0</b></div>
-        <div class="mini-card"><span data-i18n="premium">保费</span><b id="premiumBal2">0</b></div>
+        <div class="mini-card"><span data-i18n="avail">Available</span><b id="availBal">0</b></div>
+        <div class="mini-card"><span data-i18n="frozen">Frozen</span><b id="frozenBal">0</b></div>
+        <div class="mini-card"><span data-i18n="premium">Premium</span><b id="premiumBal2">0</b></div>
       </div>
       <div class="row">
         <input id="wdInput" type="number" min="2" max="500" step="1" inputmode="numeric" placeholder="2-500" />
-        <button id="wdBtn" class="btn-primary" data-i18n="withdraw">提现（单笔2-500，费1枚）</button>
+        <button id="wdBtn" class="btn-primary" data-i18n="withdraw">Withdraw (2-500, fee 1)</button>
       </div>
-      <button id="faucetBtn" class="btn-ghost" data-i18n="faucet">测试领币100枚（站内模式）</button>
-      <h4 data-i18n="flows">收支流水</h4>
+      <button id="faucetBtn" class="btn-ghost" data-i18n="faucet">Claim 100 test 枚</button>
+      <h4 data-i18n="flows">Transactions</h4>
       <div id="flowList" class="flow-list"></div>
+
+      <h3 class="me-gap" data-i18n="meInvite">Invite</h3>
+      <p class="muted" data-i18n="invRule"></p>
+      <div class="row">
+        <input id="inviteLink" readonly />
+        <button id="copyInvBtn" class="btn-primary" data-i18n="copy">Copy</button>
+      </div>
+      <div class="grid3">
+        <div class="mini-card"><span data-i18n="qualifiedInvitees">Qualified</span><b id="invCount">0</b></div>
+        <div class="mini-card"><span data-i18n="curRate">Rate</span><b id="invRate">0%</b></div>
+        <div class="mini-card"><span data-i18n="invTotal">Total</span><b id="invTotal">0</b></div>
+      </div>
     </section>
   </main>
+
+  <!-- 底部 Dock -->
+  <nav id="dock" class="dock hide">
+    <button data-dock="home" class="dock-item active"><span class="dock-ico">⌂</span><span data-i18n="dockHome">Home</span></button>
+    <button data-dock="bbs" class="dock-item"><span class="dock-ico">✎</span><span data-i18n="dockBbs">Board</span></button>
+    <button data-dock="insurance" class="dock-item"><span class="dock-ico">✦</span><span data-i18n="dockIns">Insurance</span></button>
+    <button data-dock="me" class="dock-item"><span class="dock-ico">◔</span><span data-i18n="dockMe">Me</span></button>
+  </nav>
 </div>
 <script src="/app.js"></script>
 </body>

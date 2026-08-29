@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
 const now = () => Math.floor(Date.now() / 1000);
-const coinNum = (v) => Number(BigInt(v)) / Number(SCALE); // BigInt(最小单位) -> 枚数值
+const coinNum = (v) => Number(BigInt(v)) / Number(SCALE);
 function jstr(obj) {
   return JSON.stringify(obj, (k, v) => (typeof v === 'bigint' ? coinNum(v) : v), 2);
 }
@@ -27,9 +27,8 @@ function readBody(req) {
 }
 
 const app = await createApp();
-const { game, wallet, insurance, store, cfg } = app;
+const { game, wallet, insurance, social, chain, store, cfg } = app;
 const scheduler = new Scheduler(app);
-// 内置定时：每 2 秒推进（自动结算到期局 + UTC 定点赔付），单容器自洽
 setInterval(() => { scheduler.tick(now()).catch((e) => console.error('[tick]', e.message)); }, 2000);
 
 const routes = [];
@@ -42,7 +41,7 @@ route('POST', '/login', async (b) => {
   return await game.register(b.wallet, b.inviterUid ?? null, now());
 });
 route('POST', '/register', (b) => game.register(b.wallet, b.inviterUid ?? null, now()));
-route('POST', '/faucet', (b) => wallet.issue(b.uid, Number(b.amount ?? 100), 'FAUCET')); // 演示领枚
+route('POST', '/faucet', (b) => wallet.issue(b.uid, Number(b.amount ?? 100), 'FAUCET'));
 route('GET', /^\/user\/(.+)$/, async (b, m) => {
   const uid = m[1];
   const user = await store.getUser(uid);
@@ -60,26 +59,58 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
 // —— 保险 ——
 route('POST', '/insurance/switch', (b) => insurance.setSwitch(b.uid, !!b.on));
 route('POST', '/insurance/deposit', (b) => insurance.depositPremium(b.uid, coin(Number(b.amount))));
-// —— 对局 ——
+// —— 对局（站内余额模式）——
 route('POST', '/issue', (b) => wallet.issue(b.uid, Number(b.amount)));
 route('POST', '/bet', (b) => game.bet(b.uid, b.side, Number(b.amount), Number(b.pick), now()));
+// —— 对局（链上直接转账模式）：核验 tx -> 等额入账 -> 立即下注 ——
+route('POST', '/bet/onchain', async (b) => {
+  const amount = Number(b.amount), pick = Number(b.pick);
+  const u = await store.getUser(b.uid);
+  await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: coin(amount) });
+  await wallet.issue(b.uid, amount, 'CHAIN_DEPOSIT'); // 用户转入平台钱包，作为站内资产来源
+  return await game.bet(b.uid, b.side, amount, pick, now());
+});
 route('POST', '/settle', (b) => game.settle(b.atSec ?? now()));
 route('POST', '/payout', (b) => insurance.runPayoutBatch(b.atSec ?? now()));
 route('GET', '/round/current', () => game.currentRound());
 route('GET', /^\/round\/(.+)$/, (b, m) => game.roundDetail(m[1]));
 route('GET', '/recent', () => game.recentRounds(100));
-// —— 提现 ——
-route('POST', '/withdraw', (b) => wallet.withdraw(b.uid, Number(b.amount)));
+// —— BBS ——
+route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
+route('GET', '/bbs/list', () => social.list(50));
+// —— 链配置（公开，不含私钥）——
+route('GET', '/chain/config', () => chain.publicConfig());
+// —— 提现：配置了代付私钥则自动链上打款，否则生成待处理单 ——
+route('POST', '/withdraw', async (b) => {
+  const wd = await wallet.withdraw(b.uid, Number(b.amount));
+  if (chain.canPayout) {
+    try {
+      const pay = await chain.payout(wd.toWallet, wd.arrive);
+      const done = await wallet.confirmWithdraw(wd.withdrawId, pay.txHash);
+      return { ...done, paid: true };
+    } catch (e) {
+      return { ...wd, paid: false, payoutError: e.message }; // 余额已冻结为在途，管理员可重试/退回
+    }
+  }
+  return wd;
+});
 route('POST', '/withdraw/confirm', (b) => wallet.confirmWithdraw(b.withdrawId, b.txhash));
+route('POST', '/withdraw/fail', (b) => wallet.failWithdraw(b.withdrawId));
+// —— 后台总览（运营状态，不含任何敏感信息）——
+route('GET', '/admin/overview', async () => {
+  const users = await store.listUsers();
+  const rounds = await store.listRecentRounds(100000);
+  const posts = await store.listPosts(100000);
+  return { chain: chain.publicConfig(), ledger: await store.getLedger(), counts: { users: users.length, rounds: rounds.length, posts: posts.length } };
+});
 // —— 系统 ——
 route('GET', '/ledger', async () => { await store.assertBalanced('api'); return { ...(await store.getLedger()), storeKind: store.kind, balanced: true }; });
-route('GET', '/health', () => ({ ok: true, service: 'wish-game', store: store.kind, ts: now() }));
+route('GET', '/health', () => ({ ok: true, service: 'wish-game', store: store.kind, chain: chain.enabled, ts: now() }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   try {
-    // API
-    if (url.pathname.startsWith('/') && routes.some((r) => (typeof r.p === 'string' ? r.p === url.pathname : r.p.test(url.pathname)))) {
+    if (routes.some((r) => (typeof r.p === 'string' ? r.p === url.pathname : r.p.test(url.pathname)))) {
       const body = req.method === 'POST' ? await readBody(req) : {};
       for (const r of routes) {
         const match = typeof r.p === 'string' ? (r.p === url.pathname ? [] : null) : url.pathname.match(r.p);
@@ -90,7 +121,6 @@ const server = http.createServer(async (req, res) => {
         }
       }
     }
-    // 静态前端
     let file = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
     const fp = path.join(PUBLIC_DIR, file);
     if (fp.startsWith(PUBLIC_DIR) && fs.existsSync(fp) && fs.statSync(fp).isFile()) {
@@ -105,4 +135,4 @@ const server = http.createServer(async (req, res) => {
 });
 
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, '0.0.0.0', () => console.log(`wish-game listening 0.0.0.0:${PORT} store=${store.kind}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`wish-game listening 0.0.0.0:${PORT} store=${store.kind} chain=${chain.enabled}`));

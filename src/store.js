@@ -17,8 +17,9 @@ export class MemoryStore {
     this.referralLogs = [];
     this.flows = [];
     this.withdraws = [];
+    this.posts = [];
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
-    this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0 };
+    this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0 };
   }
 
   async init() { /* 内存版无需建表 */ }
@@ -55,7 +56,6 @@ export class MemoryStore {
     if (!a) throw new GameError(Codes.NOT_FOUND, '账户不存在');
     return { ...a };
   }
-  /** 原子增量（可负），返回更新后快照 */
   async applyAccount(uid, d = {}) {
     const a = this.accounts.get(uid);
     if (!a) throw new GameError(Codes.NOT_FOUND, '账户不存在');
@@ -109,7 +109,7 @@ export class MemoryStore {
   async addPayoutBatch(b) { this.payoutBatches.push({ ...b }); }
   async hasPaidBatch(seq) { return this.payoutBatches.some((b) => b.seq === seq && b.state === 'paid'); }
 
-  // -------- 邀请返佣 / 流水 / 提现 --------
+  // -------- 邀请返佣 / 流水 / 提现 / BBS --------
   async addReferralLog(x) { this.referralLogs.push({ ...x }); }
   async referralSummary(inviterUid) {
     let total = 0n; const invitees = new Set();
@@ -127,6 +127,10 @@ export class MemoryStore {
   async insertWithdraw(w) { this.withdraws.push({ ...w }); }
   async findWithdraw(id) { const w = this.withdraws.find((x) => x.withdrawId === id); return w ? { ...w } : null; }
   async updateWithdraw(id, patch) { Object.assign(this.withdraws.find((x) => x.withdrawId === id), patch); }
+
+  // -------- BBS --------
+  async addPost(p) { this.posts.push({ ...p }); }
+  async listPosts(limit = 50) { return this.posts.slice(-limit).reverse().map((p) => ({ ...p })); }
 
   // -------- 守恒 --------
   async totalInside() {
@@ -151,7 +155,7 @@ export class MemoryStore {
     return {
       accounts: new Map([...this.accounts].map(([k, v]) => [k, { ...v }])),
       ledger: { ...this.ledger },
-      len: { bets: this.bets.length, nodes: this.nodes.length, nodeLogs: this.nodeLogs.length, payoutBatches: this.payoutBatches.length, referralLogs: this.referralLogs.length, flows: this.flows.length, withdraws: this.withdraws.length, rounds: this.rounds.size, users: this.users.size },
+      len: { bets: this.bets.length, nodes: this.nodes.length, nodeLogs: this.nodeLogs.length, payoutBatches: this.payoutBatches.length, referralLogs: this.referralLogs.length, flows: this.flows.length, withdraws: this.withdraws.length, posts: this.posts.length, rounds: this.rounds.size, users: this.users.size },
       seq: { ...this._seq },
     };
   }
@@ -159,7 +163,7 @@ export class MemoryStore {
     this.accounts = s.accounts; this.ledger = s.ledger;
     this.bets.length = s.len.bets; this.nodes.length = s.len.nodes; this.nodeLogs.length = s.len.nodeLogs;
     this.payoutBatches.length = s.len.payoutBatches; this.referralLogs.length = s.len.referralLogs;
-    this.flows.length = s.len.flows; this.withdraws.length = s.len.withdraws;
+    this.flows.length = s.len.flows; this.withdraws.length = s.len.withdraws; this.posts.length = s.len.posts;
     this.rounds = new Map([...this.rounds].slice(0, s.len.rounds));
     this.users = new Map([...this.users].slice(0, s.len.users));
     this._seq = s.seq;

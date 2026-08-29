@@ -5,6 +5,8 @@ import { DEFAULT_CONFIG } from './config.js';
 import { InsuranceService } from './InsuranceService.js';
 import { GameService } from './GameService.js';
 import { WalletService } from './WalletService.js';
+import { SocialService } from './SocialService.js';
+import { ChainService } from './ChainService.js';
 
 const MYSQL_KEYS = ['DATABASE_URL', 'MYSQL_URL', 'MYSQL_PUBLIC_URL', 'MYSQL_PRIVATE_URL', 'MYSQLHOST', 'MYSQL_HOST', 'MYSQLDATABASE', 'MYSQL_DATABASE'];
 export function useMysql(env = process.env) {
@@ -17,5 +19,7 @@ export async function createApp(cfg = DEFAULT_CONFIG, env = process.env) {
   const insurance = new InsuranceService(store, cfg);
   const game = new GameService(store, cfg, insurance);
   const wallet = new WalletService(store, cfg);
-  return { store, cfg, insurance, game, wallet, storeKind: store.kind };
+  const social = new SocialService(store);
+  const chain = new ChainService(env); // 链上适配层（未配置则关闭，回退站内余额）
+  return { store, cfg, insurance, game, wallet, social, chain, storeKind: store.kind };
 }

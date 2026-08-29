@@ -53,6 +53,10 @@ CREATE TABLE IF NOT EXISTS withdraws (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, withdraw_id VARCHAR(16) UNIQUE, uid VARCHAR(16), amount BIGINT,
   fee BIGINT, arrive BIGINT, to_wallet VARCHAR(128), state VARCHAR(16), txhash VARCHAR(128) NULL
 );
+CREATE TABLE IF NOT EXISTS posts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, post_id VARCHAR(16) UNIQUE, uid VARCHAR(16),
+  content VARCHAR(400), at BIGINT, KEY idx_id(id)
+);
 CREATE TABLE IF NOT EXISTS ledger (
   id TINYINT PRIMARY KEY, insurance_pool BIGINT DEFAULT 0, platform BIGINT DEFAULT 0,
   pending_withdraw BIGINT DEFAULT 0, issued BIGINT DEFAULT 0, withdrawn BIGINT DEFAULT 0
@@ -75,7 +79,6 @@ export class MysqlStore {
     catch { throw new Error('启用 MySQL 需要依赖 mysql2（npm i mysql2），Railway 构建会自动安装'); }
     const e = this.env;
     const opts = { supportBigNumbers: true, bigNumberStrings: false, connectionLimit: 10, enableKeepAlive: true };
-    // 兼容 Railway 两种命名（MYSQLHOST 与 MYSQL_HOST 等）及连接 URL（优先内网 URL）
     const url = e.DATABASE_URL || e.MYSQL_URL || e.MYSQL_PRIVATE_URL || e.MYSQL_PUBLIC_URL;
     if (url) {
       this.pool = mysql.createPool(url, opts);
@@ -208,7 +211,6 @@ export class MysqlStore {
     }));
   }
   async updateNode(id, p = {}) {
-    // periodN/state 为直接赋值，金额类为累加
     const col = { paidAmount: 'paid_amount', paidToUserAmount: 'paid_to_user', forfeitedAmount: 'forfeited' };
     const sets = [], vals = [];
     if ('periodN' in p) { sets.push('period_n=?'); vals.push(p.periodN); }
@@ -245,6 +247,13 @@ export class MysqlStore {
     if (p.state) { sets.push('state=?'); vals.push(p.state); }
     if ('txhash' in p) { sets.push('txhash=?'); vals.push(p.txhash); }
     if (sets.length) { vals.push(id); await this.exec(`UPDATE withdraws SET ${sets.join(',')} WHERE withdraw_id=?`, vals); }
+  }
+
+  // -------- BBS（联表带出发送者钱包地址）--------
+  async addPost(p) { await this.exec('INSERT INTO posts(post_id,uid,content,at) VALUES(?,?,?,?)', [p.postId, p.uid, p.content, p.at]); }
+  async listPosts(limit = 50) {
+    return (await this.exec('SELECT p.post_id post_id,p.uid uid,p.content content,p.at at,u.wallet wallet FROM posts p LEFT JOIN users u ON u.uid=p.uid ORDER BY p.id DESC LIMIT ?', [limit]))
+      .map((r) => ({ postId: r.post_id, uid: r.uid, content: r.content, at: Number(r.at), wallet: r.wallet }));
   }
 
   async totalInside() {

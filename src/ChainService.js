@@ -15,6 +15,24 @@ const ERC20_ABI = [
   'function decimals() view returns (uint8)',
   'event Transfer(address indexed from, address indexed to, uint256 value)',
 ];
+const SEND_TIMEOUT_MS = 15000;  // 广播交易（含 estimateGas）最长等待
+const WAIT_TIMEOUT_MS = 25000;  // 已广播后等回执最长等待
+
+/** 给链上 Promise 加硬超时，避免 RPC 无响应时 HTTP 请求被无限挂起（前端 Failed to fetch） */
+function withTimeout(p, ms, msg) {
+  let timer;
+  return Promise.race([
+    Promise.resolve(p).finally(() => clearTimeout(timer)),
+    new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(msg)), ms); }),
+  ]);
+}
+/** 链上失败：标记是否已广播（已广播=钱可能已出，不能自动退余额） */
+function chainError(e, broadcast, txHash = null) {
+  const err = new GameError(Codes.CHAIN_ERROR ?? 'CHAIN_ERROR', e?.shortMessage || e?.message || String(e));
+  err.broadcast = broadcast;
+  err.txHash = txHash;
+  return err;
+}
 
 export class ChainService {
   constructor(env = process.env) {
@@ -31,7 +49,7 @@ export class ChainService {
 
   get enabled() { return !!(this.rpc && this.token && this.platform); }
   get canPayout() { return this.enabled && !!this.pk; }
-  /** 可下发给前端的公开配置（绝不含私钥） */
+  /** 可下发给前端的公开配置（绝不含私钥/RPC） */
   publicConfig() {
     return { enabled: this.enabled, canPayout: this.canPayout, chainId: this.chainId, tokenContract: this.token, platformAddress: this.platform, decimals: this.decimals };
   }
@@ -44,7 +62,8 @@ export class ChainService {
     if (!this.enabled) throw new GameError(Codes.BAD_INPUT, '尚未配置链参数（RPC_URL / TOKEN_CONTRACT / PLATFORM_WALLET_ADDRESS）');
     if (!this._provider) {
       const { JsonRpcProvider } = await this._ethers();
-      this._provider = new JsonRpcProvider(this.rpc);
+      // staticNetwork：信任固定链，跳过 ethers 每次的网络探测；requestTimeout：单次请求硬超时，防止挂死
+      this._provider = new JsonRpcProvider(this.rpc, undefined, { staticNetwork: true, requestTimeout: SEND_TIMEOUT_MS, pollingInterval: 3000 });
     }
     return this._provider;
   }
@@ -61,7 +80,10 @@ export class ChainService {
     if (!key.startsWith('0x')) throw new GameError(Codes.BAD_INPUT, '交易哈希格式不正确');
     if (this._usedTx.has(key)) throw new GameError(Codes.BAD_INPUT, '该链上交易已使用，请勿重复提交');
     const p = await this._provider();
-    const [receipt, tx] = await Promise.all([p.getTransactionReceipt(txHash), p.getTransaction(txHash)]);
+    const [receipt, tx] = await withTimeout(
+      Promise.all([p.getTransactionReceipt(txHash), p.getTransaction(txHash)]),
+      SEND_TIMEOUT_MS, '链上节点无响应，请稍后再试',
+    );
     if (!receipt) throw new GameError(Codes.BAD_INPUT, '链上尚未查到该交易，请稍候再试');
     if (receipt.status !== 1) throw new GameError(Codes.BAD_INPUT, '该链上交易未成功');
     if (!tx.to || tx.to.toLowerCase() !== this.token.toLowerCase()) throw new GameError(Codes.BAD_INPUT, '交易目标不是平台指定的代币合约');
@@ -82,13 +104,18 @@ export class ChainService {
     }
     if (!hit) throw new GameError(Codes.BAD_INPUT, '未找到转入平台钱包的代币 Transfer 记录');
 
-    const head = await p.getBlockNumber();
+    const head = await withTimeout(p.getBlockNumber(), SEND_TIMEOUT_MS, '链上节点无响应，请稍后再试');
     if (head - receipt.blockNumber < this.needConfirm) throw new GameError(Codes.BAD_INPUT, `仍在确认中（${head - receipt.blockNumber}/${this.needConfirm} 块），请稍后`);
     this._usedTx.add(key);
     return hit;
   }
 
-  /** 用平台私钥代付提现（ERC20 transfer 到用户地址），返回 txHash */
+  /**
+   * 用平台私钥代付提现（ERC20 transfer 到用户地址），返回 txHash。
+   * 分两阶段并各自硬超时：
+   *  - 广播前失败（RPC 不通 / gas 不足 / 代币不足）：钱没出，错误 broadcast=false，上层可安全退余额；
+   *  - 已拿到 tx.hash 但等回执超时：钱可能已出，错误 broadcast=true，上层保留在途、不退款，靠 hash 对账。
+   */
   async payout(toAddress, innerAmount) {
     if (!this.canPayout) throw new GameError(Codes.BAD_INPUT, '未配置 PAYOUT_PRIVATE_KEY，无法自动代付');
     const ethers = await this._ethers();
@@ -96,8 +123,15 @@ export class ChainService {
     const wallet = new ethers.Wallet(this.pk, p);
     const contract = new ethers.Contract(this.token, ERC20_ABI, wallet);
     const value = this.toChain(BigInt(innerAmount));
-    const tx = await contract.transfer(toAddress, value);
-    const rc = await tx.wait();
-    return { txHash: tx.hash, blockNumber: rc.blockNumber };
+
+    let tx;
+    try {
+      tx = await withTimeout(contract.transfer(toAddress, value), SEND_TIMEOUT_MS, '代付交易无法广播：节点无响应或平台钱包 BNB(gas)/代币不足');
+    } catch (e) { throw chainError(e, false); }
+
+    try {
+      const rc = await withTimeout(tx.wait(this.needConfirm), WAIT_TIMEOUT_MS, '交易已广播但回执超时，请到区块浏览器按哈希核对，勿重复提现');
+      return { txHash: tx.hash, blockNumber: rc.blockNumber };
+    } catch (e) { throw chainError(e, true, tx.hash); }
   }
 }

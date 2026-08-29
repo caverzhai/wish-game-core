@@ -8,6 +8,7 @@ const shortAddr = (a = '') => (a.length > 12 ? a.slice(0, 6) + '…' + a.slice(-
 const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
 const codeLen = (s) => [...String(s)].length;
 const utcHM = (sec) => new Date(sec * 1000).toISOString().slice(11, 16) + ' UTC';
+const pad2 = (n) => String(n).padStart(2, '0');
 
 const I18N = {
   en: {
@@ -18,22 +19,22 @@ const I18N = {
     amountLabel: 'Wish amount (1-99 枚, integer)', confirmWish: 'Confirm Wish', waitingStart: 'Waiting for the first wish…', historyTitle: 'Past rounds',
     insTitle: 'Wish Insurance', insSwitch: 'Insurance', premium: 'Premium', lossAccum: 'Net loss', depositPremium: 'Deposit premium',
     insRule: 'Active only when switched on and premium ≥ 20 枚. Insured winners contribute 10% to the pool; every 100 枚 net loss opens a payout node (costs 20 枚), returned over 100 periods.',
-    myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', poolActiveNodes: 'Active nodes',
+    myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
     invRule: 'Tier by direct invites who ever generated a node, on wish volume: 1→0.1% / 5→0.2% / 10→0.3% / 20→0.4% / 50+→0.5%.',
     bbsTitle: 'Board (plain text, up to 100 chars)', bbsPlaceholder: 'Say something (max 100 chars)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
-    avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', faucet: 'Claim 100 test 枚', flows: 'Transactions',
+    avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', faucet: 'Claim 100 test 枚', flows: 'Transactions',
     chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
     stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red', winGreen: 'Green',
     nodeProgress: 'Progress', nodePeriod: 'Periods', pickNum: 'Pick', stake: 'Amount', detail: 'Detail', close: 'Close',
     needPick: 'Please pick a number 0-9 first', needAmount: 'Enter an integer 1-99 (枚)', copyOk: 'Copied', noWallet: 'No wallet extension detected',
-    walletShort: 'Wallet balance short by', noWalletGap: 'Balance not enough and no wallet detected', offchainShort: 'Balance not enough, claim test 枚 first (short)',
+    walletShort: 'Wallet balance short by', noWalletGap: 'Balance not enough and no wallet detected', offchainShort: 'Balance not enough, claim test 枚 first (short',
     reply: 'Reply', sendReply: 'Send', replyPh: 'Write a reply (max 100 chars)', replies: 'replies',
     flow_BET_FROZEN: 'Wish placed', flow_WIN_CREDIT: 'Win credited', flow_INS_WIN_CUT: 'Insured 10% to pool', flow_CANCEL_REFUND: 'Void refund',
     flow_REFERRAL: 'Referral reward', flow_PREMIUM_IN: 'Premium deposit', flow_NODE_PREMIUM_OUT: 'Node premium', flow_NODE_PAYOUT: 'Node payout', flow_NODE_FORFEIT: 'Lapsed to pool',
-    flow_WITHDRAW_FREEZE: 'Withdraw held', flow_WITHDRAW_DONE: 'Withdraw done', flow_WITHDRAW_FAIL: 'Withdraw returned', flow_FAUCET: 'Test claim',
-    flow_CHAIN_DEPOSIT: 'On-chain deposit', flow_ISSUE: 'System credit',
+    flow_WITHDRAW_FEE: 'Withdraw fee', flow_WITHDRAW_PENDING: 'Withdraw in transit', flow_WITHDRAW_PAID: 'Withdraw paid', flow_WITHDRAW_REFUND: 'Withdraw refunded',
+    flow_FAUCET: 'Test claim', flow_CHAIN_DEPOSIT: 'On-chain deposit', flow_ISSUE: 'System credit',
   },
   'zh-TW': {
     appTitle: '三分鐘願望池', loginTip: '連接錢包即可開始，邀請連結自動綁定推薦關係', connectWallet: '連接錢包', demoEnter: '未裝錢包？以演示身份進入', logout: '退出',
@@ -43,12 +44,12 @@ const I18N = {
     amountLabel: '許願金（1-99 枚，正整數）', confirmWish: '確認許願', waitingStart: '等待第一個願望進場…', historyTitle: '往期記錄',
     insTitle: '願望保險', insSwitch: '保險開關', premium: '保費餘額', lossAccum: '淨虧累計', depositPremium: '存入保費',
     insRule: '開關開且保費≥20枚才生效；生效贏家收益再扣10%入保池；淨虧每滿100枚生成一個賠付節點並扣20枚保費，節點分100期返還。',
-    myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時間', poolActiveNodes: '待釋放節點',
+    myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
     invRule: '名下有「生成過賠付節點」的直邀好友數決定檔位，按下注流水返傭：1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
     bbsTitle: '廣場（100字以內純文字）', bbsPlaceholder: '說點什麼吧（最多100字）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
-    avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', faucet: '測試領幣100枚', flows: '收支流水',
+    avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', faucet: '測試領幣100枚', flows: '收支流水',
     chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
     stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅勝', winGreen: '綠勝',
     nodeProgress: '進度', nodePeriod: '已釋放期數', pickNum: '選號', stake: '投入', detail: '明細', close: '收起',
@@ -57,8 +58,8 @@ const I18N = {
     reply: '回覆', sendReply: '送出', replyPh: '寫下回覆（最多100字）', replies: '則回覆',
     flow_BET_FROZEN: '許願投入', flow_WIN_CREDIT: '中獎到帳', flow_INS_WIN_CUT: '保險贏家扣10%', flow_CANCEL_REFUND: '對局退款',
     flow_REFERRAL: '邀請返傭', flow_PREMIUM_IN: '存入保費', flow_NODE_PREMIUM_OUT: '節點扣保費', flow_NODE_PAYOUT: '節點賠付', flow_NODE_FORFEIT: '斷保當期充公',
-    flow_WITHDRAW_FREEZE: '提現凍結', flow_WITHDRAW_DONE: '提現到帳', flow_WITHDRAW_FAIL: '提現退回', flow_FAUCET: '測試領幣',
-    flow_CHAIN_DEPOSIT: '鏈上轉入', flow_ISSUE: '系統入帳',
+    flow_WITHDRAW_FEE: '提現手續費', flow_WITHDRAW_PENDING: '提現在途', flow_WITHDRAW_PAID: '提現到帳', flow_WITHDRAW_REFUND: '提現退回',
+    flow_FAUCET: '測試領幣', flow_CHAIN_DEPOSIT: '鏈上轉入', flow_ISSUE: '系統入帳',
   },
   ja: {
     appTitle: '3分間願い池', loginTip: 'ウォレット接続で開始。招待リンクで紹介者を自動登録します', connectWallet: 'ウォレット接続', demoEnter: 'ウォレットなし？デモで入る', logout: 'ログアウト',
@@ -68,12 +69,12 @@ const I18N = {
     amountLabel: '願い金（1-99 枚、整数）', confirmWish: '願いを確定', waitingStart: '最初の願いを待っています…', historyTitle: '過去の記録',
     insTitle: '願い保険', insSwitch: '保険スイッチ', premium: '保険料残高', lossAccum: '純損失累計', depositPremium: '保険料を入れる',
     insRule: 'スイッチONかつ保険料≥20枚で有効。適用勝者は利益の10%を保険池へ。純損失100枚ごとに返還ノード生成（保険料20枚差引）、100期で返還。',
-    myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', poolActiveNodes: '解放待ちノード',
+    myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
     invRule: 'ノードを生成した直招待人数で率が決定（投入額ベース）: 1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
     bbsTitle: '広場（100文字以内のテキスト）', bbsPlaceholder: 'ひとこと（最大100文字）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
-    avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', faucet: 'テスト100枚受取', flows: '取引履歴',
+    avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', faucet: 'テスト100枚受取', flows: '取引履歴',
     chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
     stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤勝ち', winGreen: '緑勝ち',
     nodeProgress: '進捗', nodePeriod: '解放済期', pickNum: '数字', stake: '投入', detail: '詳細', close: '閉じる',
@@ -82,8 +83,8 @@ const I18N = {
     reply: '返信', sendReply: '送信', replyPh: '返信を書く（最大100文字）', replies: '件',
     flow_BET_FROZEN: '願い投入', flow_WIN_CREDIT: '当選入金', flow_INS_WIN_CUT: '保険勝者10%', flow_CANCEL_REFUND: '不成立返金',
     flow_REFERRAL: '招待報酬', flow_PREMIUM_IN: '保険料投入', flow_NODE_PREMIUM_OUT: 'ノード保険料', flow_NODE_PAYOUT: 'ノード返還', flow_NODE_FORFEIT: '失効分を保険池へ',
-    flow_WITHDRAW_FREEZE: '出金保留', flow_WITHDRAW_DONE: '出金完了', flow_WITHDRAW_FAIL: '出金差戻し', flow_FAUCET: 'テスト受取',
-    flow_CHAIN_DEPOSIT: 'オンチェーン入金', flow_ISSUE: 'システム入金',
+    flow_WITHDRAW_FEE: '出金手数料', flow_WITHDRAW_PENDING: '出金保留', flow_WITHDRAW_PAID: '出金完了', flow_WITHDRAW_REFUND: '出金差戻し',
+    flow_FAUCET: 'テスト受取', flow_CHAIN_DEPOSIT: 'オンチェーン入金', flow_ISSUE: 'システム入金',
   },
 };
 
@@ -142,6 +143,8 @@ function switchDock(name) {
   $('tab-' + name).classList.add('active');
   if (name === 'home') renderHistory();
   if (name === 'bbs') loadBbs();
+  if (name === 'insurance') updatePoolCountdown();
+  if (name === 'me' && state.uid) api('/withdraw/reap', { uid: state.uid }).then(refresh).catch(() => {});
 }
 
 // ---------------- 许愿 ----------------
@@ -159,10 +162,13 @@ function selectSide(side) {
   $('sideRed').classList.toggle('sel', side === 'red'); $('sideGreen').classList.toggle('sel', side === 'green');
 }
 function tickCountdown() {
-  if (!state.round) { $('countdown').textContent = '···'; return; }
-  const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
-  $('countdown').textContent = remain;
-  $('countdown').className = 'countdown' + (remain <= 30 ? ' urgent' : '');
+  if (!state.round) { $('countdown').textContent = '···'; }
+  else {
+    const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
+    $('countdown').textContent = remain;
+    $('countdown').className = 'countdown' + (remain <= 30 ? ' urgent' : '');
+  }
+  updatePoolCountdown();
 }
 function renderRound() {
   const r = state.round;
@@ -195,17 +201,16 @@ async function submitWish() {
   $('playMsg').className = 'msg'; $('playMsg').textContent = '';
   if (state.pick === null) { $('playMsg').textContent = t('needPick'); return; }
   if (!Number.isInteger(amount) || amount < 1 || amount > 99) { $('playMsg').textContent = t('needAmount'); return; }
-  const side = state.side, pick = state.pick, uid = state.uid;
-  // 1) 站内余额优先（余额为中奖可能带小数，按整枚抵扣）
+  const side = state.side, pick = state.pick, uid = state.uid, btn = $('betBtn');
   const availCoin = state.me ? Math.floor(Number(state.me.account.available)) : 0;
   const balancePart = Math.min(availCoin, amount);
   const chainPart = amount - balancePart; // 需外部钱包补的差额
   try {
+    btn.disabled = true;
     if (chainPart <= 0) { // 余额足够，全程站内
       await api('/bet', { uid, side, amount, pick });
       $('amountInput').value = ''; await refresh(); return;
     }
-    // 2) 差额需要钱包
     if (!(state.chainCfg && state.chainCfg.enabled)) { $('playMsg').textContent = `${t('offchainShort')} ${chainPart} 枚)`; return; }
     if (!window.ethereum) { $('playMsg').textContent = t('noWalletGap'); return; }
     const dec = state.chainCfg.decimals;
@@ -229,6 +234,7 @@ async function submitWish() {
     }
     $('playMsg').textContent = 'tx: ' + shortAddr(txHash);
   } catch (e) { $('playMsg').textContent = e.message; }
+  finally { btn.disabled = false; }
 }
 
 // ---------------- 历史（首页） ----------------
@@ -251,7 +257,13 @@ async function renderHistory() {
   });
 }
 
-// ---------------- 保险池公示 ----------------
+// ---------------- 保险池公示 + 释放倒计时 ----------------
+function updatePoolCountdown() {
+  const el = $('poolCountdown');
+  if (!el || !state.pool) return;
+  const s = Math.max(0, state.pool.nextBatchAt - Math.floor(Date.now() / 1000));
+  el.textContent = `${pad2(Math.floor(s / 3600))}:${pad2(Math.floor((s % 3600) / 60))}:${pad2(s % 60)}`;
+}
 function renderPoolPublic() {
   const p = state.pool; if (!p) return;
   const total = Number(p.poolBalance), next = Number(p.nextDueTotal);
@@ -262,12 +274,13 @@ function renderPoolPublic() {
     <div class="pp-grid">
       <div class="pp-box big"><span>${t('poolTotal')}</span><b>${fmt(total)} 枚</b></div>
       <div class="pp-box"><span>${t('poolNext')}</span><b>${fmt(next)} 枚</b></div>
-      <div class="pp-box"><span>${t('poolNextAt')}</span><b>${utcHM(p.nextBatchAt)}</b></div>
+      <div class="pp-box"><span>${t('poolNextAt')}</span><b>${utcHM(p.nextBatchAt)}</b><small class="pp-cd">${t('nextReleaseIn')} <i id="poolCountdown">--:--:--</i></small></div>
       <div class="pp-box"><span>${t('poolActiveNodes')}</span><b>${p.nextPayNodeCount}/${p.activeNodeCount}</b></div>
     </div>
     <div class="pp-bar"><i class="${ok ? 'ok' : 'bad'}" style="width:${barW}%"></i></div>
     <div class="pp-foot ${ok ? 'ok' : 'bad'}">${t('poolCover')} ${next > 0 ? cover : '—'}% · ${ok ? t('poolSufficient') : t('poolShort') + ' ' + fmt(Math.abs(gap)) + ' 枚'}</div>`;
   $('poolPublicMini').innerHTML = `<span>${t('poolTotal')} <b>${fmt(total)}</b> 枚</span><span>${t('poolNext')} <b>${fmt(next)}</b> 枚</span><span class="${ok ? 'ok' : 'bad'}">${ok ? '✓' : '!'} ${ok ? t('poolSufficient') : t('poolShort')}</span>`;
+  updatePoolCountdown();
 }
 
 // ---------------- 我的 ----------------
@@ -303,16 +316,21 @@ async function loadBbs() {
       <div class="replies">${(p.replies || []).map((r) => `<div class="reply-line"><b>${shortAddr(r.wallet || r.uid)}</b><span>${escapeHtml(r.content)}</span><small>${new Date(r.at).toLocaleString()}</small></div>`).join('')}</div>
       <div class="reply-box hide" id="rb-${p.postId}">
         <textarea rows="2" maxlength="200" placeholder="${t('replyPh')}"></textarea>
-        <button class="btn-mini" data-sendreply="${p.postId}">${t('sendReply')}</button>
+        <button class="btn-mini" data-replysend="${p.postId}">${t('sendReply')}</button>
       </div>
-      <div class="bbs-actions"><button class="btn-mini" data-toggleReply="${p.postId}">${t('reply')}${p.replyCount ? ` (${p.replyCount})` : ''}</button></div>
+      <div class="bbs-actions"><button class="btn-mini" data-replyto="${p.postId}">${t('reply')}${p.replyCount ? ` (${p.replyCount})` : ''}</button></div>
     </div>`).join('') : `<p class="muted">${t('bbsEmpty')}</p>`;
-  $('bbsList').querySelectorAll('[data-toggleReply]').forEach((b) => b.onclick = () => $('rb-' + b.dataset.toggleReply).classList.toggle('hide'));
-  $('bbsList').querySelectorAll('[data-sendreply]').forEach((b) => b.onclick = async () => {
-    const postId = b.dataset.sendreply, ta = $('rb-' + postId).querySelector('textarea'), content = ta.value.trim();
+  $('bbsList').querySelectorAll('[data-replyto]').forEach((b) => b.onclick = () => {
+    const box = $('rb-' + b.dataset.replyto);
+    box.classList.toggle('hide');
+    if (!box.classList.contains('hide')) box.querySelector('textarea').focus();
+  });
+  $('bbsList').querySelectorAll('[data-replysend]').forEach((b) => b.onclick = async () => {
+    const postId = b.dataset.replysend, ta = $('rb-' + postId).querySelector('textarea'), content = ta.value.trim();
     if (codeLen(content) < 1 || codeLen(content) > 100) return;
-    await api('/bbs/reply', { uid: state.uid, postId, content });
-    await loadBbs();
+    b.disabled = true;
+    try { await api('/bbs/reply', { uid: state.uid, postId, content }); await loadBbs(); }
+    catch (e) { alert(e.message); b.disabled = false; }
   });
 }
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -326,7 +344,19 @@ async function postBbs() {
 // ---------------- 动作 ----------------
 async function switchIns() { const me = state.me; await api('/insurance/switch', { uid: state.uid, on: !me.user.insSwitch }); refresh(); }
 async function depositPremium() { const v = Number($('premiumInput').value); if (!v) return; await api('/insurance/deposit', { uid: state.uid, amount: v }); $('premiumInput').value = ''; refresh(); }
-async function withdraw() { const v = Number($('wdInput').value); if (!v) return; try { const r = await api('/withdraw', { uid: state.uid, amount: v }); alert(r.paid === false ? (r.payoutError || 'pending') : 'OK'); $('wdInput').value = ''; refresh(); } catch (e) { alert(e.message); } }
+async function withdraw() {
+  const v = Number($('wdInput').value);
+  if (!v) return;
+  const btn = $('wdBtn'); btn.disabled = true; btn.textContent = t('withdrawing');
+  try {
+    const r = await api('/withdraw', { uid: state.uid, amount: v });
+    if (r.paid === false) {
+      alert(((r.broadcast ? '⚠ ' : '') + (r.payoutError || 'pending') + (r.txHash ? `\n${r.txHash}` : '')));
+    }
+    $('wdInput').value = ''; refresh();
+  } catch (e) { alert(e.message); }
+  finally { btn.disabled = false; btn.textContent = t('withdraw'); }
+}
 async function faucet() { try { await api('/faucet', { uid: state.uid, amount: 100 }); refresh(); } catch (e) { alert(e.message); } }
 
 async function refresh() {

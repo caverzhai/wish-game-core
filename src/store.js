@@ -128,6 +128,8 @@ export class MemoryStore {
   async insertWithdraw(w) { this.withdraws.push({ ...w }); }
   async findWithdraw(id) { const w = this.withdraws.find((x) => x.withdrawId === id); return w ? { ...w } : null; }
   async updateWithdraw(id, patch) { Object.assign(this.withdraws.find((x) => x.withdrawId === id), patch); }
+  /** 自动代付模式下「未广播成功」的遗留在途单（无交易哈希），用于自愈退回 */
+  async listStalePending(uid) { return this.withdraws.filter((w) => w.uid === uid && w.state === 'pending' && !w.txhash).map((w) => ({ ...w })); }
 
   // -------- BBS 帖子 / 回复 --------
   async addPost(p) { this.posts.push({ ...p }); }

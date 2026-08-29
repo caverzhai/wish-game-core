@@ -87,7 +87,9 @@ route('GET', '/bbs/list', () => social.list());
 // —— 链配置（公开，不含私钥）——
 route('GET', '/chain/config', () => chain.publicConfig());
 // —— 提现：配置了代付私钥则自动链上打款，否则生成待处理单 ——
+route('POST', '/withdraw/reap', (b) => wallet.reapUnbroadcast(b.uid));
 route('POST', '/withdraw', async (b) => {
+  if (chain.canPayout) await wallet.reapUnbroadcast(b.uid); // 先把上笔未广播成功的在途单退回，避免钱卡住
   const wd = await wallet.withdraw(b.uid, Number(b.amount));
   if (chain.canPayout) {
     try {
@@ -95,7 +97,13 @@ route('POST', '/withdraw', async (b) => {
       const done = await wallet.confirmWithdraw(wd.withdrawId, pay.txHash);
       return { ...done, paid: true };
     } catch (e) {
-      return { ...wd, paid: false, payoutError: e.message }; // 余额已冻结为在途，管理员可重试/退回
+      if (e.broadcast) {
+        // 交易已广播、只是回执超时：钱可能已出，保留在途(pending)，凭哈希对账，绝不自动退款
+        return { ...wd, paid: false, broadcast: true, txHash: e.txHash, payoutError: e.message };
+      }
+      // 广播前就失败（RPC 不通 / gas 不足 / 代币不足）：钱没出，自动退回冻结余额，用户可稍后重试
+      const refunded = await wallet.failWithdraw(wd.withdrawId);
+      return { ...refunded, paid: false, payoutError: e.message };
     }
   }
   return wd;

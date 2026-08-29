@@ -252,6 +252,10 @@ export class MysqlStore {
     if ('txhash' in p) { sets.push('txhash=?'); vals.push(p.txhash); }
     if (sets.length) { vals.push(id); await this.exec(`UPDATE withdraws SET ${sets.join(',')} WHERE withdraw_id=?`, vals); }
   }
+  async listStalePending(uid) {
+    return (await this.exec("SELECT * FROM withdraws WHERE uid=? AND state='pending' AND txhash IS NULL", [uid]))
+      .map((r) => ({ withdrawId: r.withdraw_id, uid: r.uid, amount: B(r.amount), fee: B(r.fee), arrive: B(r.arrive), toWallet: r.to_wallet, state: r.state, txhash: r.txhash }));
+  }
 
   // -------- BBS 帖子 / 回复（联表带出发送者钱包）--------
   async addPost(p) { await this.exec('INSERT INTO posts(post_id,uid,content,at) VALUES(?,?,?,?)', [p.postId, p.uid, p.content, p.at]); }

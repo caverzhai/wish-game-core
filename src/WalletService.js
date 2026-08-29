@@ -56,6 +56,14 @@ export class WalletService {
     }, 'confirmWithdraw');
   }
 
+  /** 自愈：把本用户「未广播成功（无哈希）」的遗留在途单全部退回可用余额 */
+  async reapUnbroadcast(uid) {
+    const stale = await this.store.listStalePending(uid);
+    const out = [];
+    for (const wd of stale) out.push(await this.failWithdraw(wd.withdrawId));
+    return out;
+  }
+
   async failWithdraw(withdrawId) {
     const s = this.store;
     return await s.transaction(async () => {

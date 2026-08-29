@@ -63,13 +63,17 @@ route('GET', '/insurance/pool', () => insurance.poolPublic());
 // —— 对局（站内余额模式）——
 route('POST', '/issue', (b) => wallet.issue(b.uid, Number(b.amount)));
 route('POST', '/bet', (b) => game.bet(b.uid, b.side, Number(b.amount), Number(b.pick), now()));
-// —— 对局（链上直接转账模式）：核验 tx -> 等额入账 -> 立即下注 ——
+// —— 对局（混合支付）：站内余额优先，不足部分由链上钱包转入补齐 ——
+// totalAmount=许愿总额；chainAmount=本次链上实转的差额（=总额-站内可用余额），可为 0
 route('POST', '/bet/onchain', async (b) => {
-  const amount = Number(b.amount), pick = Number(b.pick);
+  const total = Number(b.totalAmount ?? b.amount), chainAmount = Number(b.chainAmount ?? total), pick = Number(b.pick);
+  if (!Number.isInteger(chainAmount) || chainAmount < 0 || chainAmount > total) throw new Error('链上补差额不合法');
   const u = await store.getUser(b.uid);
-  await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: coin(amount) });
-  await wallet.issue(b.uid, amount, 'CHAIN_DEPOSIT'); // 用户转入平台钱包，作为站内资产来源
-  return await game.bet(b.uid, b.side, amount, pick, now());
+  if (chainAmount > 0) {
+    await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: coin(chainAmount) });
+    await wallet.issue(b.uid, chainAmount, 'CHAIN_DEPOSIT'); // 差额转入平台钱包，作为站内资产来源
+  }
+  return await game.bet(b.uid, b.side, total, pick, now()); // bet 会冻结全额（站内余额 + 刚入账差额）
 });
 route('POST', '/settle', (b) => game.settle(b.atSec ?? now()));
 route('POST', '/payout', (b) => insurance.runPayoutBatch(b.atSec ?? now()));
@@ -78,7 +82,8 @@ route('GET', /^\/round\/(.+)$/, (b, m) => game.roundDetail(m[1]));
 route('GET', '/recent', () => game.recentRounds(100));
 // —— BBS ——
 route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
-route('GET', '/bbs/list', () => social.list(50));
+route('POST', '/bbs/reply', (b) => social.reply(b.uid, b.postId, b.content));
+route('GET', '/bbs/list', () => social.list());
 // —— 链配置（公开，不含私钥）——
 route('GET', '/chain/config', () => chain.publicConfig());
 // —— 提现：配置了代付私钥则自动链上打款，否则生成待处理单 ——

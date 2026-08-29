@@ -110,6 +110,14 @@ textarea { resize: vertical; }
 .bbs-item { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
 .bbs-head { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
 .bbs-text { font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+.replies { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.reply-line { background: rgba(255,255,255,.03); border-left: 2px solid var(--gold); border-radius: 6px; padding: 6px 8px; font-size: 13px; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; }
+.reply-line b { color: var(--gold); }
+.reply-line span { grid-column: 1 / -1; word-break: break-word; }
+.reply-line small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+.reply-box { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.reply-box textarea { font-size: 13px; }
+.bbs-actions { margin-top: 8px; text-align: right; }
 .chain-tip { font-size: 12px; color: var(--gold); background: rgba(230,180,80,.1); border: 1px solid rgba(230,180,80,.3); border-radius: 8px; padding: 8px; margin-bottom: 10px; }
 
 /* 底部 Dock */

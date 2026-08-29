@@ -1,5 +1,6 @@
 // =============================================================
-// app.js —— 前端：English / 繁體 / 日本語；钱包连接；首页(许愿+历史)/广场/保险/我的 底部Dock
+// app.js —— English / 繁體 / 日本語；底部Dock：首页(许愿+历史)/广场/保险/我的
+// 支付顺序：先用站内余额，不足的差额才调外部钱包；发起前先查钱包余额，不足给提示
 // =============================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -23,10 +24,12 @@ const I18N = {
     invRule: 'Tier by direct invites who ever generated a node, on wish volume: 1→0.1% / 5→0.2% / 10→0.3% / 20→0.4% / 50+→0.5%.',
     bbsTitle: 'Board (plain text, up to 100 chars)', bbsPlaceholder: 'Say something (max 100 chars)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', faucet: 'Claim 100 test 枚', flows: 'Transactions',
-    chainOn: 'On-chain: only the platform token is accepted; the wallet transfers on each wish.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
+    chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
     stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red', winGreen: 'Green',
     nodeProgress: 'Progress', nodePeriod: 'Periods', pickNum: 'Pick', stake: 'Amount', detail: 'Detail', close: 'Close',
     needPick: 'Please pick a number 0-9 first', needAmount: 'Enter an integer 1-99 (枚)', copyOk: 'Copied', noWallet: 'No wallet extension detected',
+    walletShort: 'Wallet balance short by', noWalletGap: 'Balance not enough and no wallet detected', offchainShort: 'Balance not enough, claim test 枚 first (short)',
+    reply: 'Reply', sendReply: 'Send', replyPh: 'Write a reply (max 100 chars)', replies: 'replies',
     flow_BET_FROZEN: 'Wish placed', flow_WIN_CREDIT: 'Win credited', flow_INS_WIN_CUT: 'Insured 10% to pool', flow_CANCEL_REFUND: 'Void refund',
     flow_REFERRAL: 'Referral reward', flow_PREMIUM_IN: 'Premium deposit', flow_NODE_PREMIUM_OUT: 'Node premium', flow_NODE_PAYOUT: 'Node payout', flow_NODE_FORFEIT: 'Lapsed to pool',
     flow_WITHDRAW_FREEZE: 'Withdraw held', flow_WITHDRAW_DONE: 'Withdraw done', flow_WITHDRAW_FAIL: 'Withdraw returned', flow_FAUCET: 'Test claim',
@@ -46,10 +49,12 @@ const I18N = {
     invRule: '名下有「生成過賠付節點」的直邀好友數決定檔位，按下注流水返傭：1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
     bbsTitle: '廣場（100字以內純文字）', bbsPlaceholder: '說點什麼吧（最多100字）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', faucet: '測試領幣100枚', flows: '收支流水',
-    chainOn: '鏈上模式：僅認可平台指定代幣，許願時直接從錢包轉帳', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
+    chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
     stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅勝', winGreen: '綠勝',
     nodeProgress: '進度', nodePeriod: '已釋放期數', pickNum: '選號', stake: '投入', detail: '明細', close: '收起',
     needPick: '請先選擇 0-9 的數字', needAmount: '請輸入 1-99 的正整數（枚）', copyOk: '已複製', noWallet: '未檢測到錢包插件',
+    walletShort: '錢包餘額不足，還差', noWalletGap: '站內餘額不足，且未檢測到錢包', offchainShort: '站內餘額不足，請先測試領幣（差',
+    reply: '回覆', sendReply: '送出', replyPh: '寫下回覆（最多100字）', replies: '則回覆',
     flow_BET_FROZEN: '許願投入', flow_WIN_CREDIT: '中獎到帳', flow_INS_WIN_CUT: '保險贏家扣10%', flow_CANCEL_REFUND: '對局退款',
     flow_REFERRAL: '邀請返傭', flow_PREMIUM_IN: '存入保費', flow_NODE_PREMIUM_OUT: '節點扣保費', flow_NODE_PAYOUT: '節點賠付', flow_NODE_FORFEIT: '斷保當期充公',
     flow_WITHDRAW_FREEZE: '提現凍結', flow_WITHDRAW_DONE: '提現到帳', flow_WITHDRAW_FAIL: '提現退回', flow_FAUCET: '測試領幣',
@@ -69,10 +74,12 @@ const I18N = {
     invRule: 'ノードを生成した直招待人数で率が決定（投入額ベース）: 1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
     bbsTitle: '広場（100文字以内のテキスト）', bbsPlaceholder: 'ひとこと（最大100文字）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', faucet: 'テスト100枚受取', flows: '取引履歴',
-    chainOn: 'オンチェーン：指定トークンのみ受理、願うたびウォレットから送金', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
+    chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
     stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤勝ち', winGreen: '緑勝ち',
     nodeProgress: '進捗', nodePeriod: '解放済期', pickNum: '数字', stake: '投入', detail: '詳細', close: '閉じる',
     needPick: '先に0-9の数字を選んでください', needAmount: '1-99の整数（枚）を入力', copyOk: 'コピーしました', noWallet: 'ウォレット拡張が未検出',
+    walletShort: 'ウォレット残高不足（あと', noWalletGap: '残高不足でウォレットも未検出', offchainShort: '残高不足。テスト受取してください（不足',
+    reply: '返信', sendReply: '送信', replyPh: '返信を書く（最大100文字）', replies: '件',
     flow_BET_FROZEN: '願い投入', flow_WIN_CREDIT: '当選入金', flow_INS_WIN_CUT: '保険勝者10%', flow_CANCEL_REFUND: '不成立返金',
     flow_REFERRAL: '招待報酬', flow_PREMIUM_IN: '保険料投入', flow_NODE_PREMIUM_OUT: 'ノード保険料', flow_NODE_PAYOUT: 'ノード返還', flow_NODE_FORFEIT: '失効分を保険池へ',
     flow_WITHDRAW_FREEZE: '出金保留', flow_WITHDRAW_DONE: '出金完了', flow_WITHDRAW_FAIL: '出金差戻し', flow_FAUCET: 'テスト受取',
@@ -81,7 +88,7 @@ const I18N = {
 };
 
 const state = { uid: null, wallet: null, lang: localStorage.getItem('lang') || 'en', side: 'red', pick: null, chainCfg: null, me: null, round: null, recent: [], pool: null };
-if (state.lang === 'zh-CN') state.lang = 'en'; // 简体已下线，旧缓存回退英文
+if (state.lang === 'zh-CN') state.lang = 'en';
 
 function t(k) { return (I18N[state.lang] && I18N[state.lang][k]) || I18N.en[k] || k; }
 function applyI18n() {
@@ -159,7 +166,7 @@ function tickCountdown() {
 }
 function renderRound() {
   const r = state.round;
-  if (!r) { // 无局：等待第一笔许愿
+  if (!r) {
     $('roundNo').textContent = '—'; $('roundState').textContent = t('waitingStart');
     $('betCount').textContent = 0; $('countdown').textContent = '···'; $('countdown').className = 'countdown';
   } else {
@@ -168,17 +175,20 @@ function renderRound() {
     $('betCount').textContent = r.betCount ?? 0;
     tickCountdown();
   }
-  const dots = state.recent.filter((x) => x.state === 'settled').slice(0, 100).map((x) => {
-    const win = x.result && x.result.winSide;
-    return `<span class="dot ${win}" title="${x.roundId}"></span>`;
-  }).join('');
+  const dots = state.recent.filter((x) => x.state === 'settled').slice(0, 100).map((x) => `<span class="dot ${x.result && x.result.winSide}" title="${x.roundId}"></span>`).join('');
   $('histDots').innerHTML = dots || '<span class="muted">—</span>';
 }
 function erc20TransferData(to, amountCoin, decimals) {
-  const sel = 'a9059cbb';
   const addr = to.toLowerCase().replace('0x', '').padStart(64, '0');
   const v = BigInt(amountCoin) * (10n ** BigInt(decimals || 18));
-  return '0x' + sel + addr + v.toString(16).padStart(64, '0');
+  return '0x' + 'a9059cbb' + addr + v.toString(16).padStart(64, '0');
+}
+/** 读取外部钱包里平台代币余额（最小单位 BigInt） */
+async function walletTokenWei() {
+  const cfg = state.chainCfg;
+  const data = '0x70a08231' + state.wallet.toLowerCase().replace('0x', '').padStart(64, '0'); // balanceOf
+  const hex = await window.ethereum.request({ method: 'eth_call', params: [{ to: cfg.tokenContract, data }, 'latest'] });
+  return BigInt(hex || '0x0');
 }
 async function submitWish() {
   const amount = Number($('amountInput').value);
@@ -186,23 +196,38 @@ async function submitWish() {
   if (state.pick === null) { $('playMsg').textContent = t('needPick'); return; }
   if (!Number.isInteger(amount) || amount < 1 || amount > 99) { $('playMsg').textContent = t('needAmount'); return; }
   const side = state.side, pick = state.pick, uid = state.uid;
+  // 1) 站内余额优先（余额为中奖可能带小数，按整枚抵扣）
+  const availCoin = state.me ? Math.floor(Number(state.me.account.available)) : 0;
+  const balancePart = Math.min(availCoin, amount);
+  const chainPart = amount - balancePart; // 需外部钱包补的差额
   try {
-    if (state.chainCfg && state.chainCfg.enabled && window.ethereum) {
-      const data = erc20TransferData(state.chainCfg.platformAddress, amount, state.chainCfg.decimals);
-      let txHash;
-      try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
-      catch (e) { $('playMsg').textContent = e.message || String(e); return; }
-      $('playMsg').textContent = t('chainPending');
-      for (let i = 0; i < 12; i++) {
-        await sleep(4000);
-        try { await api('/bet/onchain', { uid, side, amount, pick, txHash }); $('playMsg').textContent = '✓'; $('amountInput').value = ''; return refresh(); }
-        catch (e) { if (!/确认|查到|尚未|停止|confirm|waiting|承認|確認/.test(e.message)) { $('playMsg').textContent = e.message; return; } }
-      }
-      $('playMsg').textContent = 'tx: ' + shortAddr(txHash);
-    } else {
+    if (chainPart <= 0) { // 余额足够，全程站内
       await api('/bet', { uid, side, amount, pick });
-      $('amountInput').value = ''; await refresh();
+      $('amountInput').value = ''; await refresh(); return;
     }
+    // 2) 差额需要钱包
+    if (!(state.chainCfg && state.chainCfg.enabled)) { $('playMsg').textContent = `${t('offchainShort')} ${chainPart} 枚)`; return; }
+    if (!window.ethereum) { $('playMsg').textContent = t('noWalletGap'); return; }
+    const dec = state.chainCfg.decimals;
+    const wbal = await walletTokenWei();
+    const needWei = BigInt(chainPart) * (10n ** BigInt(dec));
+    if (wbal < needWei) {
+      const shortCoin = Number(needWei - wbal) / (10 ** dec);
+      $('playMsg').textContent = `${t('walletShort')} ${fmt(shortCoin)} 枚`; return;
+    }
+    const data = erc20TransferData(state.chainCfg.platformAddress, chainPart, dec);
+    let txHash;
+    try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
+    catch (e) { $('playMsg').textContent = e.message || String(e); return; }
+    $('playMsg').textContent = t('chainPending');
+    for (let i = 0; i < 12; i++) {
+      await sleep(4000);
+      try {
+        await api('/bet/onchain', { uid, side, pick, totalAmount: amount, chainAmount: chainPart, txHash });
+        $('playMsg').textContent = '✓'; $('amountInput').value = ''; return refresh();
+      } catch (e) { if (!/确认|查到|尚未|停止|confirm|waiting|承認|確認/.test(e.message)) { $('playMsg').textContent = e.message; return; } }
+    }
+    $('playMsg').textContent = 'tx: ' + shortAddr(txHash);
   } catch (e) { $('playMsg').textContent = e.message; }
 }
 
@@ -211,8 +236,7 @@ async function renderHistory() {
   const list = $('historyList');
   list.innerHTML = state.recent.map((r) => {
     const win = r.result && r.result.winSide;
-    return `<div class="hist-row" data-id="${r.roundId}">
-      <span class="dot ${win || 'void'}"></span><b>${r.roundId}</b>
+    return `<div class="hist-row"><span class="dot ${win || 'void'}"></span><b>${r.roundId}</b>
       <span>${r.state === 'settled' ? (win === 'red' ? t('winRed') : t('winGreen')) : t('state' + (r.state === 'cancelled' ? 'Cancelled' : 'Active'))}</span>
       <span class="muted">${r.state === 'settled' ? `${fmt(Number(r.result.total) / 1e6)} 枚 · Σ=${r.sumPick}` : ''}</span>
       <button class="btn-mini" data-detail="${r.roundId}">${t('detail')}</button>
@@ -227,13 +251,12 @@ async function renderHistory() {
   });
 }
 
-// ---------------- 保险池公示（动态） ----------------
+// ---------------- 保险池公示 ----------------
 function renderPoolPublic() {
   const p = state.pool; if (!p) return;
   const total = Number(p.poolBalance), next = Number(p.nextDueTotal);
   const cover = next > 0 ? Math.round((total / next) * 100) : 100;
-  const gap = Number(p.gap);
-  const ok = p.sufficient;
+  const ok = p.sufficient, gap = Number(p.gap);
   const barW = next > 0 ? Math.min(100, Math.round((total / next) * 100)) : 100;
   $('poolPublicCard').innerHTML = `
     <div class="pp-grid">
@@ -243,11 +266,11 @@ function renderPoolPublic() {
       <div class="pp-box"><span>${t('poolActiveNodes')}</span><b>${p.nextPayNodeCount}/${p.activeNodeCount}</b></div>
     </div>
     <div class="pp-bar"><i class="${ok ? 'ok' : 'bad'}" style="width:${barW}%"></i></div>
-    <div class="pp-foot ${ok ? 'ok' : 'bad'}">${t('poolCover')} ${next > 0 ? cover : '—'}% · ${ok ? t('poolSufficient') : t('poolShort')} ${ok ? '' : fmt(Math.abs(gap)) + ' 枚'}</div>`;
+    <div class="pp-foot ${ok ? 'ok' : 'bad'}">${t('poolCover')} ${next > 0 ? cover : '—'}% · ${ok ? t('poolSufficient') : t('poolShort') + ' ' + fmt(Math.abs(gap)) + ' 枚'}</div>`;
   $('poolPublicMini').innerHTML = `<span>${t('poolTotal')} <b>${fmt(total)}</b> 枚</span><span>${t('poolNext')} <b>${fmt(next)}</b> 枚</span><span class="${ok ? 'ok' : 'bad'}">${ok ? '✓' : '!'} ${ok ? t('poolSufficient') : t('poolShort')}</span>`;
 }
 
-// ---------------- 我的（钱包+邀请） ----------------
+// ---------------- 我的 ----------------
 function renderMe() {
   const me = state.me; if (!me) return;
   const a = me.account;
@@ -269,11 +292,28 @@ function renderMe() {
 }
 function renderInviteLink() { $('inviteLink').value = `${location.origin}${location.pathname}?ref=${state.uid}`; }
 
-// ---------------- 广场 ----------------
+// ---------------- 广场（发帖 + 回复，按最后活跃排序） ----------------
 async function loadBbs() {
   if (!$('tab-bbs').classList.contains('active')) return;
   const posts = await api('/bbs/list');
-  $('bbsList').innerHTML = posts.length ? posts.map((p) => `<div class="bbs-item"><div class="bbs-head"><b>${shortAddr(p.wallet || p.uid)}</b><small>${new Date(p.at).toLocaleString()}</small></div><div class="bbs-text">${escapeHtml(p.content)}</div></div>`).join('') : `<p class="muted">${t('bbsEmpty')}</p>`;
+  $('bbsList').innerHTML = posts.length ? posts.map((p) => `
+    <div class="bbs-item">
+      <div class="bbs-head"><b>${shortAddr(p.wallet || p.uid)}</b><small>${new Date(p.lastActiveAt).toLocaleString()}</small></div>
+      <div class="bbs-text">${escapeHtml(p.content)}</div>
+      <div class="replies">${(p.replies || []).map((r) => `<div class="reply-line"><b>${shortAddr(r.wallet || r.uid)}</b><span>${escapeHtml(r.content)}</span><small>${new Date(r.at).toLocaleString()}</small></div>`).join('')}</div>
+      <div class="reply-box hide" id="rb-${p.postId}">
+        <textarea rows="2" maxlength="200" placeholder="${t('replyPh')}"></textarea>
+        <button class="btn-mini" data-sendreply="${p.postId}">${t('sendReply')}</button>
+      </div>
+      <div class="bbs-actions"><button class="btn-mini" data-toggleReply="${p.postId}">${t('reply')}${p.replyCount ? ` (${p.replyCount})` : ''}</button></div>
+    </div>`).join('') : `<p class="muted">${t('bbsEmpty')}</p>`;
+  $('bbsList').querySelectorAll('[data-toggleReply]').forEach((b) => b.onclick = () => $('rb-' + b.dataset.toggleReply).classList.toggle('hide'));
+  $('bbsList').querySelectorAll('[data-sendreply]').forEach((b) => b.onclick = async () => {
+    const postId = b.dataset.sendreply, ta = $('rb-' + postId).querySelector('textarea'), content = ta.value.trim();
+    if (codeLen(content) < 1 || codeLen(content) > 100) return;
+    await api('/bbs/reply', { uid: state.uid, postId, content });
+    await loadBbs();
+  });
 }
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 async function postBbs() {

@@ -57,6 +57,10 @@ CREATE TABLE IF NOT EXISTS posts (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, post_id VARCHAR(16) UNIQUE, uid VARCHAR(16),
   content VARCHAR(400), at BIGINT, KEY idx_id(id)
 );
+CREATE TABLE IF NOT EXISTS replies (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, reply_id VARCHAR(16) UNIQUE, post_id VARCHAR(16), uid VARCHAR(16),
+  content VARCHAR(400), at BIGINT, KEY idx_post(post_id), KEY idx_id(id)
+);
 CREATE TABLE IF NOT EXISTS ledger (
   id TINYINT PRIMARY KEY, insurance_pool BIGINT DEFAULT 0, platform BIGINT DEFAULT 0,
   pending_withdraw BIGINT DEFAULT 0, issued BIGINT DEFAULT 0, withdrawn BIGINT DEFAULT 0
@@ -249,11 +253,17 @@ export class MysqlStore {
     if (sets.length) { vals.push(id); await this.exec(`UPDATE withdraws SET ${sets.join(',')} WHERE withdraw_id=?`, vals); }
   }
 
-  // -------- BBS（联表带出发送者钱包地址）--------
+  // -------- BBS 帖子 / 回复（联表带出发送者钱包）--------
   async addPost(p) { await this.exec('INSERT INTO posts(post_id,uid,content,at) VALUES(?,?,?,?)', [p.postId, p.uid, p.content, p.at]); }
-  async listPosts(limit = 50) {
+  async listPosts(limit = 100000) {
     return (await this.exec('SELECT p.post_id post_id,p.uid uid,p.content content,p.at at,u.wallet wallet FROM posts p LEFT JOIN users u ON u.uid=p.uid ORDER BY p.id DESC LIMIT ?', [limit]))
       .map((r) => ({ postId: r.post_id, uid: r.uid, content: r.content, at: Number(r.at), wallet: r.wallet }));
+  }
+  async getPost(postId) { const r = await this.exec('SELECT * FROM posts WHERE post_id=? LIMIT 1', [postId]); return r[0] ? { postId: r[0].post_id, uid: r[0].uid, content: r[0].content, at: Number(r[0].at) } : null; }
+  async addReply(r) { await this.exec('INSERT INTO replies(reply_id,post_id,uid,content,at) VALUES(?,?,?,?,?)', [r.replyId, r.postId, r.uid, r.content, r.at]); }
+  async listRepliesAll() {
+    return (await this.exec('SELECT r.reply_id reply_id,r.post_id post_id,r.uid uid,r.content content,r.at at,u.wallet wallet FROM replies r LEFT JOIN users u ON u.uid=r.uid ORDER BY r.id'))
+      .map((r) => ({ replyId: r.reply_id, postId: r.post_id, uid: r.uid, content: r.content, at: Number(r.at), wallet: r.wallet }));
   }
 
   async totalInside() {

@@ -1,147 +1,116 @@
 // =============================================================
-// InsuranceService.js —— 可选保险：保费账户、Q5 节点生成、6h 定点赔付
+// InsuranceService.js —— 可选保险：保费、Q5 节点生成、6h 定点赔付（async）
 // =============================================================
 import { GameError, Codes } from './errors.js';
 import { nextDue, batchSeqAt, isAlive } from './engine-payout.js';
 
 export class InsuranceService {
-  constructor(store, cfg) {
-    this.store = store;
-    this.cfg = cfg;
-  }
+  constructor(store, cfg) { this.store = store; this.cfg = cfg; }
 
-  /** 保险是否生效：开关打开 且 保费账户 >= 20 枚 */
-  isActive(uid) {
-    const u = this.store.getUser(uid);
-    const a = this.store.account(uid);
+  async isActive(uid) {
+    const u = await this.store.getUser(uid);
+    const a = await this.store.getAccount(uid);
     return !!u.insSwitch && a.premium >= this.cfg.premiumMin;
   }
-
-  setSwitch(uid, on) {
-    const u = this.store.getUser(uid);
-    u.insSwitch = !!on;
-    return u.insSwitch;
+  async setSwitch(uid, on) {
+    await this.store.getUser(uid);
+    return await this.store.setUserSwitch(uid, !!on);
   }
 
-  /** 可用余额 -> 保费账户（预存保费） */
-  depositPremium(uid, amount) {
+  async depositPremium(uid, amount) {
     if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, '存入保费必须为正数（枚）');
-    return this.store.transaction(() => {
-      const a = this.store.account(uid);
+    return await this.store.transaction(async () => {
+      const a = await this.store.getAccount(uid);
       if (a.available < amount) throw new GameError(Codes.INSUFFICIENT_BALANCE, '可用余额不足');
-      a.available -= amount;
-      a.premium += amount;
-      this.store.addFlow(uid, 'PREMIUM_IN', amount);
-      return a.premium;
+      const after = await this.store.applyAccount(uid, { avail: -amount, premium: amount });
+      await this.store.addFlow(uid, 'PREMIUM_IN', amount);
+      return after.premium;
     }, 'depositPremium');
   }
 
-  /** 邀请人名下「生成过节点的去重直邀人数」——决定返佣档位 */
-  countDistinctNodeInvitees(inviterUid) {
+  /** 邀请人名下「生成过节点的去重直邀人数」 */
+  async countDistinctNodeInvitees(inviterUid) {
+    const nodes = await this.store.listNodes({});
     const set = new Set();
-    for (const n of this.store.nodes) {
-      const u = this.store.users.get(n.uid);
-      if (u && u.inviterUid === inviterUid) set.add(n.uid);
+    for (const n of nodes) {
+      const u = await this.store.getUser(n.uid);
+      if (u.inviterUid === inviterUid) set.add(n.uid);
     }
     return set.size;
   }
-
-  /** 用户最新节点所在批次序号（用于 168h=28 批续命判定） */
-  newestNodeSeq(uid) {
+  async newestNodeSeq(uid) {
+    const nodes = await this.store.listNodes({ uid });
     let seq = null;
-    for (const n of this.store.nodes) {
-      if (n.uid === uid && (seq === null || n.batchSeq > seq)) seq = n.batchSeq;
-    }
+    for (const n of nodes) if (seq === null || n.batchSeq > seq) seq = n.batchSeq;
     return seq;
   }
 
-  /**
-   * Q5：亏损只加不减；每满 100 枚且保费>=20 枚 -> 开 1 节点、扣 20 枚保费入保池；
-   * 结束后保费<20 -> 剩余累计亏损清零；保费>=20 -> 不足 100 的零头保留。
-   * 注意：本方法为「内部记账」，由外层事务包裹，自身不再开事务。
-   */
-  accrueLossInternal(uid, lossAdd, atSec) {
+  /** Q5 内部记账（由结算事务包裹，自身不开事务） */
+  async accrueLossInternal(uid, lossAdd, atSec) {
     if (lossAdd <= 0n) return [];
-    const cfg = this.cfg, s = this.store, a = s.account(uid);
-    a.lossAccum += lossAdd;
+    const cfg = this.cfg, s = this.store;
+    let a = await s.applyAccount(uid, { loss: lossAdd });
     const created = [];
     while (a.lossAccum >= cfg.nodeThreshold && a.premium >= cfg.nodePremium) {
-      a.premium -= cfg.nodePremium;
-      s.ledger.insurancePool += cfg.nodePremium; // 扣的 20 枚保费进保险池
-      a.lossAccum -= cfg.nodeThreshold;
+      await s.applyAccount(uid, { premium: -cfg.nodePremium, loss: -cfg.nodeThreshold });
+      await s.applyLedger({ ins: cfg.nodePremium }); // 20 枚保费进保险池
       const node = {
-        nodeId: s.nextId('node', 'N'),
-        uid,
-        total: cfg.nodeTotal,
-        periodN: 0,
-        paidAmount: 0n,        // 已处置总额（到账+充公），用于末期补差与完成判定
-        paidToUserAmount: 0n,  // 已实际到账
-        forfeitedAmount: 0n,   // 断保充公
-        state: 'active',
-        createdAtSec: atSec,
-        batchSeq: batchSeqAt(atSec, cfg),
+        nodeId: s.nextId('node', 'N'), uid, total: cfg.nodeTotal, periodN: 0, paidAmount: 0n,
+        paidToUserAmount: 0n, forfeitedAmount: 0n, state: 'active', createdAtSec: atSec, batchSeq: batchSeqAt(atSec, cfg),
       };
-      s.nodes.push(node);
-      s.addFlow(uid, 'NODE_PREMIUM_OUT', cfg.nodePremium, { nodeId: node.nodeId });
+      await s.insertNode(node);
+      await s.addFlow(uid, 'NODE_PREMIUM_OUT', cfg.nodePremium, { nodeId: node.nodeId });
       created.push(node);
+      a = await s.getAccount(uid);
     }
-    if (a.premium < cfg.nodePremium) a.lossAccum = 0n; // 保费不够开门，零头清零
+    if (a.premium < cfg.nodePremium && a.lossAccum > 0n) {
+      await s.applyAccount(uid, { loss: -a.lossAccum }); // 保费不足，零头清零
+    }
     return created;
   }
 
-  /**
-   * 6 小时全局赔付（UTC 3/9/15/21 点由调度器触发，幂等：同一批次只成功一次）
-   * currentSec=当前秒（测试可虚拟推进）
-   */
-  runPayoutBatch(currentSec) {
+  /** 6h 全局赔付，幂等（同一批次只成功一次） */
+  async runPayoutBatch(currentSec) {
     const s = this.store, cfg = this.cfg;
     const currentSeq = batchSeqAt(currentSec, cfg);
-    // 幂等：该批次已成功则跳过
-    if (s.payoutBatches.find((b) => b.seq === currentSeq && b.state === 'paid')) {
-      return { status: 'skip', currentSeq };
-    }
-    return s.transaction(() => {
-      const active = s.nodes.filter((n) => n.state === 'active');
+    if (await s.hasPaidBatch(currentSeq)) return { status: 'skip', currentSeq };
+
+    return await s.transaction(async () => {
+      const active = await s.listNodes({ active: true });
       let dueTotal = 0n;
       const dues = new Map();
       for (const n of active) {
         const due = nextDue(n, cfg);
         if (due != null) { dues.set(n.nodeId, due); dueTotal += due; }
       }
-      // 保险池不足本次全部应赔 -> 整批顺延：不推进期号、不充公（168h 窗口随之冻结）
-      if (dueTotal > 0n && s.ledger.insurancePool < dueTotal) {
-        const batch = { batchId: s.nextId('batch', 'B'), seq: currentSeq, state: 'deferred', dueTotal, at: currentSec };
-        s.payoutBatches.push(batch);
-        return { status: 'deferred', currentSeq, dueTotal, insurancePool: s.ledger.insurancePool };
+      const ledger = await s.getLedger();
+      if (dueTotal > 0n && ledger.insurancePool < dueTotal) {
+        await s.addPayoutBatch({ batchId: s.nextId('batch', 'B'), seq: currentSeq, state: 'deferred', dueTotal, at: currentSec });
+        return { status: 'deferred', currentSeq, dueTotal, insurancePool: ledger.insurancePool };
       }
       const newestSeq = new Map();
-      for (const n of active) newestSeq.set(n.uid, this.newestNodeSeq(n.uid));
+      for (const n of active) newestSeq.set(n.uid, await this.newestNodeSeq(n.uid));
 
       let paidToUser = 0n, forfeited = 0n;
       for (const n of active) {
         const due = dues.get(n.nodeId);
-        if (due == null) { n.state = 'done'; continue; }
+        if (due == null) { await s.updateNode(n.nodeId, { state: 'done' }); continue; }
         const alive = isAlive(newestSeq.get(n.uid), currentSeq, cfg);
         if (alive) {
-          s.ledger.insurancePool -= due;
-          s.account(n.uid).available += due;
-          s.addFlow(n.uid, 'NODE_PAYOUT', due, { nodeId: n.nodeId });
-          n.paidToUserAmount += due;
+          await s.applyLedger({ ins: -due });
+          await s.applyAccount(n.uid, { avail: due });
+          await s.updateNode(n.nodeId, { paidToUserAmount: n.paidToUserAmount + due });
+          await s.addFlow(n.uid, 'NODE_PAYOUT', due, { nodeId: n.nodeId });
           paidToUser += due;
         } else {
-          // 断保：仅「当期」充公——资金本就留在保险池，不做科目移动（否则总账凭空增多），
-          // 只登记充公凭证、期号照走不补发；后续期次保留，再续命可续领。
-          s.addFlow(n.uid, 'NODE_FORFEIT', due, { nodeId: n.nodeId });
-          n.forfeitedAmount += due;
+          await s.updateNode(n.nodeId, { forfeitedAmount: n.forfeitedAmount + due });
+          await s.addFlow(n.uid, 'NODE_FORFEIT', due, { nodeId: n.nodeId });
           forfeited += due;
         }
-        n.periodN += 1;
-        n.paidAmount += due;
-        if (n.periodN >= 100) n.state = 'done';
-        s.nodeLogs.push({ nodeId: n.nodeId, uid: n.uid, periodN: n.periodN, due, dest: alive ? 'user' : 'forfeit', seq: currentSeq });
+        await s.updateNode(n.nodeId, { periodN: n.periodN + 1, paidAmount: n.paidAmount + due, state: n.periodN + 1 >= 100 ? 'done' : 'active' });
+        await s.addNodeLog({ nodeId: n.nodeId, uid: n.uid, periodN: n.periodN + 1, due, dest: alive ? 'user' : 'forfeit', seq: currentSeq });
       }
-      const batch = { batchId: s.nextId('batch', 'B'), seq: currentSeq, state: 'paid', dueTotal, paidToUser, forfeited, at: currentSec };
-      s.payoutBatches.push(batch);
+      await s.addPayoutBatch({ batchId: s.nextId('batch', 'B'), seq: currentSeq, state: 'paid', dueTotal, paidToUser, forfeited, at: currentSec });
       return { status: 'paid', currentSeq, paidToUser, forfeited, dueTotal };
     }, 'runPayoutBatch');
   }

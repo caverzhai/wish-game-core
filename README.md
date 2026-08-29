@@ -1,18 +1,19 @@
 # 3分钟愿望实现 · 核心后端（wish-game-core）
 
-中心化网站玩法的**可运行核心后端**：对局结算、保险节点与 6 小时赔付、邀请返佣、提现、总账守恒。
+中心化网站玩法的**可运行全栈**：网页前端 + 对局结算、保险节点与 6 小时赔付、邀请返佣、提现、总账守恒，支持内存 / MySQL 两种仓储。
 全站金额单位统一为 **「枚」**，不出现任何币名；空气币仅作欢乐豆，只可转账、不可闪兑。
 
-- **零第三方依赖**，仅需 Node.js ≥ 18（用内置 `node:test` 做测试）
+- **内存模式零第三方依赖**（持久化仅需 `mysql2`），Node.js ≥ 18（内置 `node:test` 测试）
 - 金额全程 **6 位定点 BigInt 整数**运算，禁用浮点，无精度/溢出问题
-- 每笔结算都做**总账守恒校验**，不平即回滚（内存事务快照，生产替换为 DB 事务）
+- 每笔结算都做**总账守恒校验**，不平即回滚（内存用事务快照，MySQL 用 `BEGIN/COMMIT/ROLLBACK` + 行锁）
+- 同一服务托管**网页界面**（`public/`）与 JSON API；内置定时器自动结算、定点赔付
 
 ## 运行
 
 ```bash
 npm test     # 14 个单元测试：分奖/流局/保险10%/双边/Q5节点/100期/断保续命/顺延/返佣/提现/守恒
 npm run demo # 端到端流程演示（虚拟时钟，打印每一步与守恒结果）
-npm run serve# 启动零依赖 HTTP 接口（默认 8080，可用 curl/Postman 联调）
+npm start    # 启动服务（默认 8080）：浏览器打开 / 即网页界面，/health 看状态
 ```
 
 ## 目录结构
@@ -22,14 +23,16 @@ src/
   money.js             定点金额：枚 <-> 1e-6 BigInt、比例运算、格式化
   config.js            全部规则参数（单一事实源，可后台配置）+ 邀请档位
   errors.js            业务错误码
-  store.js             内存仓储 + 总账科目 + 守恒校验 + 事务快照（生产用 MySQL 同接口平替）
+  store.js             内存仓储（async，同接口），含总账科目、守恒校验、事务快照
+  store-mysql.js       MySQL 持久化仓储（自动建表/事务/行锁），注入 MYSQL* 环境变量即启用
   engine-settle.js     结算纯函数：流局判定/抽水拆分/胜方按比例分(尾差归保池)/保险10%/返佣计划
   engine-payout.js     100 期释放纯计算 + 批次序号(168h=28 批续命)
   GameService.js       注册/下注/封盘/结算/历史（每局状态机）
   InsuranceService.js  保险开关/保费/Q5 节点生成/6h 赔付(续命/当期充公/顺延冻结/末期补差)
   WalletService.js     发放(充值入账)/提现(2-500、费1归平台)/链上成功失败回写
   Scheduler.js         定时推进：自动结算到期局、补齐 6h 赔付批次
-  app.js               装配；server.js HTTP；demo.js 演示
+  app.js               装配（按环境变量选内存/MySQL）；server.js HTTP+静态托管；demo.js 演示
+public/                纯原生网页前端（index.html / app.js / style.css，无构建步骤）
 test/core.test.js      单元测试
 ```
 
@@ -58,13 +61,15 @@ test/core.test.js      单元测试
 
 ## HTTP 接口（金额入参为整数枚）
 
-`POST /register`、`POST /insurance/switch`、`POST /insurance/deposit`、`POST /issue`、
+`POST /login`（关联钱包即注册/登录）、`POST /register`、`POST /faucet`（演示领枚）、
+`POST /insurance/switch`、`POST /insurance/deposit`、`POST /issue`、
 `POST /bet`、`POST /settle`、`GET /round/current`、`GET /round/:id`、`GET /recent`、
-`POST /payout`、`POST /withdraw`、`POST /withdraw/confirm`、`GET /user/:uid`、`GET /ledger`。
+`POST /payout`、`POST /withdraw`、`POST /withdraw/confirm`、`GET /user/:uid`、`GET /ledger`、`GET /health`。
+响应中的金额统一为「枚」数值；过程中 `/round/current` 只回匿名笔数，不公开投入与选号。
 
-## 生产化接入点（当前为内存实现，接口已预留）
+## 生产化接入点
 
-1. **持久化**：新增 `MysqlStore` 实现与 `MemoryStore` 相同方法；事务用 `BEGIN/COMMIT/ROLLBACK`+行锁，金额列用 `BIGINT`（存 1e-6）。
+1. **持久化（已实现）**：`src/store-mysql.js` 与 `MemoryStore` 同接口，事务 `BEGIN/COMMIT/ROLLBACK` + 行锁，金额列 `BIGINT`（存 1e-6），Railway 注入 `MYSQL*` 变量即自动启用并建表。
 2. **链上充提**：第三方 ERC20（18 位）。充值给每个用户独立充值地址、按 `txhash+logIndex` 幂等、N 块确认入账，超 6 位尾差截准；提币用热钱包队列、记录 txhash、失败重试，站内 6 位 ×10¹² 与链上 18 位无损换算。
 3. **定时任务**：`Scheduler.tick` 换成 cron（UTC 3/9/15/21）+ 单实例 leader 锁，保证幂等不重发。
 4. **公平自证（可选）**：封盘时下发全部选号哈希根，开奖后公开明细，供玩家核对无事后改单。

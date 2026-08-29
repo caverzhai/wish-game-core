@@ -1,55 +1,52 @@
 # 部署到 GitHub → Railway 指南
 
-本项目零第三方依赖，Railway 用 Nixpacks 识别 `package.json` 后执行 `npm start`，
-已内置 `railway.json`（启动命令、健康检查 `/health`）、`.nvmrc`(Node 20)，端口自动用平台注入的 `PORT` 并绑定 `0.0.0.0`。
+同一 Node 服务同时提供**网页前端**和 **HTTP API**；内存模式零外部依赖即可跑，
+接入 Railway MySQL 后自动切换为持久化（代码已内置，注入环境变量即生效、首次启动自动建表）。
+已内置 `railway.json`（启动命令、健康检查 `/health`）、`.nvmrc`(Node 20)，端口用平台注入的 `PORT` 并绑定 `0.0.0.0`。
 
-## 一、推送本地仓库到 GitHub
+## 一、推送到 GitHub
 
-### 方式 A：网页建仓 + 命令行推送（无需装额外工具）
-1. 在 GitHub 网页右上角 **New repository**，名字如 `wish-game-core`，**不要**勾选 README/gitignore（保持空仓库）。
-2. 在项目目录执行（把 `<你的仓库地址>` 换成 GitHub 给的 URL）：
 ```bash
 git init -b main
 git add .
-git commit -m "feat: 3分钟愿望实现核心后端（对局/保险/返佣/提现/守恒）"
-git remote add origin <你的仓库地址>      # 例如 https://github.com/你/wish-game-core.git
+git commit -m "feat: 对局/保险/返佣/提现 + 网页前端 + MySQL 持久化"
+git remote add origin https://github.com/caverzhai/wish-game-core.git
 git push -u origin main
 ```
-首次 push 会弹出系统登录窗口，用 GitHub 账号授权一次即可。
-
-### 方式 B：安装 GitHub CLI（可选，命令行直接建仓）
-```bash
-winget install --id GitHub.cli        # 安装后重开终端
-gh auth login                         # 按提示浏览器登录
-git init -b main && git add . && git commit -m "init"
-gh repo create wish-game-core --source=. --private --push
-```
-
-> 修改提交身份（当前为占位身份）：
-> `git config user.name "你的名字" && git config user.email "你的邮箱"` 后
-> `git commit --amend --reset-author --no-edit`
+> 提交身份占位可改：`git config user.name "名字" && git config user.email "邮箱"`。
 
 ## 二、在 Railway 部署（连 GitHub，push 即自动部署）
-1. 打开 https://railway.com 用 GitHub 登录；
-2. **New Project → Deploy from GitHub repo**，授权并选择 `wish-game-core`；
-3. Railway 自动识别 Node、安装并运行 `npm start`（零依赖，无需 build 步骤）；
-4. 服务卡片 **Settings → Networking → Generate Domain**，端口填平台变量 `$PORT`（或直接选服务端口），得到公网网址；
-5. 浏览器访问 `https://你的域名/health` 返回 `{"ok":true,...}` 即成功；`/recent` 看对局、`/ledger` 看总账。
+1. https://railway.com 用 GitHub 登录；
+2. **New Project → Deploy from GitHub repo**，选择 `wish-game-core`；
+3. Railway 自动 `npm install`（会装 mysql2，内存模式用不到也无妨）并 `npm start`；
+4. 服务 **Settings → Networking → Generate Domain**，得到公网网址；
+5. 直接打开域名根路径 `/` 就是**网页界面**；`/health` 返回 `{"ok":true,"store":"memory"|"mysql"}`。
 
-之后每次 `git push`，Railway 都会自动重新部署。
+之后每次 `git push`，Railway 自动重新部署。
 
-### 用 Railway CLI 直接部署（不连 GitHub 也可）
+## 三、接入 MySQL 持久化（数据不随重启清空，推荐）
+1. 同一 Railway 项目内 **New → Database → Add MySQL**；
+2. 点开 Web 服务 → **Variables → Add Variable → Add Reference**，选中刚加的 MySQL，
+   Railway 会自动注入 `MYSQLHOST / MYSQLPORT / MYSQLUSER / MYSQLPASSWORD / MYSQLDATABASE`
+   （代码同时兼容 `DATABASE_URL / MYSQL_URL / MYSQL_PUBLIC_URL`）；
+3. 触发一次重新部署；启动日志出现 `store=mysql`、`/health` 返回 `"store":"mysql"` 即成功，**首次启动自动建表**；
+4. 不配置上述变量时自动回退内存模式（重启清空，仅演示用）。
+
+## 四、页面与接口
+- 网页：`/`（对局/历史/保险/邀请/资产提现五个标签，金额单位统一「枚」）。
+- 主要 API（JSON）：
+  - `POST /login {wallet,inviterUid?}` 关联钱包即注册/登录；`POST /register`
+  - `POST /faucet {uid,amount?}` 演示领枚（默认 100）；`POST /issue {uid,amount}` 管理员入账
+  - `GET  /user/:uid` 账户/节点/邀请/流水聚合；`GET /round/current`、`GET /round/:id`、`GET /recent`
+  - `POST /bet {uid,side,amount,pick}`；`POST /settle`（一般由内置定时器自动完成）
+  - `POST /insurance/switch`、`POST /insurance/deposit`；`POST /payout`（一般自动）
+  - `POST /withdraw {uid,amount}`、`POST /withdraw/confirm`；`GET /ledger`、`GET /health`
+- 内置定时器：服务每 2 秒自动结算到期局，并在 UTC 3/9/15/21 点自动执行保险赔付，单容器无需额外 cron。
+
+## 五、本地验证
 ```bash
-npm i -g @railway/cli
-railway login
-railway init        # 建项目
-railway up          # 直接上传当前目录部署
-railway domain      # 生成公网域名
+npm test       # 14 个单元/守恒用例
+npm run demo   # 端到端虚拟时钟演示
+npm start      # 本地起服务，打开 http://localhost:8080
 ```
-
-## 三、重要说明
-- **当前为内存仓储**：容器重启 / 重新部署后数据会清空，仅用于演示与逻辑验证。
-  正式留存数据需接数据库（Railway 可一键添加 MySQL/Postgres），届时新增一个与
-  `src/store.js` 同接口的持久化仓储即可，领域层代码不用改。
-- 本服务无需任何环境变量即可启动；规则数值集中在 `src/config.js`。
-- 本地验证：`npm test`（14 用例）、`npm run demo`（端到端）、`npm start`（本地起服务）。
+规则数值集中在 `src/config.js`；金额内部为 6 位定点整数（BigInt），接口与页面统一以「枚」展示。

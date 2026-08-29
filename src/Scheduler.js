@@ -1,40 +1,31 @@
 // =============================================================
-// Scheduler.js —— 定时任务调度（生产用 XXL-Job / BullMQ / cron，单点 leader 锁）
-// 这里用「可虚拟推进」的方式实现，便于测试 150/180 秒与每 6h、168h、25 天逻辑
+// Scheduler.js —— 定时推进（async）：自动结算到期局 + 补齐 6h 赔付批次
+// 生产用 cron/队列 + 单实例 leader 锁；单容器内 setInterval 调用本 tick 即可
 // =============================================================
 import { batchSeqAt } from './engine-payout.js';
 
 export class Scheduler {
-  constructor(app) {
-    this.app = app;
-    this.lastPayoutSeq = null; // 已执行到的赔付批次序号
-  }
+  constructor(app) { this.app = app; this.lastPayoutSeq = null; }
 
-  /** 把系统时间推进到 nowSec：自动结算到期局，并补齐期间所有 6h 赔付批次（不漏期） */
-  tick(nowSec) {
-    const { game, insurance, cfg } = this.app;
-    const result = { settled: [], payouts: [] };
+  async tick(nowSec) {
+    const { game, insurance, cfg, store } = this.app;
+    const out = { settled: [], payouts: [] };
 
-    // 1) 结算所有已到 180s 的局
     let guard = 0;
-    // eslint-disable-next-line no-constant-condition
     while (guard++ < 1000) {
-      const r = game._findOpenRound();
+      const r = await store.findOpenRound();
       if (!r || nowSec < r.settleAt) break;
-      result.settled.push(game.settle(nowSec));
+      out.settled.push(await game.settle(nowSec));
     }
 
-    // 2) 6h 定点赔付：逐批补齐（顺延/幂等都在服务内处理）
     const targetSeq = batchSeqAt(nowSec, cfg);
-    if (this.lastPayoutSeq === null) {
-      this.lastPayoutSeq = targetSeq; // 首次对齐，不补发历史
-    } else {
+    if (this.lastPayoutSeq === null) this.lastPayoutSeq = targetSeq;
+    else {
       for (let seq = this.lastPayoutSeq + 1; seq <= targetSeq; seq++) {
-        const atSec = seq * cfg.payoutEverySec + 1; // 落在该批次内
-        result.payouts.push(insurance.runPayoutBatch(atSec));
+        out.payouts.push(await insurance.runPayoutBatch(seq * cfg.payoutEverySec + 1));
       }
       this.lastPayoutSeq = targetSeq;
     }
-    return result;
+    return out;
   }
 }

@@ -1,14 +1,19 @@
 {
   "name": "wish-game-core",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "3分钟愿望实现 - 中心化网站核心后端（全站单位：枚；6位定点整数；零第三方依赖）",
+  "description": "3分钟愿望实现 - 中心化网站（红绿池对局 + 可选保险 + 邀请返佣 + 提现；全站金额单位：枚；6位定点整数）。内存模式零依赖，接入 MySQL 需 mysql2。",
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test",
     "demo": "node src/demo.js",
     "serve": "node src/server.js"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "mysql2": "^3.24.2"
+  }
 }

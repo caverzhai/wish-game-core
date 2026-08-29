@@ -74,14 +74,21 @@ export class MysqlStore {
     try { mysql = await import('mysql2/promise'); }
     catch { throw new Error('启用 MySQL 需要依赖 mysql2（npm i mysql2），Railway 构建会自动安装'); }
     const e = this.env;
-    const url = e.DATABASE_URL || e.MYSQL_URL || e.MYSQL_PUBLIC_URL;
-    this.pool = url
-      ? mysql.createPool(url)
-      : mysql.createPool({
-          host: e.MYSQLHOST || '127.0.0.1', port: Number(e.MYSQLPORT || 3306),
-          user: e.MYSQLUSER || 'root', password: e.MYSQLPASSWORD || '', database: e.MYSQLDATABASE || 'railway',
-          supportBigNumbers: true, bigNumberStrings: false, connectionLimit: 10,
-        });
+    const opts = { supportBigNumbers: true, bigNumberStrings: false, connectionLimit: 10, enableKeepAlive: true };
+    // 兼容 Railway 两种命名（MYSQLHOST 与 MYSQL_HOST 等）及连接 URL（优先内网 URL）
+    const url = e.DATABASE_URL || e.MYSQL_URL || e.MYSQL_PRIVATE_URL || e.MYSQL_PUBLIC_URL;
+    if (url) {
+      this.pool = mysql.createPool(url, opts);
+    } else {
+      this.pool = mysql.createPool({
+        ...opts,
+        host: e.MYSQLHOST || e.MYSQL_HOST || '127.0.0.1',
+        port: Number(e.MYSQLPORT || e.MYSQL_PORT || 3306),
+        user: e.MYSQLUSER || e.MYSQL_USER || 'root',
+        password: e.MYSQLPASSWORD || e.MYSQL_PASSWORD || e.MYSQL_ROOT_PASSWORD || '',
+        database: e.MYSQLDATABASE || e.MYSQL_DATABASE || 'railway',
+      });
+    }
     for (const stmt of SCHEMA.split(';').map((s) => s.trim()).filter(Boolean)) {
       await this.pool.query(stmt);
     }

@@ -6,8 +6,9 @@ import { InsuranceService } from './InsuranceService.js';
 import { GameService } from './GameService.js';
 import { WalletService } from './WalletService.js';
 
+const MYSQL_KEYS = ['DATABASE_URL', 'MYSQL_URL', 'MYSQL_PUBLIC_URL', 'MYSQL_PRIVATE_URL', 'MYSQLHOST', 'MYSQL_HOST', 'MYSQLDATABASE', 'MYSQL_DATABASE'];
 export function useMysql(env = process.env) {
-  return !!(env.MYSQLHOST || env.DATABASE_URL || env.MYSQL_URL || env.MYSQL_PUBLIC_URL);
+  return MYSQL_KEYS.some((k) => env[k]);
 }
 
 export async function createApp(cfg = DEFAULT_CONFIG, env = process.env) {

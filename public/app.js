@@ -28,7 +28,7 @@ const I18N = {
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', flows: 'Transactions',
     wdOk: 'Withdrawal sent. Arrived:', wdPending: 'Submitted, pending platform processing.',
     premiumWithdraw: 'Premium → balance (insurance OFF)', premiumOutPh: 'Blank = withdraw all', premiumNeed: 'Enter a positive integer amount',
-    resetData: 'Reset ALL data', confirmReset1: 'Reset ALL accounts, rounds and records?', confirmReset2: 'This CANNOT be undone. Confirm again?', resetDone: 'All data cleared.',
+   
     chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
     pendingTitle: 'Pending on-chain payments', pendingVerify: 'Verify & credit now', chainWillCredit: 'Paid on-chain. It is credited automatically once confirmed; you can also tap Verify under Me.', chainCreditedRedo: 'Your on-chain payment has been credited to balance, please place the wish again.',
     manualCredit: 'Credit by hash', manualTxPh: 'Paste 0x… tx hash to credit', manualOk: 'Credited to balance', manualAlready: 'This tx was already credited', manualBadHash: 'Invalid tx hash',
@@ -61,7 +61,7 @@ const I18N = {
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', flows: '收支流水',
     wdOk: '提現已發送，到帳：', wdPending: '已提交，待平台處理。',
     premiumWithdraw: '保費提回餘額（需先關閉保險）', premiumOutPh: '留空＝全部提回', premiumNeed: '請輸入正整數金額',
-    resetData: '清空全部資料', confirmReset1: '確定清空所有帳號、對局與記錄嗎？', confirmReset2: '此操作無法復原，再次確認？', resetDone: '全部資料已清空。',
+   
     chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
     pendingTitle: '待核驗的鏈上支付', pendingVerify: '重新核驗並入帳', chainWillCredit: '鏈上已支付，確認後會自動補入餘額，也可到「我的」手動核驗。', chainCreditedRedo: '鏈上支付已補入餘額，請重新許願。',
     manualCredit: '貼哈希補入帳', manualTxPh: '貼上 0x… 交易哈希補錄入帳', manualOk: '已補入餘額', manualAlready: '此交易先前已入帳', manualBadHash: '交易哈希格式不正確',
@@ -94,7 +94,7 @@ const I18N = {
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', flows: '取引履歴',
     wdOk: '送金しました。着金：', wdPending: '送信済み。プラットフォーム処理待ち。',
     premiumWithdraw: '保険料を残高へ戻す（保険OFF時）', premiumOutPh: '空欄＝全額戻す', premiumNeed: '正の整数を入力してください',
-    resetData: '全データを消去', confirmReset1: 'すべてのアカウント・対局・記録を消去しますか？', confirmReset2: '元に戻せません。再度確認してください。', resetDone: '全データを消去しました。',
+   
     chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
     pendingTitle: '未確認のオンチェーン支払い', pendingVerify: '再確認して入金', chainWillCredit: 'オンチェーンで支払い済み。承認後に自動入金されます。マイで手動確認も可能です。', chainCreditedRedo: 'オンチェーン支払いを残高に入金しました。もう一度願いを入力してください。',
     manualCredit: 'ハッシュで入金', manualTxPh: '0x… トランザクションハッシュを貼って入金', manualOk: '残高に入金しました', manualAlready: 'この取引は入金済みです', manualBadHash: 'トランザクションハッシュ形式が不正です',
@@ -404,7 +404,6 @@ function syncAdmin(isAdmin) {
   if (isAdmin === undefined) isAdmin = state.isAdmin;
   state.isAdmin = !!isAdmin;
   $('adminPanel').classList.toggle('hide', !state.isAdmin);
-  $('adminResetWrap').classList.toggle('hide', !state.isAdmin);
   if (state.isAdmin) loadAdminWords();
 }
 
@@ -551,18 +550,6 @@ async function withdraw() {
   finally { btn.disabled = false; btn.textContent = t('withdraw'); }
 }
 
-// 管理员一键清空全部业务数据（二次确认）
-async function adminResetAll() {
-  if (!confirm(t('confirmReset1'))) return;
-  if (!confirm(t('confirmReset2'))) return;
-  const btn = $('adminResetBtn'); btn.disabled = true;
-  try {
-    await api('/admin/reset', { uid: state.uid, confirm: true });
-    alert(t('resetDone'));
-    localStorage.removeItem('pendingTxs');
-    location.reload();
-  } catch (e) { alert(e.message); btn.disabled = false; }
-}
 
 // —— 链上掉单补录：钱包已支付就一定能凭交易哈希入账，绝不丢钱 ——
 function loadPending() { try { return JSON.parse(localStorage.getItem('pendingTxs') || '[]'); } catch { return []; } }
@@ -608,7 +595,6 @@ function init() {
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
   $('premiumOutBtn').onclick = withdrawPremium;
   $('wdBtn').onclick = withdraw;
-  $('adminResetBtn').onclick = adminResetAll;
   $('pendingVerifyBtn').onclick = async () => { $('pendingVerifyBtn').disabled = true; try { await creditPending(); } finally { $('pendingVerifyBtn').disabled = false; renderPending(); } };
   $('manualTxBtn').onclick = async () => {
     const txHash = $('manualTxInput').value.trim();
@@ -625,7 +611,6 @@ function init() {
   $('bbsSend').onclick = postBbs;
   $('bbsInput').oninput = () => { $('bbsChar').textContent = codeLen($('bbsInput').value) + '/100'; };
   selectSide('red');
-  // 自动登录：以钱包为准走 /login（后端无此账号会自动重新注册）——清空数据后旧 uid 失效也能自愈
   const savedWallet = localStorage.getItem('wallet');
   if (savedWallet) {
     api('/login', { wallet: savedWallet }).then(async (u) => {
@@ -636,6 +621,6 @@ function init() {
     }).catch(() => { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); });
   }
 }
-const FE_BUILD = '20260830-8';
+const FE_BUILD = '20260830-9';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = FE_BUILD; }
 init();

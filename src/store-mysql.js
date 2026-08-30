@@ -318,14 +318,6 @@ export class MysqlStore {
     return true;
   }
 
-  // —— 管理员清空全部业务数据（保留 blocked_words 屏蔽词配置）——
-  async resetAll() {
-    const tables = ['node_logs', 'nodes', 'payout_batches', 'referral_logs', 'bets', 'rounds',
-      'flows', 'withdraws', 'replies', 'posts', 'accounts', 'users', 'chain_txs', 'seq'];
-    for (const t of tables) await this.exec(`DELETE FROM ${t}`);
-    await this.exec('UPDATE ledger SET insurance_pool=0,platform=0,pending_withdraw=0,issued=0,withdrawn=0 WHERE id=1');
-    return true;
-  }
 
   async totalInside() {
     const a = (await this.exec('SELECT COALESCE(SUM(available+frozen+premium),0) s FROM accounts'))[0].s;

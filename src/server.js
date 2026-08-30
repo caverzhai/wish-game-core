@@ -13,7 +13,7 @@ import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
 
-const BUILD = '20260830-8'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '20260830-9'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -162,13 +162,6 @@ route('POST', '/admin/word/remove', async (b) => { await requireAdmin(b.uid); re
 route('POST', '/admin/post/delete', async (b) => { await requireAdmin(b.uid); return social.deletePost(b.uid, b.postId); });
 route('POST', '/admin/user/ban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, b.banned !== false) }; });
 route('POST', '/admin/user/unban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, false) }; });
-// 管理员一键清空全部业务数据（账号/对局/流水/节点/帖子等），保留屏蔽词配置；必须显式 confirm
-route('POST', '/admin/reset', async (b) => {
-  await requireAdmin(b.uid);
-  if (b.confirm !== true) throw new GameError(Codes.BAD_INPUT, '请显式确认清空（confirm=true）');
-  await store.resetAll();
-  return { ok: true, resetAt: now() };
-});
 // —— 链配置（公开，不含私钥）——
 route('GET', '/chain/config', () => chain.publicConfig());
 // —— 提现：配置了代付私钥则自动链上打款，否则生成待处理单 ——

@@ -82,13 +82,3 @@ test('保费提回：保险开启时拒绝，关闭后可提回余额，用户�
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('resetAll：清空全部用户/账户业务数据，ledger 归零', async () => {
-  const app = await mk();
-  await app.game.register('0xR1');
-  await app.game.register('0xR2');
-  assert.equal((await app.store.listUsers()).length, 2);
-  await app.store.resetAll();
-  assert.equal((await app.store.listUsers()).length, 0);
-  const led = await app.store.getLedger();
-  assert.equal(led.insurancePool + led.platform + led.pendingWithdraw, 0n);
-});

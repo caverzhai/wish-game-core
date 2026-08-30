@@ -37,6 +37,7 @@ const I18N = {
     needPick: 'Please pick a number 0-9 first', needAmount: 'Enter an integer 1-99 (枚)', copyOk: 'Copied', noWallet: 'No wallet extension detected',
     walletShort: 'Wallet balance short by', noWalletGap: 'No wallet detected. Open this site inside the TokenPocket DApp browser, or install & unlock a wallet extension.', offchainShort: 'Balance not enough (short',
     chainNotConfigured: 'This site has no on-chain token configured, so wallet payment is unavailable. Please use the deployed online site.', wrongChain: 'Please switch the wallet network to BNB Smart Chain (chainId 56).',
+    selfCheck: 'Wallet environment check', scSite: 'Site chain config', scNoSite: 'NOT configured (use online site)', scWallet: 'Wallet detected', scNoWallet: 'NONE — open inside TokenPocket DApp browser, or install a wallet extension', scNet: 'Current network', scAccount: 'Authorized account', scNoAccount: 'none (connect/unlock wallet)', scWhich: 'Wallet type',
     reply: 'Reply', sendReply: 'Send', replyPh: 'Write a reply (max 100 chars)', replies: 'replies', confirmDelPost: 'Delete this post and its replies?',
     flow_BET_FROZEN: 'Wish placed', flow_WIN_CREDIT: 'Win credited', flow_INS_WIN_CUT: 'Insured 10% to pool', flow_CANCEL_REFUND: 'Void refund',
     flow_REFERRAL: 'Referral reward', flow_PREMIUM_IN: 'Premium deposit', flow_NODE_PREMIUM_OUT: 'Node premium', flow_NODE_PAYOUT: 'Node payout', flow_NODE_FORFEIT: 'Lapsed to pool',
@@ -69,6 +70,7 @@ const I18N = {
     needPick: '請先選擇 0-9 的數字', needAmount: '請輸入 1-99 的正整數（枚）', copyOk: '已複製', noWallet: '未檢測到錢包插件',
     walletShort: '錢包餘額不足，還差', noWalletGap: '未檢測到錢包：請在 TokenPocket 錢包的 DApp 瀏覽器內打開本站，或在瀏覽器安裝並解鎖錢包外掛', offchainShort: '站內餘額不足（差',
     chainNotConfigured: '本站未配置鏈上代幣，無法從錢包扣款，請使用已部署的線上站點', wrongChain: '請把錢包網路切換到 BNB Smart Chain（chainId 56）',
+    selfCheck: '錢包環境自檢', scSite: '站點鏈配置', scNoSite: '未配置（請用線上站點）', scWallet: '是否檢測到錢包', scNoWallet: '無——請在 TokenPocket 的 DApp 瀏覽器內打開，或安裝錢包外掛', scNet: '目前網路', scAccount: '已授權帳戶', scNoAccount: '無（請連接/解鎖錢包）', scWhich: '錢包類型',
     reply: '回覆', sendReply: '送出', replyPh: '寫下回覆（最多100字）', replies: '則回覆', confirmDelPost: '確定刪除該帖及其全部回覆？',
     flow_BET_FROZEN: '許願投入', flow_WIN_CREDIT: '中獎到帳', flow_INS_WIN_CUT: '保險贏家扣10%', flow_CANCEL_REFUND: '對局退款',
     flow_REFERRAL: '邀請返傭', flow_PREMIUM_IN: '存入保費', flow_NODE_PREMIUM_OUT: '節點扣保費', flow_NODE_PAYOUT: '節點賠付', flow_NODE_FORFEIT: '斷保當期充公',
@@ -101,6 +103,7 @@ const I18N = {
     needPick: '先に0-9の数字を選んでください', needAmount: '1-99の整数（枚）を入力', copyOk: 'コピーしました', noWallet: 'ウォレット拡張が未検出',
     walletShort: 'ウォレット残高不足（あと', noWalletGap: 'ウォレット未検出。TokenPocket のDAppブラウザで開くか、ウォレット拡張をインストール・解除してください', offchainShort: '残高不足（不足',
     chainNotConfigured: 'このサイトにはオンチェーン銘柄が未設定で、ウォレット支払いできません。デプロイ済みサイトをご利用ください', wrongChain: 'ウォレットのネットワークを BNB Smart Chain（chainId 56）に切り替えてください',
+    selfCheck: 'ウォレット環境チェック', scSite: 'サイトのチェーン設定', scNoSite: '未設定（オンライン版を使用）', scWallet: 'ウォレット検出', scNoWallet: 'なし — TokenPocket のDAppブラウザで開くか、ウォレット拡張を入れてください', scNet: '現在のネットワーク', scAccount: '許可アカウント', scNoAccount: 'なし（ウォレット接続/解除を）', scWhich: 'ウォレット種別',
     reply: '返信', sendReply: '送信', replyPh: '返信を書く（最大100文字）', replies: '件', confirmDelPost: 'この投稿と返信を削除しますか？',
     flow_BET_FROZEN: '願い投入', flow_WIN_CREDIT: '当選入金', flow_INS_WIN_CUT: '保険勝者10%', flow_CANCEL_REFUND: '不成立返金',
     flow_REFERRAL: '招待報酬', flow_PREMIUM_IN: '保険料投入', flow_NODE_PREMIUM_OUT: 'ノード保険料', flow_NODE_PAYOUT: 'ノード返還', flow_NODE_FORFEIT: '失効分を保険池へ',
@@ -240,6 +243,30 @@ async function ensureWalletReady() {
     catch (e) { throw new Error(t('wrongChain') + ' chainId=' + state.chainCfg.chainId); }
   }
   return eth;
+}
+// 钱包环境自检：站点配链 / 是否检测到钱包 / 当前网络 / 已授权账户 / 钱包类型，一眼定位卡点
+async function walletSelfCheck() {
+  const lines = [];
+  const cfg = state.chainCfg;
+  const siteOk = !!(cfg && cfg.enabled);
+  lines.push(`${siteOk ? '✓' : '✗'} ${t('scSite')}: ${siteOk ? 'chainId ' + cfg.chainId : t('scNoSite')}`);
+  const eth = window.ethereum;
+  lines.push(`${eth ? '✓' : '✗'} ${t('scWallet')}: ${eth ? 'OK' : t('scNoWallet')}`);
+  if (eth) {
+    try {
+      const c = await eth.request({ method: 'eth_chainId' });
+      const want = siteOk ? '0x' + Number(cfg.chainId).toString(16) : null;
+      const okNet = !want || String(c).toLowerCase() === want;
+      lines.push(`${okNet ? '✓' : '!'} ${t('scNet')}: chainId ${parseInt(c, 16)}${want && !okNet ? '  →  ' + t('wrongChain') : ''}`);
+    } catch (e) { lines.push(`! ${t('scNet')}: ${e.message || e}`); }
+    try {
+      const a = await eth.request({ method: 'eth_accounts' });
+      lines.push(`${a && a.length ? '✓' : '!'} ${t('scAccount')}: ${a && a.length ? a[0] : t('scNoAccount')}`);
+    } catch (e) { lines.push(`! ${t('scAccount')}: ${e.message || e}`); }
+    const which = eth.isTokenPocket ? 'TokenPocket' : eth.isMetaMask ? 'MetaMask' : eth.isCoinbaseWallet ? 'Coinbase' : (eth.isTrust ? 'Trust' : 'injected');
+    lines.push(`${t('scWhich')}: ${which}`);
+  }
+  alert(lines.join('\n'));
 }
 async function submitWish() {
   const amount = Number($('amountInput').value);
@@ -564,6 +591,7 @@ function init() {
   $('connectBtn').onclick = connectWallet; $('demoBtn').onclick = demoEnter; $('logoutBtn').onclick = logout;
   $('sideRed').onclick = () => selectSide('red'); $('sideGreen').onclick = () => selectSide('green');
   $('betBtn').onclick = submitWish;
+  $('selfCheckBtn').onclick = walletSelfCheck;
   document.querySelectorAll('.dock-item').forEach((d) => d.onclick = () => switchDock(d.dataset.dock));
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
   $('premiumOutBtn').onclick = withdrawPremium;

@@ -146,25 +146,6 @@
         <input id="wdInput" type="number" min="2" max="500" step="1" inputmode="numeric" placeholder="2-500" />
         <button id="wdBtn" class="btn-primary" data-i18n="withdraw">Withdraw (2-500, fee 1)</button>
       </div>
-
-      <h3 class="me-gap" data-i18n="rechargeTitle">Recharge</h3>
-      <div class="recharge-box">
-        <p class="muted" data-i18n="rechargeHint">Transfer token to the platform address, then paste tx hash to credit.</p>
-        <div class="row">
-          <input id="rcvAddr" readonly />
-          <button id="copyRcvBtn" class="btn-primary" data-i18n="copy">Copy</button>
-        </div>
-        <div class="row">
-          <input id="rechargeAmount" type="number" min="1" step="1" inputmode="numeric" placeholder="Amount" />
-          <button id="rechargeSendBtn" class="btn-ghost" data-i18n="rechargeSend">Send via wallet</button>
-        </div>
-        <div class="row">
-          <input id="rechargeTxInput" placeholder="0x… tx hash" />
-          <button id="rechargeConfirmBtn" class="btn-primary" data-i18n="rechargeConfirm">Credit</button>
-        </div>
-        <small id="rechargeMsg" class="msg"></small>
-      </div>
-
       <div id="adminResetWrap" class="admin-danger hide">
         <button id="adminResetBtn" class="btn-danger" data-i18n="resetData">Reset all data</button>
       </div>

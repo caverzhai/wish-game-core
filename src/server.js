@@ -13,6 +13,8 @@ import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
 
+const BUILD = '20260830-3'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
@@ -207,7 +209,7 @@ route('GET', '/admin/overview', async () => {
 });
 // —— 系统 ——
 route('GET', '/ledger', async () => { await store.assertBalanced('api'); return { ...(await store.getLedger()), storeKind: store.kind, balanced: true }; });
-route('GET', '/health', () => ({ ok: true, service: 'wish-game', store: store.kind, chain: chain.enabled, ts: now() }));
+route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now() }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');

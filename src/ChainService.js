@@ -40,17 +40,19 @@ export class ChainService {
     this.rpc = env.RPC_URL || '';
     this.token = (env.TOKEN_CONTRACT || '').trim();
     this.platform = (env.PLATFORM_WALLET_ADDRESS || env.PLATFORM_ADDRESS || '').trim();
-    this.pk = env.PAYOUT_PRIVATE_KEY || '';
+    this.pk = (env.PAYOUT_PRIVATE_KEY || '').trim();
+    // 代付私钥必须是 0x+64位十六进制；占位符（如 0xPAYOUT_PRIVATE_KEY）视为未配置，避免签名期才崩
+    this.pkValid = /^0x[0-9a-fA-F]{64}$/.test(this.pk);
     this.decimals = Number(env.TOKEN_DECIMALS || 18);
     this.needConfirm = Number(env.CONFIRM_BLOCKS ?? 1);
     this._providerInstance = null; // 缓存的 ethers Provider（不可与方法 _provider() 同名，否则遮蔽方法）
   }
 
   get enabled() { return !!(this.rpc && this.token && this.platform); }
-  get canPayout() { return this.enabled && !!this.pk; }
+  get canPayout() { return this.enabled && this.pkValid; } // 私钥格式合法才允许自动代付
   /** 可下发给前端的公开配置（绝不含私钥/RPC） */
   publicConfig() {
-    return { enabled: this.enabled, canPayout: this.canPayout, chainId: this.chainId, tokenContract: this.token, platformAddress: this.platform, decimals: this.decimals };
+    return { enabled: this.enabled, canPayout: this.canPayout, payoutReady: this.canPayout, chainId: this.chainId, tokenContract: this.token, platformAddress: this.platform, decimals: this.decimals };
   }
 
   async _ethers() {
@@ -120,12 +122,17 @@ export class ChainService {
    *  - 已拿到 tx.hash 但等回执超时：钱可能已出，错误 broadcast=true，上层保留在途、不退款，靠 hash 对账。
    */
   async payout(toAddress, innerAmount, onBroadcast) {
-    if (!this.canPayout) throw new GameError(Codes.BAD_INPUT, '未配置 PAYOUT_PRIVATE_KEY，无法自动代付');
+    if (!this.enabled) throw chainError(new Error('站点未配置链参数，无法代付'), false);
+    // 私钥非法（常见：把占位符 0xPAYOUT_PRIVATE_KEY 当成值填进去）：广播前直接报错，上层会原路退款，不卡单
+    if (!this.pkValid) throw chainError(new Error('代付私钥未正确配置：PAYOUT_PRIVATE_KEY 必须是平台收款钱包 0x 开头共 64 位的真实私钥，当前值是占位符或格式错误，请在平台环境变量里改成真实私钥后重新部署'), false);
     const ethers = await this._ethers();
     const p = await this._provider();
-    const wallet = new ethers.Wallet(this.pk, p);
-    const contract = new ethers.Contract(this.token, ERC20_ABI, wallet);
-    const value = this.toChain(BigInt(innerAmount));
+    let wallet, contract, value;
+    try {
+      wallet = new ethers.Wallet(this.pk, p);
+      contract = new ethers.Contract(this.token, ERC20_ABI, wallet);
+      value = this.toChain(BigInt(innerAmount));
+    } catch (e) { throw chainError(e, false); } // 签名对象构造失败=钱没出，广播前错误，必退款
 
     let tx;
     try {

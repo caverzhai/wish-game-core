@@ -389,7 +389,14 @@ function renderMe() {
   }).join('') : '<p class="muted">—</p>';
   $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} 枚</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
   const tip = $('chainModeTip');
-  tip.classList.remove('hide'); tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
+  tip.classList.remove('hide');
+  if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
+    tip.style.color = '#ff6b6b';
+    tip.textContent = '⚠ 平台代付私鑰未正確配置（PAYOUT_PRIVATE_KEY 是佔位符或格式錯誤），提現無法打出，請管理員到環境变量填入平台錢包真實私鑰後重新部署';
+  } else {
+    tip.style.color = '';
+    tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
+  }
   syncAdmin(me.isAdmin);
 }
 function renderInviteLink() { $('inviteLink').value = `${location.origin}${location.pathname}?ref=${state.uid}`; }
@@ -629,6 +636,6 @@ function init() {
     }).catch(() => { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); });
   }
 }
-const FE_BUILD = '20260830-4';
+const FE_BUILD = '20260830-5';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = FE_BUILD; }
 init();

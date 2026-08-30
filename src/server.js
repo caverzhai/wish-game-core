@@ -13,7 +13,7 @@ import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
 
-const BUILD = '20260830-4'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '20260830-5'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');

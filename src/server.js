@@ -13,7 +13,7 @@ import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
 
-const BUILD = '20260830-5'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '20260830-6'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -120,13 +120,11 @@ route('POST', '/bet/onchain', async (b) => {
   const txKey = String(b.txHash || '').toLowerCase();
   if (needInner > 0n) {
     if (!txKey) throw new GameError(Codes.BAD_INPUT, '站内余额不足，需要链上钱包补齐，但缺少交易哈希');
-    const already = await store.isChainTxUsed(txKey);
-    if (!already) {
-      const u = await store.getUser(b.uid);
-      await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner }); // 链上实转必须恰为差额
-      await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT'); // 差额先入账（独立事务，即使随后下注失败，钱也留在余额，不丢）
-      await store.markChainTxUsed(txKey, b.uid, needInner);       // 入账成功才登记，幂等防重
-    }
+    if (await store.isChainTxUsed(txKey)) return { dup: true, msg: '该链上交易已使用，不能重复许愿' }; // 幂等兜底：同一笔交易绝不下第二次注
+    const u = await store.getUser(b.uid);
+    await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner }); // 链上实转必须恰为差额
+    await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT'); // 差额先入账（独立事务，即使随后下注失败，钱也留在余额，不丢）
+    await store.markChainTxUsed(txKey, b.uid, needInner);       // 入账成功才登记，幂等防重
   }
   return await game.bet(b.uid, b.side, total, pick, now()); // 冻结全额后，原站内余额被精确用尽 → 清零
 });

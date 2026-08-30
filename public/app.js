@@ -29,12 +29,14 @@ const I18N = {
     wdOk: 'Withdrawal sent. Arrived:', wdPending: 'Submitted, pending platform processing.',
     premiumWithdraw: 'Premium → balance (insurance OFF)', premiumOutPh: 'Blank = withdraw all', premiumNeed: 'Enter a positive integer amount',
     resetData: 'Reset ALL data', confirmReset1: 'Reset ALL accounts, rounds and records?', confirmReset2: 'This CANNOT be undone. Confirm again?', resetDone: 'All data cleared.',
-    chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
+    chainOn: 'Recharge mode: recharge in Me first; wishes only spend in-app balance.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
     pendingTitle: 'Pending on-chain payments', pendingVerify: 'Verify & credit now', chainWillCredit: 'Paid on-chain. It is credited automatically once confirmed; you can also tap Verify under Me.', chainCreditedRedo: 'Your on-chain payment has been credited to balance, please place the wish again.',
     manualCredit: 'Credit by hash', manualTxPh: 'Paste 0x… tx hash to credit', manualOk: 'Credited to balance', manualAlready: 'This tx was already credited', manualBadHash: 'Invalid tx hash',
     stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red', winGreen: 'Green',
     nodeProgress: 'Progress', nodePeriod: 'Periods', pickNum: 'Pick', stake: 'Amount', detail: 'Detail', close: 'Close',
     needPick: 'Please pick a number 0-9 first', needAmount: 'Enter an integer 1-99 (枚)', copyOk: 'Copied', noWallet: 'No wallet extension detected',
+    needRecharge: 'Insufficient in-app balance. Please recharge in "Me" first.',
+    rechargeTitle: 'Recharge', rechargeHint: 'Transfer token to the platform address below, then paste the tx hash and tap Credit after confirmation.', rechargeSend: 'Send via wallet', rechargeConfirm: 'Credit by hash', rechargeOk: 'Credited', rechargeWait: 'Submitted, wait for on-chain confirmation then tap Credit.',
     walletShort: 'Wallet balance short by', noWalletGap: 'No wallet detected. Open this site inside the TokenPocket DApp browser, or install & unlock a wallet extension.', offchainShort: 'Balance not enough (short',
     chainNotConfigured: 'This site has no on-chain token configured, so wallet payment is unavailable. Please use the deployed online site.', wrongChain: 'Please switch the wallet network to BNB Smart Chain (chainId 56).',
     selfCheck: 'Wallet environment check', scSite: 'Site chain config', scNoSite: 'NOT configured (use online site)', scWallet: 'Wallet detected', scNoWallet: 'NONE — open inside TokenPocket DApp browser, or install a wallet extension', scNet: 'Current network', scAccount: 'Authorized account', scNoAccount: 'none (connect/unlock wallet)', scWhich: 'Wallet type',
@@ -62,12 +64,14 @@ const I18N = {
     wdOk: '提現已發送，到帳：', wdPending: '已提交，待平台處理。',
     premiumWithdraw: '保費提回餘額（需先關閉保險）', premiumOutPh: '留空＝全部提回', premiumNeed: '請輸入正整數金額',
     resetData: '清空全部資料', confirmReset1: '確定清空所有帳號、對局與記錄嗎？', confirmReset2: '此操作無法復原，再次確認？', resetDone: '全部資料已清空。',
-    chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
+    chainOn: '充值制：請先在「我的」充值，許願只扣站內餘額，不再自動扣外部錢包', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
     pendingTitle: '待核驗的鏈上支付', pendingVerify: '重新核驗並入帳', chainWillCredit: '鏈上已支付，確認後會自動補入餘額，也可到「我的」手動核驗。', chainCreditedRedo: '鏈上支付已補入餘額，請重新許願。',
     manualCredit: '貼哈希補入帳', manualTxPh: '貼上 0x… 交易哈希補錄入帳', manualOk: '已補入餘額', manualAlready: '此交易先前已入帳', manualBadHash: '交易哈希格式不正確',
     stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅勝', winGreen: '綠勝',
     nodeProgress: '進度', nodePeriod: '已釋放期數', pickNum: '選號', stake: '投入', detail: '明細', close: '收起',
     needPick: '請先選擇 0-9 的數字', needAmount: '請輸入 1-99 的正整數（枚）', copyOk: '已複製', noWallet: '未檢測到錢包插件',
+    needRecharge: '站內餘額不足，請先到「我的」充值',
+    rechargeTitle: '充值', rechargeHint: '請用錢包把代幣轉入下方平台收款地址，區塊確認後，粘貼交易哈希點「核對到賬」。', rechargeSend: '調起錢包轉賬', rechargeConfirm: '核對到賬', rechargeOk: '已到賬', rechargeWait: '已發起轉賬，等區塊確認後再點「核對到賬」。',
     walletShort: '錢包餘額不足，還差', noWalletGap: '未檢測到錢包：請在 TokenPocket 錢包的 DApp 瀏覽器內打開本站，或在瀏覽器安裝並解鎖錢包外掛', offchainShort: '站內餘額不足（差',
     chainNotConfigured: '本站未配置鏈上代幣，無法從錢包扣款，請使用已部署的線上站點', wrongChain: '請把錢包網路切換到 BNB Smart Chain（chainId 56）',
     selfCheck: '錢包環境自檢', scSite: '站點鏈配置', scNoSite: '未配置（請用線上站點）', scWallet: '是否檢測到錢包', scNoWallet: '無——請在 TokenPocket 的 DApp 瀏覽器內打開，或安裝錢包外掛', scNet: '目前網路', scAccount: '已授權帳戶', scNoAccount: '無（請連接/解鎖錢包）', scWhich: '錢包類型',
@@ -95,12 +99,14 @@ const I18N = {
     wdOk: '送金しました。着金：', wdPending: '送信済み。プラットフォーム処理待ち。',
     premiumWithdraw: '保険料を残高へ戻す（保険OFF時）', premiumOutPh: '空欄＝全額戻す', premiumNeed: '正の整数を入力してください',
     resetData: '全データを消去', confirmReset1: 'すべてのアカウント・対局・記録を消去しますか？', confirmReset2: '元に戻せません。再度確認してください。', resetDone: '全データを消去しました。',
-    chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
+    chainOn: 'チャージ制：「マイ」で先にチャージし、願いは内部残高だけで消費', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
     pendingTitle: '未確認のオンチェーン支払い', pendingVerify: '再確認して入金', chainWillCredit: 'オンチェーンで支払い済み。承認後に自動入金されます。マイで手動確認も可能です。', chainCreditedRedo: 'オンチェーン支払いを残高に入金しました。もう一度願いを入力してください。',
     manualCredit: 'ハッシュで入金', manualTxPh: '0x… トランザクションハッシュを貼って入金', manualOk: '残高に入金しました', manualAlready: 'この取引は入金済みです', manualBadHash: 'トランザクションハッシュ形式が不正です',
     stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤勝ち', winGreen: '緑勝ち',
     nodeProgress: '進捗', nodePeriod: '解放済期', pickNum: '数字', stake: '投入', detail: '詳細', close: '閉じる',
     needPick: '先に0-9の数字を選んでください', needAmount: '1-99の整数（枚）を入力', copyOk: 'コピーしました', noWallet: 'ウォレット拡張が未検出',
+    needRecharge: '残高不足です。「マイ」で先にチャージしてください。',
+    rechargeTitle: 'チャージ', rechargeHint: 'ウォレットから下記の平台アドレスへトークンを送り、承認後にtxハッシュを貼って「入金確認」を押してください。', rechargeSend: 'ウォレットで送金', rechargeConfirm: '入金確認', rechargeOk: '入金済み', rechargeWait: '送信しました。承認後に「入金確認」を押してください。',
     walletShort: 'ウォレット残高不足（あと', noWalletGap: 'ウォレット未検出。TokenPocket のDAppブラウザで開くか、ウォレット拡張をインストール・解除してください', offchainShort: '残高不足（不足',
     chainNotConfigured: 'このサイトにはオンチェーン銘柄が未設定で、ウォレット支払いできません。デプロイ済みサイトをご利用ください', wrongChain: 'ウォレットのネットワークを BNB Smart Chain（chainId 56）に切り替えてください',
     selfCheck: 'ウォレット環境チェック', scSite: 'サイトのチェーン設定', scNoSite: '未設定（オンライン版を使用）', scWallet: 'ウォレット検出', scNoWallet: 'なし — TokenPocket のDAppブラウザで開くか、ウォレット拡張を入れてください', scNet: '現在のネットワーク', scAccount: '許可アカウント', scNoAccount: 'なし（ウォレット接続/解除を）', scWhich: 'ウォレット種別',
@@ -157,6 +163,7 @@ function enterMain() {
   $('loginMask').classList.add('hide'); $('main').classList.remove('hide'); $('dock').classList.remove('hide');
   $('who').textContent = `${state.uid} · ${shortAddr(state.wallet)}`;
   $('who').classList.remove('hide'); $('logoutBtn').classList.remove('hide');
+  const rcv = $('rcvAddr'); if (rcv && state.chainCfg) rcv.value = state.chainCfg.platformAddress || '';
   buildNumGrid(); renderInviteLink(); renderPending(); switchDock('home');
   refresh(); setInterval(refresh, 1500); setInterval(tickCountdown, 1000);
   setInterval(() => loadBbs(true), 10000);
@@ -268,61 +275,20 @@ async function walletSelfCheck() {
   }
   alert(lines.join('\n'));
 }
+// 充值制：许愿只扣站内余额，不足直接提示去「我的」充值，绝不在下注时动外部钱包
 async function submitWish() {
   const amount = Number($('amountInput').value);
   $('playMsg').className = 'msg'; $('playMsg').textContent = '';
   if (state.pick === null) { $('playMsg').textContent = t('needPick'); return; }
   if (!Number.isInteger(amount) || amount < 1 || amount > 99) { $('playMsg').textContent = t('needAmount'); return; }
-  const side = state.side, pick = state.pick, uid = state.uid, btn = $('betBtn');
-  const S6 = 1_000_000;
+  const btn = $('betBtn');
   try {
     btn.disabled = true;
-    // 第一优先：纯站内下注，由后端实时余额判定——够就直接成功，绝不碰外部钱包（避免前端快照过期误扣）
-    try {
-      await api('/bet', { uid, side, amount, pick });
-      $('amountInput').value = ''; await refresh(); return;
-    } catch (e) {
-      if (e.code !== 'INSUFFICIENT_BALANCE') { $('playMsg').textContent = e.message || String(e); return; }
-    }
-    // 后端确认余额不足：拉最新账户，精确计算链上补差
-    const fresh = await api('/user/' + uid);
-    const availInner = Math.round(Number(fresh.account.available) * S6);
-    const totalInner = amount * S6;
-    const chainInner = totalInner - Math.min(availInner, totalInner); // 只补真实差额
-    await ensureWalletReady();
-    const dec = state.chainCfg.decimals, diff = dec - 6;
-    if (diff < 0) { $('playMsg').textContent = 'Token decimals < 6, unsupported'; return; }
-    const needWei = BigInt(chainInner) * (10n ** BigInt(diff));
-    const wbal = await walletTokenWei();
-    if (wbal < needWei) {
-      const shortInner = Number(needWei - wbal) / (10 ** diff);
-      $('playMsg').textContent = t('walletShort') + ' ' + fmt(shortInner / S6) + ' 枚'; return;
-    }
-    const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
-    let txHash;
-    try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
-    catch (e) { $('playMsg').textContent = e.message || String(e); return; }
-    $('playMsg').textContent = t('chainPending');
-    addPending({ txHash, ts: Date.now(), totalAmount: amount, side, pick, chainInner });
-    let lastErr = '';
-    for (let i = 0; i < 15; i++) {
-      await sleep(4000);
-      try {
-        await api('/bet/onchain', { uid, side, pick, totalAmount: amount, chainInner, txHash });
-        removePending(txHash);
-        $('playMsg').textContent = '✓'; $('amountInput').value = ''; return refresh();
-      } catch (e) {
-        lastErr = e.message || String(e);
-        if (!CHAIN_RETRY.test(lastErr)) break;
-      }
-    }
-    await creditPending();
-    const stillPending = loadPending().some((x) => x.txHash === txHash);
-    $('playMsg').textContent = stillPending
-      ? (lastErr ? lastErr + ' · ' : '') + t('chainWillCredit') + ' (' + shortAddr(txHash) + ')'
-      : t('chainCreditedRedo');
-  } catch (e) { $('playMsg').textContent = e.message; }
-  finally { btn.disabled = false; }
+    await api('/bet', { uid: state.uid, side: state.side, amount, pick: state.pick });
+    $('amountInput').value = ''; $('playMsg').textContent = '✓'; await refresh();
+  } catch (e) {
+    $('playMsg').textContent = (e.code === 'INSUFFICIENT_BALANCE') ? t('needRecharge') : (e.message || String(e));
+  } finally { btn.disabled = false; }
 }
 
 // ---------------- 历史（首页） ----------------
@@ -483,49 +449,19 @@ async function postBbs() {
 // ---------------- 动作 ----------------
 async function switchIns() { const me = state.me; await api('/insurance/switch', { uid: state.uid, on: !me.user.insSwitch }); refresh(); }
 
-// 保费存入：先纯站内（后端实时余额判定），仅当后端明确余额不足才用外部钱包补差
+// 充值制：保费只扣站内余额，不足提示去充值，不在此动外部钱包
 async function depositPremium() {
   const amount = Number($('premiumInput').value);
   const msg = $('premiumMsg'); msg.className = 'msg'; msg.textContent = '';
   if (!Number.isInteger(amount) || amount <= 0) { msg.textContent = t('premiumNeed'); return; }
-  const btn = $('premiumBtn'), S6 = 1_000_000;
+  const btn = $('premiumBtn');
   try {
     btn.disabled = true;
-    try {
-      await api('/insurance/deposit', { uid: state.uid, amount });
-      $('premiumInput').value = ''; await refresh(); return;
-    } catch (e) {
-      if (e.code !== 'INSUFFICIENT_BALANCE') { msg.textContent = e.message || String(e); return; }
-    }
-    const fresh = await api('/user/' + state.uid);
-    const availInner = Math.round(Number(fresh.account.available) * S6);
-    const totalInner = amount * S6;
-    const chainInner = totalInner - Math.min(availInner, totalInner);
-    await ensureWalletReady();
-    const dec = state.chainCfg.decimals, diff = dec - 6;
-    if (diff < 0) { msg.textContent = 'Token decimals < 6, unsupported'; return; }
-    const needWei = BigInt(chainInner) * (10n ** BigInt(diff));
-    const wbal = await walletTokenWei();
-    if (wbal < needWei) { const s = Number(needWei - wbal) / (10 ** diff); msg.textContent = t('walletShort') + ' ' + fmt(s / S6) + ' 枚'; return; }
-    const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
-    let txHash;
-    try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
-    catch (e) { msg.textContent = e.message || String(e); return; }
-    msg.textContent = t('chainPending');
-    addPending({ txHash, ts: Date.now(), totalAmount: amount, chainInner, kind: 'premium' });
-    let lastErr = '';
-    for (let i = 0; i < 15; i++) {
-      await sleep(4000);
-      try {
-        await api('/insurance/deposit/onchain', { uid: state.uid, totalAmount: amount, chainInner, txHash });
-        removePending(txHash); msg.textContent = '✓'; $('premiumInput').value = ''; return refresh();
-      } catch (e) { lastErr = e.message || String(e); if (!CHAIN_RETRY.test(lastErr)) break; }
-    }
-    await creditPending();
-    const still = loadPending().some((x) => x.txHash === txHash);
-    msg.textContent = still ? (lastErr ? lastErr + ' · ' : '') + t('chainWillCredit') + ' (' + shortAddr(txHash) + ')' : t('chainCreditedRedo');
-  } catch (e) { msg.textContent = e.message; }
-  finally { btn.disabled = false; }
+    await api('/insurance/deposit', { uid: state.uid, amount });
+    $('premiumInput').value = ''; msg.textContent = '✓'; await refresh();
+  } catch (e) {
+    msg.textContent = (e.code === 'INSUFFICIENT_BALANCE') ? t('needRecharge') : (e.message || String(e));
+  } finally { btn.disabled = false; }
 }
 
 // 保险关闭时，把保费提回可用余额（输入框留空=全部提回）
@@ -535,6 +471,45 @@ async function withdrawPremium() {
   if (raw !== '') { const n = Number(raw); if (!Number.isInteger(n) || n <= 0) { alert(t('premiumNeed')); return; } body.amount = n; }
   try { await api('/insurance/premium/withdraw', body); $('premiumOutInput').value = ''; await refresh(); }
   catch (e) { alert(e.message); }
+}
+
+// ---------------- 充值（独立于下注：先转币到平台钱包，再凭哈希核对入账）----------------
+async function rechargeSend() {
+  const amount = Number($('rechargeAmount').value);
+  const msg = $('rechargeMsg'); msg.className = 'msg'; msg.textContent = '';
+  if (!Number.isInteger(amount) || amount <= 0) { msg.textContent = t('needAmount'); return; }
+  try {
+    await ensureWalletReady();
+    const dec = state.chainCfg.decimals;
+    const data = erc20TransferData(state.chainCfg.platformAddress, amount * 1_000_000, dec);
+    const txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] });
+    $('rechargeTxInput').value = txHash || '';
+    msg.textContent = t('rechargeWait');
+  } catch (e) { msg.textContent = e.message || String(e); }
+}
+
+async function rechargeConfirm() {
+  const txHash = ($('rechargeTxInput').value || '').trim();
+  const msg = $('rechargeMsg'); msg.className = 'msg';
+  if (!txHash.startsWith('0x')) { msg.textContent = 'tx hash'; return; }
+  const btn = $('rechargeConfirmBtn'); btn.disabled = true;
+  try {
+    let last = '';
+    for (let i = 0; i < 15; i++) {
+      try {
+        const r = await api('/wallet/credit', { uid: state.uid, txHash });
+        const add = Number(r.credited || 0); // 后端已把内部单位换算成「枚」
+        msg.textContent = r.already ? '✓' : (t('rechargeOk') + ' +' + fmt(add) + ' 枚');
+        $('rechargeTxInput').value = ''; $('rechargeAmount').value = '';
+        await refresh(); return;
+      } catch (e) {
+        last = e.message || String(e);
+        if (!CHAIN_RETRY.test(last)) break; // 确认中：继续轮询；硬错误立即停
+        await sleep(4000);
+      }
+    }
+    msg.textContent = last;
+  } finally { btn.disabled = false; }
 }
 
 async function withdraw() {
@@ -608,6 +583,9 @@ function init() {
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
   $('premiumOutBtn').onclick = withdrawPremium;
   $('wdBtn').onclick = withdraw;
+  $('copyRcvBtn').onclick = () => { navigator.clipboard?.writeText($('rcvAddr').value || ''); };
+  $('rechargeSendBtn').onclick = rechargeSend;
+  $('rechargeConfirmBtn').onclick = rechargeConfirm;
   $('adminResetBtn').onclick = adminResetAll;
   $('pendingVerifyBtn').onclick = async () => { $('pendingVerifyBtn').disabled = true; try { await creditPending(); } finally { $('pendingVerifyBtn').disabled = false; renderPending(); } };
   $('manualTxBtn').onclick = async () => {
@@ -636,6 +614,6 @@ function init() {
     }).catch(() => { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); });
   }
 }
-const FE_BUILD = '20260830-5';
+const FE_BUILD = '20260830-6';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = FE_BUILD; }
 init();

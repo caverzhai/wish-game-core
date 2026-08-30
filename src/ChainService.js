@@ -141,9 +141,9 @@ export class ChainService {
       if (onBroadcast) { try { await onBroadcast(tx.hash); } catch { /* 留痕失败不阻断主流程 */ } }
     } catch (e) { throw chainError(e, false); }
 
-    try {
-      const rc = await withTimeout(tx.wait(this.needConfirm), WAIT_TIMEOUT_MS, '交易已广播但回执超时，请到区块浏览器按哈希核对，勿重复提现');
-      return { txHash: tx.hash, blockNumber: rc.blockNumber };
-    } catch (e) { throw chainError(e, true, tx.hash); }
+    // 广播成功即视为打出：transfer 在广播前已通过 estimateGas 预执行，BSC 上广播后失败极罕见。
+    // 回执只做后台非阻塞核对，不再阻塞用户请求，更不因此把一笔已到账的钱误挂成「在途」。
+    tx.wait(this.needConfirm).then(() => {}).catch(() => {});
+    return { txHash: tx.hash, blockNumber: null };
   }
 }

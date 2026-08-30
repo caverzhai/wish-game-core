@@ -64,8 +64,7 @@ export class WalletService {
     return await s.transaction(async () => {
       const wd = await s.findWithdraw(withdrawId);
       if (!wd) throw new GameError(Codes.NOT_FOUND, '提现单不存在');
-      if (wd.state === 'paid') return wd; // 已确认，幂等
-      if (wd.state !== 'pending') throw new GameError(Codes.BAD_INPUT, '提现单状态不允许确认');
+      if (wd.state !== 'pending') return wd; // 已确认或其它终态：幂等返回，绝不重复记账、不抛错
       await s.applyLedger({ pending: -wd.arrive, withdrawn: wd.arrive });
       await s.updateWithdraw(withdrawId, { state: 'paid', txhash: txhash ?? null });
       await s.addFlow(wd.uid, 'WITHDRAW_PAID', wd.arrive, { withdrawId, txhash });
@@ -77,7 +76,10 @@ export class WalletService {
   async reapUnbroadcast(uid) {
     const stale = await this.store.listStalePending(uid, STALE_WITHDRAW_MS);
     const out = [];
-    for (const wd of stale) out.push(await this.failWithdraw(wd.withdrawId));
+    for (const wd of stale) {
+      try { out.push(await this.failWithdraw(wd.withdrawId)); }
+      catch { /* 单笔自愈异常不阻断其它单，更不阻断本次提现 */ }
+    }
     return out;
   }
 
@@ -86,9 +88,8 @@ export class WalletService {
     return await s.transaction(async () => {
       const wd = await s.findWithdraw(withdrawId);
       if (!wd) throw new GameError(Codes.NOT_FOUND, '提现单不存在');
-      if (wd.state === 'failed') return wd; // 已退款，幂等，不重复入账
-      if (wd.state === 'paid') throw new GameError(Codes.BAD_INPUT, '该提现已打款成功，不能回退');
-      if (wd.state !== 'pending') throw new GameError(Codes.BAD_INPUT, '提现单状态不允许失败回退');
+      // 幂等且永不因状态抛错打断用户：只有 pending 才执行退款；failed/paid/其它终态一律直接返回
+      if (wd.state !== 'pending') return wd;
       await s.applyLedger({ pending: -wd.arrive, plat: -wd.fee });
       await s.applyAccount(wd.uid, { avail: wd.amount });
       await s.updateWithdraw(withdrawId, { state: 'failed' });

@@ -55,3 +55,31 @@ test('confirmWithdraw 幂等：已 paid 再确认直接返回，不重复记账'
   const led = await app.store.getLedger();
   assert.equal(led.withdrawn, wd.arrive, 'withdrawn 只记一次');
 });
+
+test('已成功广播并留痕(有txhash)的在途单不被 reap 回收，防止重复退款', async () => {
+  const app = await mk();
+  const U = (await app.game.register('0xw4')).uid;
+  await app.wallet.issueInner(U, coin(10), 'INIT');
+  const wd = await app.wallet.withdraw(U, 3); // pending
+  // 模拟 payout 广播成功后立即把哈希写库（哪怕回执未回）
+  await app.store.updateWithdraw(wd.withdrawId, { txhash: '0xbroadcasted' });
+  // 即使超过时间窗，也绝不能被当遗留单退回
+  const cur = app.store.withdraws.find((x) => x.withdrawId === wd.withdrawId);
+  cur.at = 0;
+  const reaped = await app.wallet.reapUnbroadcast(U);
+  assert.equal(reaped.length, 0, '已广播单不回收');
+  const a = await app.store.getAccount(U);
+  assert.equal(a.available, coin(7), '已广播单的钱保持在途，不退');
+});
+
+test('failWithdraw 遇到 paid/任意终态都不再抛错（提现流程不被历史脏单打断）', async () => {
+  const app = await mk();
+  const U = (await app.game.register('0xw5')).uid;
+  await app.wallet.issueInner(U, coin(10), 'INIT');
+  const wd = await app.wallet.withdraw(U, 4);
+  await app.wallet.confirmWithdraw(wd.withdrawId, '0xpaid'); // 置 paid
+  const r = await app.wallet.failWithdraw(wd.withdrawId);    // 再失败回退：不抛错
+  assert.equal(r.state, 'paid', 'paid 单保持 paid，不重复退款');
+  const a = await app.store.getAccount(U);
+  assert.equal(a.available, coin(6), '提走4后不再变动');
+});

@@ -119,7 +119,7 @@ export class ChainService {
    *  - 广播前失败（RPC 不通 / gas 不足 / 代币不足）：钱没出，错误 broadcast=false，上层可安全退余额；
    *  - 已拿到 tx.hash 但等回执超时：钱可能已出，错误 broadcast=true，上层保留在途、不退款，靠 hash 对账。
    */
-  async payout(toAddress, innerAmount) {
+  async payout(toAddress, innerAmount, onBroadcast) {
     if (!this.canPayout) throw new GameError(Codes.BAD_INPUT, '未配置 PAYOUT_PRIVATE_KEY，无法自动代付');
     const ethers = await this._ethers();
     const p = await this._provider();
@@ -130,6 +130,8 @@ export class ChainService {
     let tx;
     try {
       tx = await withTimeout(contract.transfer(toAddress, value), SEND_TIMEOUT_MS, '代付交易无法广播：节点无响应或平台钱包 BNB(gas)/代币不足');
+      // 一旦广播成功，立即把哈希交给上层留痕（哪怕回执未回），避免被自愈逻辑误当未广播单重复退款
+      if (onBroadcast) { try { await onBroadcast(tx.hash); } catch { /* 留痕失败不阻断主流程 */ } }
     } catch (e) { throw chainError(e, false); }
 
     try {

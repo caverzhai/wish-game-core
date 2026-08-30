@@ -629,6 +629,6 @@ function init() {
     }).catch(() => { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); });
   }
 }
-const FE_BUILD = '20260830-3';
+const FE_BUILD = '20260830-4';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = FE_BUILD; }
 init();

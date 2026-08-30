@@ -11,3 +11,6 @@ Thumbs.db
 dist/
 coverage/
 *.zip
+
+# 临时截图
+*.png

@@ -13,7 +13,7 @@ import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
 
-const BUILD = '20260830-3'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '20260830-4'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -177,11 +177,13 @@ route('GET', '/chain/config', () => chain.publicConfig());
 route('POST', '/withdraw/reap', (b) => wallet.reapUnbroadcast(b.uid));
 route('POST', '/withdraw', async (b) => {
   await assertNotBanned(b.uid);
-  if (chain.canPayout) await wallet.reapUnbroadcast(b.uid); // 先把上笔未广播成功的在途单退回，避免钱卡住
+  if (chain.canPayout) { try { await wallet.reapUnbroadcast(b.uid); } catch { /* 自愈回收绝不阻断本次提现 */ } } // 先把上笔未广播成功的在途单退回，避免钱卡住
   const wd = await wallet.withdraw(b.uid, Number(b.amount));
   if (chain.canPayout) {
     try {
-      const pay = await chain.payout(wd.toWallet, wd.arrive);
+      const pay = await chain.payout(wd.toWallet, wd.arrive, async (hash) => {
+        try { await store.updateWithdraw(wd.withdrawId, { txhash: hash }); } catch { /* 留痕失败不阻断 */ }
+      });
       const done = await wallet.confirmWithdraw(wd.withdrawId, pay.txHash);
       return { ...done, paid: true };
     } catch (e) {

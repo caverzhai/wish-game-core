@@ -22,7 +22,7 @@ const I18N = {
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
-    invRule: 'Tier by direct invites who ever generated a node, on wish volume: 1→0.1% / 5→0.2% / 10→0.3% / 20→0.4% / 50+→0.5%.',
+    invTierTip: 'Tier is set by how many direct friends ever generated a payout node; commission on their wish volume:', invColPeople: 'Qualified friends', invColRate: 'Rate', invPeopleUnit: '',
     bbsTitle: 'Board (plain text, up to 100 chars)', bbsPlaceholder: 'Say something (max 100 chars)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
     adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words',
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', flows: 'Transactions',
@@ -55,7 +55,7 @@ const I18N = {
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
-    invRule: '名下有「生成過賠付節點」的直邀好友數決定檔位，按下注流水返傭：1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
+    invTierTip: '名下有「生成過賠付節點」的直邀好友數決定檔位，按好友許願流水返傭：', invColPeople: '達標好友', invColRate: '返傭率', invPeopleUnit: '人',
     bbsTitle: '廣場（100字以內純文字）', bbsPlaceholder: '說點什麼吧（最多100字）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
     adminModeration: '管理員治理', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', flows: '收支流水',
@@ -88,7 +88,7 @@ const I18N = {
     myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
-    invRule: 'ノードを生成した直招待人数で率が決定（投入額ベース）: 1人0.1% / 5人0.2% / 10人0.3% / 20人0.4% / 50人以上0.5%。',
+    invTierTip: '返還ノードを生成した直招待人数で档位が決定、招待した人の投入額に応じて報酬：', invColPeople: '達成フレンド', invColRate: '報酬率', invPeopleUnit: '人',
     bbsTitle: '広場（100文字以内のテキスト）', bbsPlaceholder: 'ひとこと（最大100文字）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
     adminModeration: 'モデレーション', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', flows: '取引履歴',
@@ -326,23 +326,34 @@ async function submitWish() {
 }
 
 // ---------------- 历史（首页） ----------------
+// 已展开的对局编号集合 + 明细缓存：定时刷新重绘后仍保持展开，不会“一点就收”
+const expandedRounds = new Set();
+const roundDetailCache = new Map();
+async function fillHistDetail(id, box) {
+  let d = roundDetailCache.get(id);
+  if (!d) { d = await api('/round/' + id); roundDetailCache.set(id, d); }
+  box.innerHTML = (d.bets || []).map((x) => `<div class="bet-line"><span class="tag ${x.side}">${x.side === 'red' ? t('winRed') : t('winGreen')}</span> ${x.uid} · ${t('stake')} ${fmt(Number(x.amount) / 1e6)} · ${t('pickNum')} ${x.pick}</div>`).join('') || '<p class="muted">—</p>';
+}
 async function renderHistory() {
   const list = $('historyList');
   list.innerHTML = state.recent.map((r) => {
     const win = r.result && r.result.winSide;
+    const open = expandedRounds.has(r.roundId);
     return `<div class="hist-row"><span class="dot ${win || 'void'}"></span><b>${r.roundId}</b>
       <span>${r.state === 'settled' ? (win === 'red' ? t('winRed') : t('winGreen')) : t('state' + (r.state === 'cancelled' ? 'Cancelled' : 'Active'))}</span>
       <span class="muted">${r.state === 'settled' ? `${fmt(Number(r.result.total) / 1e6)} 枚 · Σ=${r.sumPick}` : ''}</span>
-      <button class="btn-mini" data-detail="${r.roundId}">${t('detail')}</button>
-      <div class="hist-detail hide" id="hd-${r.roundId}"></div></div>`;
+      <button class="btn-mini" data-detail="${r.roundId}">${open ? t('close') : t('detail')}</button>
+      <div class="hist-detail ${open ? '' : 'hide'}" id="hd-${r.roundId}"></div></div>`;
   }).join('') || '<p class="muted">—</p>';
   list.querySelectorAll('[data-detail]').forEach((b) => b.onclick = async () => {
     const id = b.dataset.detail, box = $('hd-' + id);
-    if (!box.classList.contains('hide')) { box.classList.add('hide'); b.textContent = t('detail'); return; }
-    const d = await api('/round/' + id);
-    box.innerHTML = (d.bets || []).map((x) => `<div class="bet-line"><span class="tag ${x.side}">${x.side === 'red' ? t('winRed') : t('winGreen')}</span> ${x.uid} · ${t('stake')} ${fmt(Number(x.amount) / 1e6)} · ${t('pickNum')} ${x.pick}</div>`).join('');
-    box.classList.remove('hide'); b.textContent = t('close');
+    if (expandedRounds.has(id)) { expandedRounds.delete(id); renderHistory(); return; }
+    expandedRounds.add(id);
+    b.textContent = t('close'); box.classList.remove('hide');
+    await fillHistDetail(id, box);
   });
+  // 重绘后恢复已展开对局的明细内容
+  for (const id of expandedRounds) { const box = $('hd-' + id); if (box) fillHistDetail(id, box); }
 }
 
 // ---------------- 保险池公示 + 释放倒计时 ----------------
@@ -371,6 +382,17 @@ function renderPoolPublic() {
   updatePoolCountdown();
 }
 
+// 邀请返佣档位表（醒目分行，当前档位高亮）
+function renderInvTiers(curPerMille) {
+  const box = $('invTiers'); if (!box) return;
+  const unit = t('invPeopleUnit');
+  const tiers = [[1, '1'], [2, '5'], [3, '10'], [4, '20'], [5, '50+']]; // [perMille, 人数档]
+  const rows = tiers.map(([pm, label]) =>
+    `<div class="it-row ${Number(curPerMille) === pm ? 'active' : ''}"><span>${label}${unit}</span><b>${(pm / 10).toFixed(1)}%</b></div>`).join('');
+  box.innerHTML = `<div class="inv-tip">${t('invTierTip')}</div>
+    <div class="it-grid"><div class="it-head"><span>${t('invColPeople')}</span><span>${t('invColRate')}</span></div>${rows}</div>`;
+}
+
 // ---------------- 我的 ----------------
 function renderMe() {
   const me = state.me; if (!me) return;
@@ -380,9 +402,12 @@ function renderMe() {
   $('lossAccum').textContent = fmt(a.lossAccum) + ' 枚';
   $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
   $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
+  const invRate = (me.invite.perMille / 10).toFixed(1) + '%';
   $('invCount').textContent = me.invite.nodeInviteeCount;
-  $('invRate').textContent = (me.invite.perMille / 10).toFixed(1) + '%';
+  $('invRate').textContent = invRate;
   $('invTotal').textContent = fmt(me.invite.rewardTotal) + ' 枚';
+  const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = `${t('meInvite')}（${invRate}）`;
+  renderInvTiers(me.invite.perMille);
   $('nodeList').innerHTML = me.nodes.length ? me.nodes.map((n) => {
     const pct = Math.round((n.periodN / 100) * 100);
     return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
@@ -621,6 +646,6 @@ function init() {
     }).catch(() => { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); });
   }
 }
-const FE_BUILD = '20260830-9';
-{ const el = document.getElementById('feBuild'); if (el) el.textContent = FE_BUILD; }
+const FE_BUILD = '2.0.9';
+{ const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

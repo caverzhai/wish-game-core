@@ -49,8 +49,8 @@ body { display: flex; justify-content: center; }
 .countdown.urgent { color: var(--red); animation: pulse 1s infinite; }
 @keyframes pulse { 50% { opacity: .55; } }
 .cd-label { font-size: 12px; color: var(--muted); }
-.bet-count { margin-top: 8px; font-size: 13px; color: var(--muted); }
-.bet-count b { color: var(--txt); }
+.bet-count { margin: 12px auto 0; display: inline-flex; align-items: baseline; gap: 8px; background: var(--card2); border: 1px solid var(--gold); border-radius: 999px; padding: 6px 18px; font-size: 13px; color: var(--muted); letter-spacing: 1px; }
+.bet-count b { color: var(--gold); font-size: 26px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 
 .pools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
 .pool { display: flex; flex-direction: column; gap: 4px; padding: 16px 8px; border-radius: var(--radius); cursor: pointer; border: 2px solid var(--line); background: var(--card); color: var(--txt); }
@@ -89,6 +89,16 @@ textarea { resize: vertical; }
 .mini-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
 .mini-card span { font-size: 11px; color: var(--muted); }
 .mini-card b { font-size: 15px; }
+/* 邀请返佣档位表 */
+.inv-tiers { margin: 6px 0 4px; }
+.inv-tip { font-size: 12px; color: var(--muted); line-height: 1.55; margin-bottom: 8px; }
+.it-grid { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.it-head, .it-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; }
+.it-head { background: var(--card2); font-size: 12px; color: var(--muted); letter-spacing: 1px; }
+.it-row { border-top: 1px solid var(--line); font-size: 15px; }
+.it-row b { font-size: 17px; font-weight: 800; color: var(--txt); font-variant-numeric: tabular-nums; }
+.it-row.active { background: linear-gradient(90deg, rgba(212,175,55,.20), rgba(212,175,55,.04)); box-shadow: inset 3px 0 0 var(--gold); }
+.it-row.active b { color: var(--gold); font-size: 21px; }
 .row { display: flex; gap: 8px; margin: 10px 0; }
 .row input { flex: 1; }
 .ins-status { display: flex; align-items: center; gap: 10px; font-size: 14px; }

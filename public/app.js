@@ -35,7 +35,8 @@ const I18N = {
     stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red', winGreen: 'Green',
     nodeProgress: 'Progress', nodePeriod: 'Periods', pickNum: 'Pick', stake: 'Amount', detail: 'Detail', close: 'Close',
     needPick: 'Please pick a number 0-9 first', needAmount: 'Enter an integer 1-99 (枚)', copyOk: 'Copied', noWallet: 'No wallet extension detected',
-    walletShort: 'Wallet balance short by', noWalletGap: 'Balance not enough and no wallet detected', offchainShort: 'Balance not enough, claim test 枚 first (short',
+    walletShort: 'Wallet balance short by', noWalletGap: 'No wallet detected. Open this site inside the TokenPocket DApp browser, or install & unlock a wallet extension.', offchainShort: 'Balance not enough (short',
+    chainNotConfigured: 'This site has no on-chain token configured, so wallet payment is unavailable. Please use the deployed online site.', wrongChain: 'Please switch the wallet network to BNB Smart Chain (chainId 56).',
     reply: 'Reply', sendReply: 'Send', replyPh: 'Write a reply (max 100 chars)', replies: 'replies', confirmDelPost: 'Delete this post and its replies?',
     flow_BET_FROZEN: 'Wish placed', flow_WIN_CREDIT: 'Win credited', flow_INS_WIN_CUT: 'Insured 10% to pool', flow_CANCEL_REFUND: 'Void refund',
     flow_REFERRAL: 'Referral reward', flow_PREMIUM_IN: 'Premium deposit', flow_NODE_PREMIUM_OUT: 'Node premium', flow_NODE_PAYOUT: 'Node payout', flow_NODE_FORFEIT: 'Lapsed to pool',
@@ -66,7 +67,8 @@ const I18N = {
     stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅勝', winGreen: '綠勝',
     nodeProgress: '進度', nodePeriod: '已釋放期數', pickNum: '選號', stake: '投入', detail: '明細', close: '收起',
     needPick: '請先選擇 0-9 的數字', needAmount: '請輸入 1-99 的正整數（枚）', copyOk: '已複製', noWallet: '未檢測到錢包插件',
-    walletShort: '錢包餘額不足，還差', noWalletGap: '站內餘額不足，且未檢測到錢包', offchainShort: '站內餘額不足，請先測試領幣（差',
+    walletShort: '錢包餘額不足，還差', noWalletGap: '未檢測到錢包：請在 TokenPocket 錢包的 DApp 瀏覽器內打開本站，或在瀏覽器安裝並解鎖錢包外掛', offchainShort: '站內餘額不足（差',
+    chainNotConfigured: '本站未配置鏈上代幣，無法從錢包扣款，請使用已部署的線上站點', wrongChain: '請把錢包網路切換到 BNB Smart Chain（chainId 56）',
     reply: '回覆', sendReply: '送出', replyPh: '寫下回覆（最多100字）', replies: '則回覆', confirmDelPost: '確定刪除該帖及其全部回覆？',
     flow_BET_FROZEN: '許願投入', flow_WIN_CREDIT: '中獎到帳', flow_INS_WIN_CUT: '保險贏家扣10%', flow_CANCEL_REFUND: '對局退款',
     flow_REFERRAL: '邀請返傭', flow_PREMIUM_IN: '存入保費', flow_NODE_PREMIUM_OUT: '節點扣保費', flow_NODE_PAYOUT: '節點賠付', flow_NODE_FORFEIT: '斷保當期充公',
@@ -97,7 +99,8 @@ const I18N = {
     stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤勝ち', winGreen: '緑勝ち',
     nodeProgress: '進捗', nodePeriod: '解放済期', pickNum: '数字', stake: '投入', detail: '詳細', close: '閉じる',
     needPick: '先に0-9の数字を選んでください', needAmount: '1-99の整数（枚）を入力', copyOk: 'コピーしました', noWallet: 'ウォレット拡張が未検出',
-    walletShort: 'ウォレット残高不足（あと', noWalletGap: '残高不足でウォレットも未検出', offchainShort: '残高不足。テスト受取してください（不足',
+    walletShort: 'ウォレット残高不足（あと', noWalletGap: 'ウォレット未検出。TokenPocket のDAppブラウザで開くか、ウォレット拡張をインストール・解除してください', offchainShort: '残高不足（不足',
+    chainNotConfigured: 'このサイトにはオンチェーン銘柄が未設定で、ウォレット支払いできません。デプロイ済みサイトをご利用ください', wrongChain: 'ウォレットのネットワークを BNB Smart Chain（chainId 56）に切り替えてください',
     reply: '返信', sendReply: '送信', replyPh: '返信を書く（最大100文字）', replies: '件', confirmDelPost: 'この投稿と返信を削除しますか？',
     flow_BET_FROZEN: '願い投入', flow_WIN_CREDIT: '当選入金', flow_INS_WIN_CUT: '保険勝者10%', flow_CANCEL_REFUND: '不成立返金',
     flow_REFERRAL: '招待報酬', flow_PREMIUM_IN: '保険料投入', flow_NODE_PREMIUM_OUT: 'ノード保険料', flow_NODE_PAYOUT: 'ノード返還', flow_NODE_FORFEIT: '失効分を保険池へ',
@@ -141,7 +144,7 @@ async function connectWallet() {
   try {
     if (!window.ethereum) { $('loginErr').textContent = t('noWallet'); return; }
     const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    if (!accs || !accs[0]) return;
+    if (!accs || !accs.length) return;
     window.ethereum.on?.('accountsChanged', (a) => { if (a[0]) { localStorage.clear(); location.reload(); } });
     await doLogin(accs[0]);
   } catch (e) { $('loginErr').textContent = e.message || String(e); }
@@ -220,6 +223,24 @@ async function walletTokenWei() {
   const hex = await window.ethereum.request({ method: 'eth_call', params: [{ to: cfg.tokenContract, data }, 'latest'] });
   return BigInt(hex || '0x0');
 }
+// 发起钱包扣款前的统一就绪检查：站点已配链、检测到钱包、已授权账户、网络切到目标链(BSC=56)
+async function ensureWalletReady() {
+  if (!(state.chainCfg && state.chainCfg.enabled)) throw new Error(t('chainNotConfigured'));
+  const eth = window.ethereum;
+  if (!eth) throw new Error(t('noWalletGap'));
+  let accs;
+  try { accs = await eth.request({ method: 'eth_requestAccounts' }); }
+  catch (e) { throw new Error(e.message || String(e)); }
+  if (!accs || !accs.length) throw new Error(t('noWalletGap'));
+  const want = '0x' + Number(state.chainCfg.chainId).toString(16);
+  let cur = '';
+  try { cur = (await eth.request({ method: 'eth_chainId' }) || '').toLowerCase(); } catch { /* 取不到则跳过，交给发送时校验 */ }
+  if (cur && cur !== want) {
+    try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: want }] }); }
+    catch (e) { throw new Error(t('wrongChain') + ' chainId=' + state.chainCfg.chainId); }
+  }
+  return eth;
+}
 async function submitWish() {
   const amount = Number($('amountInput').value);
   $('playMsg').className = 'msg'; $('playMsg').textContent = '';
@@ -237,8 +258,7 @@ async function submitWish() {
       await api('/bet', { uid, side, amount, pick });
       $('amountInput').value = ''; await refresh(); return;
     }
-    if (!(state.chainCfg && state.chainCfg.enabled)) { $('playMsg').textContent = `${t('offchainShort')} ${fmt(chainInner / S6)} 枚)`; return; }
-    if (!window.ethereum) { $('playMsg').textContent = t('noWalletGap'); return; }
+    await ensureWalletReady();
     const dec = state.chainCfg.decimals, diff = dec - 6;
     if (diff < 0) { $('playMsg').textContent = 'Token decimals < 6, unsupported'; return; }
     const needWei = BigInt(chainInner) * (10n ** BigInt(diff)); // 站内6位 → 链上最小单位
@@ -442,8 +462,7 @@ async function depositPremium() {
       await api('/insurance/deposit', { uid: state.uid, amount });
       $('premiumInput').value = ''; await refresh(); return;
     }
-    if (!(state.chainCfg && state.chainCfg.enabled)) { msg.textContent = `${t('offchainShort')} ${fmt(chainInner / S6)} 枚)`; return; }
-    if (!window.ethereum) { msg.textContent = t('noWalletGap'); return; }
+    await ensureWalletReady();
     const dec = state.chainCfg.decimals, diff = dec - 6;
     if (diff < 0) { msg.textContent = 'Token decimals < 6, unsupported'; return; }
     const needWei = BigInt(chainInner) * (10n ** BigInt(diff));
@@ -566,7 +585,15 @@ function init() {
   $('bbsSend').onclick = postBbs;
   $('bbsInput').oninput = () => { $('bbsChar').textContent = codeLen($('bbsInput').value) + '/100'; };
   selectSide('red');
-  const uid = localStorage.getItem('uid'), wallet = localStorage.getItem('wallet');
-  if (uid && wallet) { state.uid = uid; state.wallet = wallet; api('/chain/config').then((c) => { state.chainCfg = c; enterMain(); }); }
+  // 自动登录：以钱包为准走 /login（后端无此账号会自动重新注册）——清空数据后旧 uid 失效也能自愈
+  const savedWallet = localStorage.getItem('wallet');
+  if (savedWallet) {
+    api('/login', { wallet: savedWallet }).then(async (u) => {
+      state.uid = u.uid; state.wallet = u.wallet; state.isAdmin = !!u.isAdmin;
+      localStorage.setItem('uid', u.uid); localStorage.setItem('wallet', u.wallet);
+      state.chainCfg = await api('/chain/config');
+      enterMain();
+    }).catch(() => { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); });
+  }
 }
 init();

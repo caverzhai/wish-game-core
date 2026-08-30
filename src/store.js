@@ -133,6 +133,8 @@ export class MemoryStore {
   async updateWithdraw(id, patch) { Object.assign(this.withdraws.find((x) => x.withdrawId === id), patch); }
   /** 自动代付模式下「未广播成功」的遗留在途单（无交易哈希），用于自愈退回 */
   async listStalePending(uid, staleMs = 120000) { const now = Date.now(); return this.withdraws.filter((w) => w.uid === uid && w.state === 'pending' && !w.txhash && (!w.at || now - w.at > staleMs)).map((w) => ({ ...w })); }
+  // 已广播（有哈希）但状态仍 pending 的单：钱已打出，用于对账补确认
+  async listBroadcastedPending(uid) { return this.withdraws.filter((w) => w.uid === uid && w.state === 'pending' && !!w.txhash).map((w) => ({ ...w })); }
 
   // -------- BBS 帖子 / 回复 --------
   async addPost(p) { this.posts.push({ ...p }); }

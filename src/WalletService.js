@@ -83,6 +83,16 @@ export class WalletService {
     return out;
   }
 
+  /** 对账：把「已广播(有哈希)但仍 pending」的单补确认为 paid（钱已打出，回执延迟不应一直挂在途） */
+  async reconcileBroadcasted(uid) {
+    const out = [];
+    for (const wd of await this.store.listBroadcastedPending(uid)) {
+      try { out.push(await this.confirmWithdraw(wd.withdrawId, wd.txhash)); }
+      catch { /* 单笔异常不阻断 */ }
+    }
+    return out;
+  }
+
   async failWithdraw(withdrawId) {
     const s = this.store;
     return await s.transaction(async () => {

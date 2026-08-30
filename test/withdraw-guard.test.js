@@ -83,3 +83,17 @@ test('failWithdraw 遇到 paid/任意终态都不再抛错（提现流程不被�
   const a = await app.store.getAccount(U);
   assert.equal(a.available, coin(6), '提走4后不再变动');
 });
+
+test('reconcileBroadcasted：有哈希却挂 pending 的已广播单补确认为 paid（钱已到不再显示在途）', async () => {
+  const app = await mk();
+  const U = (await app.game.register('0xw6')).uid;
+  await app.wallet.issueInner(U, coin(10), 'INIT');
+  const wd = await app.wallet.withdraw(U, 3);
+  await app.store.updateWithdraw(wd.withdrawId, { txhash: '0xbroadcast' }); // 已广播留痕、但回执延迟没 confirm
+  await app.wallet.reconcileBroadcasted(U);
+  const cur = await app.store.findWithdraw(wd.withdrawId);
+  assert.equal(cur.state, 'paid', '补确认为 paid');
+  const led = await app.store.getLedger();
+  assert.equal(led.withdrawn, wd.arrive, '在途转为已打出');
+  assert.equal(await app.store.totalInside(), await app.store.totalSource());
+});

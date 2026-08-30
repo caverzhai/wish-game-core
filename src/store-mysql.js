@@ -271,6 +271,11 @@ export class MysqlStore {
     return (await this.exec("SELECT * FROM withdraws WHERE uid=? AND state='pending' AND txhash IS NULL AND (created_at = 0 OR created_at < ?)", [uid, Date.now() - (staleMs ?? 120000)]))
       .map((r) => ({ withdrawId: r.withdraw_id, uid: r.uid, amount: B(r.amount), fee: B(r.fee), arrive: B(r.arrive), toWallet: r.to_wallet, state: r.state, txhash: r.txhash }));
   }
+  // 已广播（有哈希）但仍 pending：钱已打出，用于对账补确认
+  async listBroadcastedPending(uid) {
+    return (await this.exec("SELECT * FROM withdraws WHERE uid=? AND state='pending' AND txhash IS NOT NULL", [uid]))
+      .map((r) => ({ withdrawId: r.withdraw_id, uid: r.uid, amount: B(r.amount), fee: B(r.fee), arrive: B(r.arrive), toWallet: r.to_wallet, state: r.state, txhash: r.txhash }));
+  }
 
   // -------- BBS 帖子 / 回复（联表带出发送者钱包）--------
   async addPost(p) { await this.exec('INSERT INTO posts(post_id,uid,content,at) VALUES(?,?,?,?)', [p.postId, p.uid, p.content, p.at]); }

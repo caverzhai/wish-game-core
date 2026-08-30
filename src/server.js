@@ -13,7 +13,7 @@ import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
 
-const BUILD = '20260830-6'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '20260830-7'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -172,10 +172,13 @@ route('POST', '/admin/reset', async (b) => {
 // —— 链配置（公开，不含私钥）——
 route('GET', '/chain/config', () => chain.publicConfig());
 // —— 提现：配置了代付私钥则自动链上打款，否则生成待处理单 ——
-route('POST', '/withdraw/reap', (b) => wallet.reapUnbroadcast(b.uid));
+route('POST', '/withdraw/reap', async (b) => { await wallet.reconcileBroadcasted(b.uid).catch(() => {}); return await wallet.reapUnbroadcast(b.uid); });
 route('POST', '/withdraw', async (b) => {
   await assertNotBanned(b.uid);
-  if (chain.canPayout) { try { await wallet.reapUnbroadcast(b.uid); } catch { /* 自愈回收绝不阻断本次提现 */ } } // 先把上笔未广播成功的在途单退回，避免钱卡住
+  if (chain.canPayout) {
+    try { await wallet.reconcileBroadcasted(b.uid); } catch { /* 已广播单对账补确认，不阻断 */ }
+    try { await wallet.reapUnbroadcast(b.uid); } catch { /* 未广播遗留单回收，绝不阻断本次提现 */ }
+  }
   const wd = await wallet.withdraw(b.uid, Number(b.amount));
   if (chain.canPayout) {
     try {

@@ -128,7 +128,7 @@ function applyI18n() {
 async function api(url, body) {
   const opt = body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {};
   const r = await fetch(url, opt); const j = await r.json();
-  if (!r.ok) throw new Error(j.message || j.error || 'error');
+  if (!r.ok) { const err = new Error(j.message || j.error || 'error'); err.code = j.code; throw err; }
   return j;
 }
 
@@ -275,31 +275,34 @@ async function submitWish() {
   if (!Number.isInteger(amount) || amount < 1 || amount > 99) { $('playMsg').textContent = t('needAmount'); return; }
   const side = state.side, pick = state.pick, uid = state.uid, btn = $('betBtn');
   const S6 = 1_000_000;
-  const availInner = state.me ? Math.round(Number(state.me.account.available) * S6) : 0; // 站内可用（最小单位，round 消除浮点）
-  const totalInner = amount * S6;
-  const useInner = Math.min(availInner, totalInner); // 站内动用：用尽全部可用余额（含小数零头）
-  const chainInner = totalInner - useInner;          // 链上补齐的精确差额（最小单位）
   try {
     btn.disabled = true;
-    if (chainInner <= 0) {
+    // 第一优先：纯站内下注，由后端实时余额判定——够就直接成功，绝不碰外部钱包（避免前端快照过期误扣）
+    try {
       await api('/bet', { uid, side, amount, pick });
       $('amountInput').value = ''; await refresh(); return;
+    } catch (e) {
+      if (e.code !== 'INSUFFICIENT_BALANCE') { $('playMsg').textContent = e.message || String(e); return; }
     }
+    // 后端确认余额不足：拉最新账户，精确计算链上补差
+    const fresh = await api('/user/' + uid);
+    const availInner = Math.round(Number(fresh.account.available) * S6);
+    const totalInner = amount * S6;
+    const chainInner = totalInner - Math.min(availInner, totalInner); // 只补真实差额
     await ensureWalletReady();
     const dec = state.chainCfg.decimals, diff = dec - 6;
     if (diff < 0) { $('playMsg').textContent = 'Token decimals < 6, unsupported'; return; }
-    const needWei = BigInt(chainInner) * (10n ** BigInt(diff)); // 站内6位 → 链上最小单位
+    const needWei = BigInt(chainInner) * (10n ** BigInt(diff));
     const wbal = await walletTokenWei();
     if (wbal < needWei) {
-      const shortInner = Number(needWei - wbal) / (10 ** diff); // 链上最小单位 → 站内6位
-      $('playMsg').textContent = `${t('walletShort')} ${fmt(shortInner / S6)} 枚`; return;
+      const shortInner = Number(needWei - wbal) / (10 ** diff);
+      $('playMsg').textContent = t('walletShort') + ' ' + fmt(shortInner / S6) + ' 枚'; return;
     }
     const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
     let txHash;
     try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
     catch (e) { $('playMsg').textContent = e.message || String(e); return; }
     $('playMsg').textContent = t('chainPending');
-    // 链上已广播就先登记待核验：哪怕随后下注接口没成功，也能凭此把钱补入余额，绝不丢
     addPending({ txHash, ts: Date.now(), totalAmount: amount, side, pick, chainInner });
     let lastErr = '';
     for (let i = 0; i < 15; i++) {
@@ -310,14 +313,13 @@ async function submitWish() {
         $('playMsg').textContent = '✓'; $('amountInput').value = ''; return refresh();
       } catch (e) {
         lastErr = e.message || String(e);
-        if (!CHAIN_RETRY.test(lastErr)) break; // 确定性硬错误不再空转，交给下面的补录兜底
+        if (!CHAIN_RETRY.test(lastErr)) break;
       }
     }
-    // 下注未成功：立刻尝试凭交易哈希把链上实收补入余额（钱不丢）
     await creditPending();
     const stillPending = loadPending().some((x) => x.txHash === txHash);
     $('playMsg').textContent = stillPending
-      ? `${lastErr ? lastErr + ' · ' : ''}${t('chainWillCredit')} (${shortAddr(txHash)})`
+      ? (lastErr ? lastErr + ' · ' : '') + t('chainWillCredit') + ' (' + shortAddr(txHash) + ')'
       : t('chainCreditedRedo');
   } catch (e) { $('playMsg').textContent = e.message; }
   finally { btn.disabled = false; }
@@ -474,27 +476,30 @@ async function postBbs() {
 // ---------------- 动作 ----------------
 async function switchIns() { const me = state.me; await api('/insurance/switch', { uid: state.uid, on: !me.user.insSwitch }); refresh(); }
 
-// 保费存入：与许愿相同的混合支付——站内余额优先并精确用尽，不足由外部钱包补齐
+// 保费存入：先纯站内（后端实时余额判定），仅当后端明确余额不足才用外部钱包补差
 async function depositPremium() {
   const amount = Number($('premiumInput').value);
   const msg = $('premiumMsg'); msg.className = 'msg'; msg.textContent = '';
   if (!Number.isInteger(amount) || amount <= 0) { msg.textContent = t('premiumNeed'); return; }
   const btn = $('premiumBtn'), S6 = 1_000_000;
-  const availInner = state.me ? Math.round(Number(state.me.account.available) * S6) : 0;
-  const totalInner = amount * S6;
-  const chainInner = totalInner - Math.min(availInner, totalInner);
   try {
     btn.disabled = true;
-    if (chainInner <= 0) {
+    try {
       await api('/insurance/deposit', { uid: state.uid, amount });
       $('premiumInput').value = ''; await refresh(); return;
+    } catch (e) {
+      if (e.code !== 'INSUFFICIENT_BALANCE') { msg.textContent = e.message || String(e); return; }
     }
+    const fresh = await api('/user/' + state.uid);
+    const availInner = Math.round(Number(fresh.account.available) * S6);
+    const totalInner = amount * S6;
+    const chainInner = totalInner - Math.min(availInner, totalInner);
     await ensureWalletReady();
     const dec = state.chainCfg.decimals, diff = dec - 6;
     if (diff < 0) { msg.textContent = 'Token decimals < 6, unsupported'; return; }
     const needWei = BigInt(chainInner) * (10n ** BigInt(diff));
     const wbal = await walletTokenWei();
-    if (wbal < needWei) { const s = Number(needWei - wbal) / (10 ** diff); msg.textContent = `${t('walletShort')} ${fmt(s / S6)} 枚`; return; }
+    if (wbal < needWei) { const s = Number(needWei - wbal) / (10 ** diff); msg.textContent = t('walletShort') + ' ' + fmt(s / S6) + ' 枚'; return; }
     const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
     let txHash;
     try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
@@ -511,7 +516,7 @@ async function depositPremium() {
     }
     await creditPending();
     const still = loadPending().some((x) => x.txHash === txHash);
-    msg.textContent = still ? `${lastErr ? lastErr + ' · ' : ''}${t('chainWillCredit')} (${shortAddr(txHash)})` : t('chainCreditedRedo');
+    msg.textContent = still ? (lastErr ? lastErr + ' · ' : '') + t('chainWillCredit') + ' (' + shortAddr(txHash) + ')' : t('chainCreditedRedo');
   } catch (e) { msg.textContent = e.message; }
   finally { btn.disabled = false; }
 }

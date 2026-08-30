@@ -188,7 +188,9 @@ route('POST', '/withdraw', async (b) => {
         return { ...wd, paid: false, broadcast: true, txHash: e.txHash, payoutError: e.message };
       }
       // 广播前就失败（RPC 不通 / gas 不足 / 代币不足）：钱没出，自动退回冻结余额，用户可稍后重试
-      const refunded = await wallet.failWithdraw(wd.withdrawId);
+      let refunded = wd;
+      try { refunded = await wallet.failWithdraw(wd.withdrawId); }
+      catch (re) { /* 已打款/已退款等：幂等冲突时不再抛二次错误，以链上与原单状态为准 */ }
       return { ...refunded, paid: false, payoutError: e.message };
     }
   }

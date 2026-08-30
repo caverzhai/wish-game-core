@@ -5,6 +5,9 @@
 import { GameError, Codes } from './errors.js';
 import { coin } from './money.js';
 
+// A pending withdraw without txhash is treated stale ONLY after this many ms (> payout worst case 15s+25s)
+export const STALE_WITHDRAW_MS = 120000;
+
 export class WalletService {
   constructor(store, cfg) { this.store = store; this.cfg = cfg; }
 
@@ -47,7 +50,7 @@ export class WalletService {
       await s.applyLedger({ plat: fee, pending: arrive });
       const wd = {
         withdrawId: await s.nextId('withdraw', 'W'), uid, amount, fee, arrive,
-        toWallet: toWallet ?? u.wallet, state: 'pending', txhash: null,
+        toWallet: toWallet ?? u.wallet, state: 'pending', txhash: null, at: Date.now(),
       };
       await s.insertWithdraw(wd);
       await s.addFlow(uid, 'WITHDRAW_FEE', fee, { withdrawId: wd.withdrawId });
@@ -61,6 +64,7 @@ export class WalletService {
     return await s.transaction(async () => {
       const wd = await s.findWithdraw(withdrawId);
       if (!wd) throw new GameError(Codes.NOT_FOUND, '提现单不存在');
+      if (wd.state === 'paid') return wd; // 已确认，幂等
       if (wd.state !== 'pending') throw new GameError(Codes.BAD_INPUT, '提现单状态不允许确认');
       await s.applyLedger({ pending: -wd.arrive, withdrawn: wd.arrive });
       await s.updateWithdraw(withdrawId, { state: 'paid', txhash: txhash ?? null });
@@ -71,7 +75,7 @@ export class WalletService {
 
   /** 自愈：把本用户「未广播成功（无哈希）」的遗留在途单全部退回可用余额 */
   async reapUnbroadcast(uid) {
-    const stale = await this.store.listStalePending(uid);
+    const stale = await this.store.listStalePending(uid, STALE_WITHDRAW_MS);
     const out = [];
     for (const wd of stale) out.push(await this.failWithdraw(wd.withdrawId));
     return out;
@@ -82,6 +86,8 @@ export class WalletService {
     return await s.transaction(async () => {
       const wd = await s.findWithdraw(withdrawId);
       if (!wd) throw new GameError(Codes.NOT_FOUND, '提现单不存在');
+      if (wd.state === 'failed') return wd; // 已退款，幂等，不重复入账
+      if (wd.state === 'paid') throw new GameError(Codes.BAD_INPUT, '该提现已打款成功，不能回退');
       if (wd.state !== 'pending') throw new GameError(Codes.BAD_INPUT, '提现单状态不允许失败回退');
       await s.applyLedger({ pending: -wd.arrive, plat: -wd.fee });
       await s.applyAccount(wd.uid, { avail: wd.amount });

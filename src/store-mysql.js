@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS flows (
 );
 CREATE TABLE IF NOT EXISTS withdraws (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, withdraw_id VARCHAR(16) UNIQUE, uid VARCHAR(16), amount BIGINT,
-  fee BIGINT, arrive BIGINT, to_wallet VARCHAR(128), state VARCHAR(16), txhash VARCHAR(128) NULL
+  fee BIGINT, arrive BIGINT, to_wallet VARCHAR(128), state VARCHAR(16), txhash VARCHAR(128) NULL, created_at BIGINT DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS posts (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, post_id VARCHAR(16) UNIQUE, uid VARCHAR(16),
@@ -106,7 +106,7 @@ export class MysqlStore {
       await this.pool.query(stmt);
     }
     // 老库幂等迁移：补齐后加的列（列已存在时数据库报错，忽略即可）
-    for (const alter of ['ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0']) {
+    for (const alter of ['ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0', 'ALTER TABLE withdraws ADD COLUMN created_at BIGINT DEFAULT 0']) {
       try { await this.pool.query(alter); } catch { /* 列已存在 */ }
     }
   }
@@ -259,7 +259,7 @@ export class MysqlStore {
   async listFlows(uid, limit = 100) {
     return (await this.exec('SELECT * FROM flows WHERE uid=? ORDER BY id DESC LIMIT ?', [uid, limit])).map((r) => ({ id: r.flow_id, uid: r.uid, bizType: r.biz_type, amount: B(r.amount), ref: r.ref_json ? JSON.parse(r.ref_json) : {}, at: Number(r.at) }));
   }
-  async insertWithdraw(w) { await this.exec('INSERT INTO withdraws(withdraw_id,uid,amount,fee,arrive,to_wallet,state,txhash) VALUES(?,?,?,?,?,?,?,?)', [w.withdrawId, w.uid, w.amount, w.fee, w.arrive, w.toWallet, w.state, w.txhash]); }
+  async insertWithdraw(w) { await this.exec('INSERT INTO withdraws(withdraw_id,uid,amount,fee,arrive,to_wallet,state,txhash,created_at) VALUES(?,?,?,?,?,?,?,?,?)', [w.withdrawId, w.uid, w.amount, w.fee, w.arrive, w.toWallet, w.state, w.txhash, w.at || Date.now()]); }
   async findWithdraw(id) { const r = await this.exec('SELECT * FROM withdraws WHERE withdraw_id=? LIMIT 1', [id]); return r[0] && { withdrawId: r.withdraw_id, uid: r.uid, amount: B(r.amount), fee: B(r.fee), arrive: B(r.arrive), toWallet: r.to_wallet, state: r.state, txhash: r.txhash }; }
   async updateWithdraw(id, p = {}) {
     const sets = [], vals = [];
@@ -267,8 +267,8 @@ export class MysqlStore {
     if ('txhash' in p) { sets.push('txhash=?'); vals.push(p.txhash); }
     if (sets.length) { vals.push(id); await this.exec(`UPDATE withdraws SET ${sets.join(',')} WHERE withdraw_id=?`, vals); }
   }
-  async listStalePending(uid) {
-    return (await this.exec("SELECT * FROM withdraws WHERE uid=? AND state='pending' AND txhash IS NULL", [uid]))
+  async listStalePending(uid, staleMs = 120000) {
+    return (await this.exec("SELECT * FROM withdraws WHERE uid=? AND state='pending' AND txhash IS NULL AND (created_at = 0 OR created_at < ?)", [uid, Date.now() - (staleMs ?? 120000)]))
       .map((r) => ({ withdrawId: r.withdraw_id, uid: r.uid, amount: B(r.amount), fee: B(r.fee), arrive: B(r.arrive), toWallet: r.to_wallet, state: r.state, txhash: r.txhash }));
   }
 

@@ -1,11 +1,11 @@
 // =============================================================
-// SocialService.js —— BBS 广场：发帖 / 回复（均 ≤100 字纯文字）
+// SocialService.js —— BBS 广场：发帖 / 回复（纯文字，单条 ≤1024 字节，按 UTF-8 计）
 // 排序：每个主题按「最新发帖时间」与「最新回复时间」取较大者，越新越靠前
 // 治理：被封禁账号禁止发言；内容命中屏蔽词（归一化后）拒绝
 // =============================================================
 import { GameError, Codes } from './errors.js';
 
-export const POST_MAX_CHARS = 100;
+export const POST_MAX_BYTES = 1024; // 单条内容上限：1024 字节（UTF-8，中文每字 3 字节）
 /** 归一化：小写 + 去空白/标点/符号，防止用空格、符号插入绕开屏蔽词 */
 const norm = (s) => String(s ?? '').toLowerCase().normalize('NFKD').replace(/[\s\p{P}\p{S}]/gu, '');
 
@@ -20,9 +20,9 @@ export class SocialService {
 
   async _check(text) {
     const content = String(text ?? '').trim();
-    const len = [...content].length;
-    if (len < 1) throw new GameError(Codes.BAD_INPUT, '内容不能为空');
-    if (len > POST_MAX_CHARS) throw new GameError(Codes.BAD_INPUT, `最多 ${POST_MAX_CHARS} 字，当前 ${len} 字`);
+    const bytes = Buffer.byteLength(content, 'utf8');
+    if (bytes < 1) throw new GameError(Codes.BAD_INPUT, '内容不能为空');
+    if (bytes > POST_MAX_BYTES) throw new GameError(Codes.BAD_INPUT, `最多 ${POST_MAX_BYTES} 字节，当前 ${bytes} 字节`);
     const words = await this.store.listBlockedWords();
     if (words.length) {
       const n = norm(content);

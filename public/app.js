@@ -134,6 +134,34 @@ async function api(url, body) {
 
 // ---------------- 登录 ----------------
 function randomDemoAddr() { let h = ''; while (h.length < 40) h += Math.random().toString(16).slice(2); return '0x' + h.slice(0, 40); }
+// 读取钱包插件「当前激活账户」地址（eth_accounts 只读、不弹窗；无插件/未授权返回 null）
+async function activeWalletAddr() {
+  const eth = window.ethereum; if (!eth) return null;
+  try { const a = await eth.request({ method: 'eth_accounts' }); return (a && a[0]) ? a[0] : null; } catch { return null; }
+}
+// 全局只绑定一次：钱包账户/网络变化时自动跟着切换，杜绝“换了钱包还显示第一个账号”
+let walletEventsBound = false;
+function bindWalletEvents() {
+  const eth = window.ethereum; if (!eth || walletEventsBound) return;
+  walletEventsBound = true;
+  eth.on?.('accountsChanged', (accs) => {
+    const next = (accs && accs[0]) || null;
+    localStorage.removeItem('pendingTxs'); // 旧账户的在途单不属于新账户，先清掉避免误锁
+    if (next) doLogin(next).catch((e) => { const el = $('loginErr'); if (el) el.textContent = e.message || String(e); });
+    else { localStorage.clear(); location.reload(); } // 断开连接 → 回登录页
+  });
+  eth.on?.('chainChanged', () => location.reload());
+}
+// 动钱/身份操作前：把登录身份强制对齐到当前激活钱包；账户变了就用新账户重登。返回是否发生切换
+async function alignWallet() {
+  bindWalletEvents();
+  const active = await activeWalletAddr();
+  if (!active) return false; // 无钱包插件/未授权：保持现状（演示账号等）
+  if (state.wallet && active.toLowerCase() === String(state.wallet).toLowerCase()) return false;
+  localStorage.removeItem('pendingTxs');
+  await doLogin(active);
+  return true;
+}
 async function doLogin(addr) {
   const ref = new URLSearchParams(location.search).get('ref');
   const u = await api('/login', { wallet: addr, inviterUid: ref || undefined });
@@ -146,21 +174,25 @@ async function connectWallet() {
   $('loginErr').textContent = '';
   try {
     if (!window.ethereum) { $('loginErr').textContent = t('noWallet'); return; }
+    bindWalletEvents();
     const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
     if (!accs || !accs.length) return;
-    window.ethereum.on?.('accountsChanged', (a) => { if (a[0]) { localStorage.clear(); location.reload(); } });
     await doLogin(accs[0]);
   } catch (e) { $('loginErr').textContent = e.message || String(e); }
 }
 async function demoEnter() { $('loginErr').textContent = ''; try { await doLogin(randomDemoAddr()); } catch (e) { $('loginErr').textContent = e.message; } }
+let mainTimersStarted = false;
 function enterMain() {
   $('loginMask').classList.add('hide'); $('main').classList.remove('hide'); $('dock').classList.remove('hide');
   $('who').textContent = `${state.uid} · ${shortAddr(state.wallet)}`;
   $('who').classList.remove('hide'); $('logoutBtn').classList.remove('hide');
-  buildNumGrid(); renderInviteLink(); renderPending(); switchDock('home');
-  refresh(); setInterval(refresh, 1500); setInterval(tickCountdown, 1000);
-  setInterval(() => loadBbs(true), 10000);
-  creditPending(); setInterval(creditPending, 12000); // 自动补录掉单
+  buildNumGrid(); renderInviteLink(); renderPending();
+  if (!mainTimersStarted) { // 切账户重登只刷新界面，不重复叠加定时器
+    mainTimersStarted = true; switchDock('home');
+    refresh(); setInterval(refresh, 1500); setInterval(tickCountdown, 1000);
+    setInterval(() => loadBbs(true), 10000);
+    creditPending(); setInterval(creditPending, 12000); // 自动补录掉单
+  }
 }
 function logout() { localStorage.clear(); location.reload(); }
 
@@ -277,10 +309,11 @@ async function submitWish() {
   if (state.pick === null) { $('playMsg').textContent = t('needPick'); return; }
   if (!Number.isInteger(amount) || amount < 1 || amount > 99) { $('playMsg').textContent = t('needAmount'); return; }
   if (livePending().length) { $('playMsg').textContent = t('pendingLock'); return; } // 上一笔链上未确认，禁止重复许愿
-  const side = state.side, pick = state.pick, uid = state.uid, btn = $('betBtn');
+  const side = state.side, pick = state.pick, btn = $('betBtn');
   const S6 = 1_000_000;
   try {
     btn.disabled = true;
+    await alignWallet(); const uid = state.uid; // 动钱前强制对齐当前激活钱包，杜绝 A 账号下注/B 钱包出钱的串号
     // 第一优先：纯站内下注，由后端实时余额判定——够就直接成功，绝不碰外部钱包（避免前端快照过期误扣）
     try {
       await api('/bet', { uid, side, amount, pick });
@@ -509,7 +542,7 @@ async function postBbs() {
 }
 
 // ---------------- 动作 ----------------
-async function switchIns() { const me = state.me; await api('/insurance/switch', { uid: state.uid, on: !me.user.insSwitch }); refresh(); }
+async function switchIns() { await alignWallet(); const me = state.me; await api('/insurance/switch', { uid: state.uid, on: !me.user.insSwitch }); refresh(); }
 
 // 保费存入：先纯站内（后端实时余额判定），仅当后端明确余额不足才用外部钱包补差
 async function depositPremium() {
@@ -520,6 +553,7 @@ async function depositPremium() {
   const btn = $('premiumBtn'), S6 = 1_000_000;
   try {
     btn.disabled = true;
+    await alignWallet(); // 动钱前对齐当前激活钱包
     try {
       await api('/insurance/deposit', { uid: state.uid, amount });
       $('premiumInput').value = ''; await refresh(); return;
@@ -560,6 +594,7 @@ async function depositPremium() {
 // 保险关闭时，把保费提回可用余额（输入框留空=全部提回）
 async function withdrawPremium() {
   const raw = $('premiumOutInput').value.trim();
+  await alignWallet();
   const body = { uid: state.uid };
   if (raw !== '') { const n = Number(raw); if (!Number.isInteger(n) || n <= 0) { alert(t('premiumNeed')); return; } body.amount = n; }
   try { await api('/insurance/premium/withdraw', body); $('premiumOutInput').value = ''; await refresh(); }
@@ -571,6 +606,7 @@ async function withdraw() {
   if (!v) return;
   const btn = $('wdBtn'); btn.disabled = true; btn.textContent = t('withdrawing');
   try {
+    await alignWallet(); // 动钱前对齐当前激活钱包，防止提到/扣到错误账号
     const r = await api('/withdraw', { uid: state.uid, amount: v });
     if (r.paid === true) alert(`${t('wdOk')} ${fmt(r.arrive)} 枚\n${r.txHash || r.txhash || ''}`);
     else if (r.paid === false) alert(((r.broadcast ? '⚠ ' : '') + (r.payoutError || 'pending') + (r.txHash ? `\n${r.txHash}` : '')));
@@ -651,16 +687,16 @@ function init() {
   $('bbsSend').onclick = postBbs;
   $('bbsInput').oninput = () => { $('bbsChar').textContent = codeLen($('bbsInput').value) + '/100'; };
   selectSide('red');
-  const savedWallet = localStorage.getItem('wallet');
-  if (savedWallet) {
-    api('/login', { wallet: savedWallet }).then(async (u) => {
-      state.uid = u.uid; state.wallet = u.wallet; state.isAdmin = !!u.isAdmin;
-      localStorage.setItem('uid', u.uid); localStorage.setItem('wallet', u.wallet);
-      state.chainCfg = await api('/chain/config');
-      enterMain();
-    }).catch(() => { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); });
-  }
+  bindWalletEvents();
+  (async () => {
+    // 有钱包插件：以「当前激活账户」为准（切换过钱包也能直接登对账号）；无插件才回退本地缓存（演示）
+    const active = await activeWalletAddr().catch(() => null);
+    const addr = active || localStorage.getItem('wallet');
+    if (!addr) return;
+    try { await doLogin(addr); }
+    catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
+  })();
 }
-const FE_BUILD = '2.1.0';
+const FE_BUILD = '2.1.1';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

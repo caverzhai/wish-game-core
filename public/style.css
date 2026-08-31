@@ -73,8 +73,8 @@ input[type=number], input[type=text], textarea { width: 100%; background: var(--
 .ins-label { font-size: 13px; color: var(--muted); flex: 0 0 auto; }
 .ins-light { width: 64px; height: 64px; border-radius: 50%; flex: 0 0 auto; background: #8b8f96; transition: background .2s, box-shadow .2s; }
 .ins-light.on { background: #22c55e; box-shadow: 0 0 14px rgba(34,197,94,.9); }
-/* 确认键移到金额框右侧 */
-.bet-inline { flex: 0 0 auto; height: 42px; padding: 0 18px; margin: 0; font-size: 15px; border-radius: 10px; }
+/* 确认键：金额框右侧，58x58 绿色圆形 */
+.bet-inline { flex: 0 0 auto; width: 58px; height: 58px; padding: 0; margin: 0; border-radius: 50%; background: #22c55e; color: #fff; font-size: 12px; font-weight: 700; line-height: 1.15; display: flex; align-items: center; justify-content: center; text-align: center; white-space: nowrap; }
 /* 保险状态横长条：绿色=生效中，灰色=关闭中 */
 .ins-status-bar { width: 100%; padding: 14px; border-radius: 10px; text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 12px; color: #fff; box-sizing: border-box; }
 .ins-status-bar.on { background: #22c55e; }

@@ -29,7 +29,7 @@ const I18N = {
     wdOk: 'Withdrawal sent. Arrived:', wdPending: 'Submitted, pending platform processing.',
     premiumWithdraw: 'Premium → balance (insurance OFF)', premiumOutPh: 'Blank = withdraw all', premiumNeed: 'Enter a positive integer amount',
    
-    chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…',
+    chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…', pendingLock: 'Previous transaction is still confirming on-chain. Wait a few seconds — do NOT submit again; it is credited automatically.', walletChanged: 'Active wallet differs from the logged-in account. Log out and reconnect the same wallet.',
     pendingTitle: 'Pending on-chain payments', pendingVerify: 'Verify & credit now', chainWillCredit: 'Paid on-chain. It is credited automatically once confirmed; you can also tap Verify under Me.', chainCreditedRedo: 'Your on-chain payment has been credited to balance, please place the wish again.',
     manualCredit: 'Credit by hash', manualTxPh: 'Paste 0x… tx hash to credit', manualOk: 'Credited to balance', manualAlready: 'This tx was already credited', manualBadHash: 'Invalid tx hash',
     stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red', winGreen: 'Green',
@@ -62,7 +62,7 @@ const I18N = {
     wdOk: '提現已發送，到帳：', wdPending: '已提交，待平台處理。',
     premiumWithdraw: '保費提回餘額（需先關閉保險）', premiumOutPh: '留空＝全部提回', premiumNeed: '請輸入正整數金額',
    
-    chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…',
+    chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…', pendingLock: '上一筆正在鏈上確認，請稍候幾秒、切勿重複許願，確認後會自動到帳。', walletChanged: '目前錢包帳戶與登入帳號不一致，請退出後重新連接同一個錢包。',
     pendingTitle: '待核驗的鏈上支付', pendingVerify: '重新核驗並入帳', chainWillCredit: '鏈上已支付，確認後會自動補入餘額，也可到「我的」手動核驗。', chainCreditedRedo: '鏈上支付已補入餘額，請重新許願。',
     manualCredit: '貼哈希補入帳', manualTxPh: '貼上 0x… 交易哈希補錄入帳', manualOk: '已補入餘額', manualAlready: '此交易先前已入帳', manualBadHash: '交易哈希格式不正確',
     stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅勝', winGreen: '綠勝',
@@ -95,7 +95,7 @@ const I18N = {
     wdOk: '送金しました。着金：', wdPending: '送信済み。プラットフォーム処理待ち。',
     premiumWithdraw: '保険料を残高へ戻す（保険OFF時）', premiumOutPh: '空欄＝全額戻す', premiumNeed: '正の整数を入力してください',
    
-    chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…',
+    chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…', pendingLock: '直前の取引がオンチェーン承認待ちです。数秒お待ちください（重複提交はしないでください）。承認後に自動で反映されます。', walletChanged: '現在のウォレットがログイン中アカウントと異なります。ログアウトして同じウォレットを再接続してください。',
     pendingTitle: '未確認のオンチェーン支払い', pendingVerify: '再確認して入金', chainWillCredit: 'オンチェーンで支払い済み。承認後に自動入金されます。マイで手動確認も可能です。', chainCreditedRedo: 'オンチェーン支払いを残高に入金しました。もう一度願いを入力してください。',
     manualCredit: 'ハッシュで入金', manualTxPh: '0x… トランザクションハッシュを貼って入金', manualOk: '残高に入金しました', manualAlready: 'この取引は入金済みです', manualBadHash: 'トランザクションハッシュ形式が不正です',
     stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤勝ち', winGreen: '緑勝ち',
@@ -235,6 +235,9 @@ async function ensureWalletReady() {
   try { accs = await eth.request({ method: 'eth_requestAccounts' }); }
   catch (e) { throw new Error(e.message || String(e)); }
   if (!accs || !accs.length) throw new Error(t('noWalletGap'));
+  // 同一台手机切换过钱包账户时，当前授权地址必须就是登录账号，否则会用错账户转账/串号
+  const curAddr = String(accs[0] || '').toLowerCase();
+  if (state.wallet && curAddr && curAddr !== String(state.wallet).toLowerCase()) throw new Error(t('walletChanged'));
   const want = '0x' + Number(state.chainCfg.chainId).toString(16);
   let cur = '';
   try { cur = (await eth.request({ method: 'eth_chainId' }) || '').toLowerCase(); } catch { /* 取不到则跳过，交给发送时校验 */ }
@@ -273,6 +276,7 @@ async function submitWish() {
   $('playMsg').className = 'msg'; $('playMsg').textContent = '';
   if (state.pick === null) { $('playMsg').textContent = t('needPick'); return; }
   if (!Number.isInteger(amount) || amount < 1 || amount > 99) { $('playMsg').textContent = t('needAmount'); return; }
+  if (livePending().length) { $('playMsg').textContent = t('pendingLock'); return; } // 上一笔链上未确认，禁止重复许愿
   const side = state.side, pick = state.pick, uid = state.uid, btn = $('betBtn');
   const S6 = 1_000_000;
   try {
@@ -512,6 +516,7 @@ async function depositPremium() {
   const amount = Number($('premiumInput').value);
   const msg = $('premiumMsg'); msg.className = 'msg'; msg.textContent = '';
   if (!Number.isInteger(amount) || amount <= 0) { msg.textContent = t('premiumNeed'); return; }
+  if (livePending().length) { msg.textContent = t('pendingLock'); return; } // 上一笔链上未确认，禁止重复存保费
   const btn = $('premiumBtn'), S6 = 1_000_000;
   try {
     btn.disabled = true;
@@ -578,6 +583,11 @@ async function withdraw() {
 
 // —— 链上掉单补录：钱包已支付就一定能凭交易哈希入账，绝不丢钱 ——
 function loadPending() { try { return JSON.parse(localStorage.getItem('pendingTxs') || '[]'); } catch { return []; } }
+// 是否存在「10 分钟内尚未确认到账」的链上在途单：在途期间禁止再次发起下注/存保费，防止确认慢时重复提交出第二注
+function livePending() {
+  const TEN = 10 * 60 * 1000, now = Date.now();
+  return loadPending().filter((x) => now - (x.ts || 0) < TEN);
+}
 function savePending(list) { localStorage.setItem('pendingTxs', JSON.stringify(list)); renderPending(); }
 function addPending(item) { const l = loadPending(); if (!l.some((x) => x.txHash === item.txHash)) l.unshift(item); savePending(l); }
 function removePending(hash) { savePending(loadPending().filter((x) => x.txHash !== hash)); }
@@ -588,18 +598,23 @@ function renderPending() {
   $('pendingCount').textContent = list.length ? `(${list.length})` : '';
   $('pendingList').innerHTML = list.map((x) => `<div class="pending-line"><span>${shortAddr(x.txHash)}</span><small>${new Date(x.ts).toLocaleString()}</small></div>`).join('');
 }
+let crediting = false;
 async function creditPending() {
-  const list = loadPending(); if (!list.length || !state.uid) return;
-  for (const item of [...list]) {
-    try {
-      await api('/wallet/credit', { uid: state.uid, txHash: item.txHash });
-      removePending(item.txHash); await refresh();
-    } catch (e) { /* 链上尚未确认 / 节点超时：保留，下轮自动再补 */ }
-  }
+  const list = loadPending(); if (!list.length || !state.uid || crediting) return;
+  crediting = true;
+  try {
+    for (const item of [...list]) {
+      try {
+        await api('/wallet/credit', { uid: state.uid, txHash: item.txHash });
+        removePending(item.txHash); await refresh();
+      } catch (e) { /* 链上尚未确认 / 节点超时：保留，下轮自动再补 */ }
+    }
+  } finally { crediting = false; }
 }
 
 async function refresh() {
   if (!state.uid) return;
+  creditPending(); // 每轮自动补录已上链确认的在途单，确认后立即清 pending、解除在途锁
   try {
     const [r, recent, me, pool] = await Promise.all([api('/round/current'), api('/recent'), api('/user/' + state.uid), api('/insurance/pool')]);
     state.round = r; state.recent = recent; state.me = me; state.pool = pool;
@@ -646,6 +661,6 @@ function init() {
     }).catch(() => { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); });
   }
 }
-const FE_BUILD = '2.0.9';
+const FE_BUILD = '2.1.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

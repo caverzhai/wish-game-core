@@ -15,7 +15,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.2.2'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '2.2.3'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');

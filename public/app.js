@@ -438,6 +438,28 @@ function switchDock(name) {
   if (name === 'me' && state.uid) { renderPending(); creditPending(); api('/withdraw/reap', { uid: state.uid }).then(refresh).catch(() => {}); }
 }
 
+// ---------------- 左右划动切换 dock ----------------
+const DOCK_ORDER = ['home', 'bbs', 'insurance', 'me'];
+function bindSwipe() {
+  let sx = 0, sy = 0, active = false;
+  const NO_SWIPE = 'input, textarea, button, select, .room-msgs, .num-grid, .pool, .room-input-bar, .room-members, .bbs-list, .history-list';
+  document.addEventListener('pointerdown', (e) => {
+    if (e.target.closest(NO_SWIPE)) { active = false; return; }
+    active = true; sx = e.clientX; sy = e.clientY;
+  }, { passive: true });
+  document.addEventListener('pointerup', (e) => {
+    if (!active) return;
+    active = false;
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 2) return;
+    const cur = document.querySelector('.dock-item.active')?.dataset.dock || 'home';
+    const idx = DOCK_ORDER.indexOf(cur);
+    const next = dx < 0 ? (idx + 1) % DOCK_ORDER.length : (idx - 1 + DOCK_ORDER.length) % DOCK_ORDER.length;
+    switchDock(DOCK_ORDER[next]);
+  }, { passive: true });
+}
+
 // ---------------- 许愿 ----------------
 function buildNumGrid() {
   const g = $('numGrid'); g.innerHTML = '';
@@ -905,6 +927,7 @@ function init() {
   $('betBtn').onclick = submitWish;
   $('selfCheckBtn').onclick = walletSelfCheck;
   document.querySelectorAll('.dock-item').forEach((d) => d.onclick = () => switchDock(d.dataset.dock));
+  bindSwipe();
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
   $('premiumOutBtn').onclick = withdrawPremium;
   $('wdBtn').onclick = withdraw;
@@ -934,6 +957,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.0';
+const FE_BUILD = '2.3.1';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

@@ -37,12 +37,13 @@ export class VoiceRoomService {
   _newId() { this._seq++; return 'R' + Date.now().toString(36) + this._seq.toString(36); }
 
   // ---------- 创建房间 ----------
-  async createRoom(uid, type, name, rechargeInner) {
+  async createRoom(uid, type, name, rechargeInner, description) {
     const u = await this.store.getUser(uid);
     if (u.banned) throw new GameError(Codes.BANNED, '账号已被封禁，无法开房');
     const cfg = ROOM_CFG[type];
     if (!cfg) throw new GameError(Codes.BAD_INPUT, '房间类型错误');
     const title = String(name ?? '').trim().slice(0, 30) || cfg.label;
+    const desc = String(description ?? '').trim().slice(0, 200);
     const recharge = BigInt(rechargeInner ?? 0);
     if (recharge < cfg.minOpen) throw new GameError(Codes.BAD_INPUT, `开房最低充值 ${Number(cfg.minOpen) / Number(SCALE)} 枚`);
     const acc = await this.store.getAccount(uid);
@@ -54,7 +55,7 @@ export class VoiceRoomService {
       balance: recharge, perMinute: cfg.perMinute,
       createdAt: Date.now(), lastActiveAt: Date.now(), emptySince: null,
       members: new Map(), messages: [], destroyed: false,
-      guestUid: null,
+      guestUid: null, description: desc,
     };
     room.members.set(uid, { uid, name: shortName(u.wallet), role: 'host', micOn: true });
     this.rooms.set(roomId, room);
@@ -188,6 +189,14 @@ export class VoiceRoomService {
     return { dissolved: true };
   }
 
+  // ---------- 房主编辑房间说明（200字） ----------
+  editDescription(roomId, uid, description) {
+    const r = this._get(roomId);
+    if (r.hostUid !== uid) throw new GameError(Codes.FORBIDDEN, '仅房主可编辑说明');
+    r.description = String(description ?? '').trim().slice(0, 200);
+    return { description: r.description };
+  }
+
   // ---------- 每分钟扣费 / 空房销毁 ----------
   async tick() {
     const now = Date.now();
@@ -255,6 +264,7 @@ export class VoiceRoomService {
       roomId: r.roomId, type: r.type, name: r.name, hostUid: r.hostUid,
       balance: r.balance, perMinute: r.perMinute, remainSec: this._remainSec(r),
       memberCount: r.members.size, guestUid: r.guestUid, createdAt: r.createdAt, emptySince: r.emptySince,
+      description: r.description || '',
     };
   }
 }

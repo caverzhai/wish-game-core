@@ -15,7 +15,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.2.4'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '2.2.5'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -162,7 +162,11 @@ route('GET', '/voice/rooms', () => voice.listRooms());
 route('GET', /^\/voice\/room\/(.+)$/, (b, m) => voice.getRoomDetail(m[1]));
 route('POST', '/voice/create', async (b) => {
   await assertNotBanned(b.uid);
-  return voice.createRoom(b.uid, b.type, b.name, coin(Number(b.amount)));
+  return voice.createRoom(b.uid, b.type, b.name, coin(Number(b.amount)), b.description);
+});
+route('POST', '/voice/edit-description', async (b) => {
+  await assertNotBanned(b.uid);
+  return voice.editDescription(b.roomId, b.uid, b.description);
 });
 route('POST', '/voice/recharge', async (b) => {
   await assertNotBanned(b.uid);

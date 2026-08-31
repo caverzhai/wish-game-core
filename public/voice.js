@@ -14,6 +14,7 @@
       chatDesc: 'Everyone: text / voice (≤30s) / image', meetDesc: 'Host+1 guest live audio, others text/image',
       minRecharge: 'Min recharge', balanceShort: 'Balance short', roomClosedTip: 'This room has been closed.',
       share: 'Share', dissolveRoom: 'Dissolve', dissolveConfirm: 'Dissolve this room?', shareCopied: 'Share link copied!', addTime: 'Add Time', addTimeTip: 'Enter amount to extend room time',
+      host: 'Host:', roomDescPh: 'Room description (optional, 200 chars)', editDescTip: 'Edit room description (200 chars):',
     },
     'zh-TW': {
       voiceTitle: '語音房', createRoom: '開房', chatRoom: '聊天室', meetingRoom: '會議室',
@@ -24,6 +25,7 @@
       chatDesc: '所有人：文字/語音(≤30秒)/圖片', meetDesc: '主持+1嘉賓實時語音，其余打字/發圖',
       minRecharge: '最低充值', balanceShort: '餘額不足', roomClosedTip: '該房間已關閉。',
       share: '分享', dissolveRoom: '解散', dissolveConfirm: '確定解散房間？', shareCopied: '分享連結已複製！', addTime: '增加時間', addTimeTip: '輸入枚數延長房間時間',
+      host: '房主：', roomDescPh: '房間說明（選填，200字內，話題/規則）', editDescTip: '編輯房間說明（200字）：',
     },
     ja: {
       voiceTitle: 'ボイスルーム', createRoom: 'ルーム作成', chatRoom: 'チャットルーム', meetingRoom: '会議室',
@@ -34,6 +36,7 @@
       chatDesc: '全員：テキスト/音声(≤30秒)/画像', meetDesc: '主催+1ゲストがライブ音声、他はテキスト/画像',
       minRecharge: '最低チャージ', balanceShort: '残高不足', roomClosedTip: 'この部屋は終了しました。',
       share: '共有', dissolveRoom: '解散', dissolveConfirm: '部屋を解散しますか？', shareCopied: '共有リンクをコピーしました！', addTime: '時間追加', addTimeTip: '時間延長のため枚数を入力',
+      host: '主：', roomDescPh: '部屋説明（任意、200文字以内）', editDescTip: '部屋説明を編集（200文字）：',
     },
   };
   for (const lang of Object.keys(V)) {
@@ -91,7 +94,7 @@
   function openCreateRoom() {
     createType = 'chat';
     document.querySelectorAll('.room-type').forEach((b) => b.classList.toggle('active', b.dataset.type === 'chat'));
-    $('roomNameInput').value = '';
+    $('roomNameInput').value = ''; $('roomDescInput').value = '';
     $('createRoomMask').classList.remove('hide');
   }
   function closeCreateRoom() { $('createRoomMask').classList.add('hide'); }
@@ -107,7 +110,7 @@
       const btn = $('confirmCreateRoom'); btn.disabled = true;
       try {
         await alignWallet();
-        const r = await api('/voice/create', { uid: state.uid, type: createType, name: $('roomNameInput').value, amount });
+        const r = await api('/voice/create', { uid: state.uid, type: createType, name: $('roomNameInput').value, amount, description: $('roomDescInput').value });
         closeCreateRoom();
         enterRoom(r.roomId);
       } catch (e) { alert(e.message || vt('balanceShort')); }
@@ -172,8 +175,27 @@
   function renderRoomInfo() {
     if (!curRoom) return;
     $('roomRemain').textContent = `${vt('remain')} ${fmtRemain(curRoom.remainSec)}`;
-    // 仅房主可见解散按钮
+    $('roomHost').textContent = `${vt('host')} ${curRoom.hostUid}`;
     $('roomDissolveBtn').classList.toggle('hide', curRoom.hostUid !== state.uid);
+    const descEl = $('roomDesc');
+    if (curRoom.description) {
+      descEl.textContent = curRoom.description;
+      descEl.classList.remove('hide');
+    } else {
+      descEl.classList.add('hide');
+    }
+  }
+
+  // 房主点击房间说明可编辑
+  async function editRoomDesc() {
+    if (!curRoom || curRoom.hostUid !== state.uid) return;
+    const v = prompt(vt('editDescTip'), curRoom.description || '');
+    if (v === null) return;
+    try {
+      const r = await api('/voice/edit-description', { uid: state.uid, roomId: curRoom.roomId, description: v });
+      curRoom.description = r.description;
+      renderRoomInfo();
+    } catch (e) { alert(e.message); }
   }
   function renderMembers() {
     $('roomMembers').innerHTML = curMembers.map((m) => {
@@ -469,7 +491,9 @@
     // voice.js 动态补充的 i18n key 需要重新翻译一次
     applyI18n();
     $('roomNameInput').placeholder = vt('roomNamePh');
+    $('roomDescInput').placeholder = vt('roomDescPh');
     $('roomTextInput').placeholder = vt('saySomething');
+    $('roomDesc').onclick = editRoomDesc;
     // 分享链接自动进房间：?room=ROOM_ID（ref 参数已由登录逻辑绑定上下级）
     const roomInvite = new URLSearchParams(location.search).get('room');
     if (roomInvite) {

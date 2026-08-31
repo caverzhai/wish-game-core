@@ -194,6 +194,7 @@
         <button class="room-type" data-type="meeting"><b data-i18n="meetingRoom">Meeting</b><small>5枚 · 0.01/分</small></button>
       </div>
       <input id="roomNameInput" maxlength="30" class="room-name-input" data-i18n-placeholder="roomNamePh" placeholder="房间名（可选）" />
+      <textarea id="roomDescInput" maxlength="200" class="room-desc-input" data-i18n-placeholder="roomDescPh" placeholder="房间说明（可选，200字内，话题/规则）"></textarea>
       <button id="confirmCreateRoom" class="btn-primary big" data-i18n="confirmCreate">确认创建</button>
       <button id="cancelCreateRoom" class="btn-ghost" data-i18n="cancel">取消</button>
     </div>
@@ -203,15 +204,21 @@
   <div id="roomMask" class="mask hide room-mask">
     <div class="room-inner">
       <div class="room-top">
-        <button id="roomBackBtn" class="btn-mini">←</button>
-        <div class="room-title">
-          <b id="roomName"></b>
-          <span id="roomRemain" class="room-remain"></span>
+        <div class="room-top-row1">
+          <button id="roomBackBtn" class="btn-mini">←</button>
+          <div class="room-title">
+            <b id="roomName"></b>
+            <span id="roomHost" class="room-host"></span>
+          </div>
+          <button id="roomDissolveBtn" class="btn-mini btn-danger hide" data-i18n="dissolveRoom">解散</button>
         </div>
-        <button id="roomShareBtn" class="btn-mini" data-i18n="share">分享</button>
-        <button id="roomDissolveBtn" class="btn-mini btn-danger hide" data-i18n="dissolveRoom">解散</button>
-        <button id="roomRechargeBtn" class="btn-mini" data-i18n="addTime">增加时间</button>
+        <div class="room-top-row2">
+          <span id="roomRemain" class="room-remain"></span>
+          <button id="roomShareBtn" class="btn-mini" data-i18n="share">分享</button>
+          <button id="roomRechargeBtn" class="btn-mini" data-i18n="addTime">增加时间</button>
+        </div>
       </div>
+      <div id="roomDesc" class="room-desc hide"></div>
       <div class="room-members" id="roomMembers"></div>
       <div class="room-msgs" id="roomMsgs"></div>
       <div id="meetingControls" class="meeting-controls hide">

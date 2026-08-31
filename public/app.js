@@ -23,6 +23,7 @@ const I18N = {
     insRule: 'Active only when switched on and premium ≥ 20 枚. Insured winners contribute 10% to the pool; every 100 枚 net loss opens a payout node (costs 20 枚), returned over 100 periods.',
   winCongrats: '🎉 Wish placed successfully! Wishing you great fortune every day!',
   insLightOn: 'Insurance active', insLightOff: 'Insurance inactive (switch ON and keep ≥20 枚 premium)',
+  insStatusLabel: 'Insurance status',
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
@@ -30,7 +31,7 @@ const I18N = {
     bbsTitle: 'Board (plain text, up to 1024 bytes)', bbsPlaceholder: 'Say something (max 1024 bytes)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
     adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words',
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', flows: 'Transactions',
-    wdOk: 'Withdrawal sent. Arrived:', wdPending: 'Submitted, pending platform processing.',
+    wdOk: 'Withdrawal sent.', wdCheckReceive: 'Please check your wallet for the funds.', wdPending: 'Submitted, pending platform processing.',
     premiumWithdraw: 'Premium → balance (insurance OFF)', premiumOutPh: 'Blank = withdraw all', premiumNeed: 'Enter a positive integer amount',
    
     chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…', pendingLock: 'Previous transaction is still confirming on-chain. Wait a few seconds — do NOT submit again; it is credited automatically.', walletChanged: 'Active wallet differs from the logged-in account. Log out and reconnect the same wallet.',
@@ -45,7 +46,7 @@ const I18N = {
     reply: 'Reply', sendReply: 'Send', replyPh: 'Write a reply (max 1024 bytes)', replies: 'replies', confirmDelPost: 'Delete this post and its replies?',
     flow_BET_FROZEN: 'Wish placed', flow_WIN_CREDIT: 'Win credited', flow_INS_WIN_CUT: 'Insured 10% to pool', flow_CANCEL_REFUND: 'Void refund',
     flow_REFERRAL: 'Referral reward', flow_PREMIUM_IN: 'Premium deposit', flow_NODE_PREMIUM_OUT: 'Node premium', flow_NODE_PAYOUT: 'Node payout', flow_NODE_FORFEIT: 'Lapsed to pool',
-    flow_WITHDRAW_FEE: 'Withdraw fee', flow_WITHDRAW_PENDING: 'Withdraw in transit', flow_WITHDRAW_PAID: 'Withdraw paid', flow_WITHDRAW_REFUND: 'Withdraw refunded',
+    flow_WITHDRAW_FEE: 'Withdraw fee', flow_WITHDRAW_PENDING: 'Withdraw', flow_WITHDRAW_PAID: 'Withdraw paid', flow_WITHDRAW_REFUND: 'Withdraw refunded',
     flow_FAUCET: 'Test claim', flow_CHAIN_DEPOSIT: 'On-chain deposit', flow_ISSUE: 'System credit',
   },
   'zh-TW': {
@@ -58,6 +59,7 @@ const I18N = {
     insRule: '開關開且保費≥20枚才生效；生效贏家收益再扣10%入保池；淨虧每滿100枚生成一個賠付節點並扣20枚保費，節點分100期返還。',
   winCongrats: '🎉 恭喜許願成功，祝您天天發大財！',
   insLightOn: '保險生效中', insLightOff: '保險未生效（開關開且保費≥20枚才生效）',
+  insStatusLabel: '保險狀態',
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
@@ -65,7 +67,7 @@ const I18N = {
     bbsTitle: '廣場（1024位元組以內純文字）', bbsPlaceholder: '說點什麼吧（最多1024位元組）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
     adminModeration: '管理員治理', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', flows: '收支流水',
-    wdOk: '提現已發送，到帳：', wdPending: '已提交，待平台處理。',
+    wdOk: '提現已發送', wdCheckReceive: '請注意查收。', wdPending: '已提交，待平台處理。',
     premiumWithdraw: '保費提回餘額（需先關閉保險）', premiumOutPh: '留空＝全部提回', premiumNeed: '請輸入正整數金額',
    
     chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…', pendingLock: '上一筆正在鏈上確認，請稍候幾秒、切勿重複許願，確認後會自動到帳。', walletChanged: '目前錢包帳戶與登入帳號不一致，請退出後重新連接同一個錢包。',
@@ -80,7 +82,7 @@ const I18N = {
     reply: '回覆', sendReply: '送出', replyPh: '寫下回覆（最多1024位元組）', replies: '則回覆', confirmDelPost: '確定刪除該帖及其全部回覆？',
     flow_BET_FROZEN: '許願投入', flow_WIN_CREDIT: '中獎到帳', flow_INS_WIN_CUT: '保險贏家扣10%', flow_CANCEL_REFUND: '對局退款',
     flow_REFERRAL: '邀請返傭', flow_PREMIUM_IN: '存入保費', flow_NODE_PREMIUM_OUT: '節點扣保費', flow_NODE_PAYOUT: '節點賠付', flow_NODE_FORFEIT: '斷保當期充公',
-    flow_WITHDRAW_FEE: '提現手續費', flow_WITHDRAW_PENDING: '提現在途', flow_WITHDRAW_PAID: '提現到帳', flow_WITHDRAW_REFUND: '提現退回',
+    flow_WITHDRAW_FEE: '提現手續費', flow_WITHDRAW_PENDING: '提現', flow_WITHDRAW_PAID: '提現到帳', flow_WITHDRAW_REFUND: '提現退回',
     flow_FAUCET: '測試領幣', flow_CHAIN_DEPOSIT: '鏈上轉入', flow_ISSUE: '系統入帳',
   },
   ja: {
@@ -93,6 +95,7 @@ const I18N = {
     insRule: 'スイッチONかつ保険料≥20枚で有効。適用勝者は利益の10%を保険池へ。純損失100枚ごとに返還ノード生成（保険料20枚差引）、100期で返還。',
   winCongrats: '🎉 願いの投稿に成功しました！毎日たくさんの幸運が訪れますように！',
   insLightOn: '保険有効中', insLightOff: '保険無効（スイッチONかつ保険料20枚以上で有効）',
+  insStatusLabel: '保険状態',
     myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
@@ -100,7 +103,7 @@ const I18N = {
     bbsTitle: '広場（1024バイト以内のテキスト）', bbsPlaceholder: 'ひとこと（最大1024バイト）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
     adminModeration: 'モデレーション', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', flows: '取引履歴',
-    wdOk: '送金しました。着金：', wdPending: '送信済み。プラットフォーム処理待ち。',
+    wdOk: '送金しました。', wdCheckReceive: 'ウォレットへの着金をご確認ください。', wdPending: '送信済み。プラットフォーム処理待ち。',
     premiumWithdraw: '保険料を残高へ戻す（保険OFF時）', premiumOutPh: '空欄＝全額戻す', premiumNeed: '正の整数を入力してください',
    
     chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…', pendingLock: '直前の取引がオンチェーン承認待ちです。数秒お待ちください（重複提交はしないでください）。承認後に自動で反映されます。', walletChanged: '現在のウォレットがログイン中アカウントと異なります。ログアウトして同じウォレットを再接続してください。',
@@ -115,7 +118,7 @@ const I18N = {
     reply: '返信', sendReply: '送信', replyPh: '返信を書く（最大1024バイト）', replies: '件', confirmDelPost: 'この投稿と返信を削除しますか？',
     flow_BET_FROZEN: '願い投入', flow_WIN_CREDIT: '当選入金', flow_INS_WIN_CUT: '保険勝者10%', flow_CANCEL_REFUND: '不成立返金',
     flow_REFERRAL: '招待報酬', flow_PREMIUM_IN: '保険料投入', flow_NODE_PREMIUM_OUT: 'ノード保険料', flow_NODE_PAYOUT: 'ノード返還', flow_NODE_FORFEIT: '失効分を保険池へ',
-    flow_WITHDRAW_FEE: '出金手数料', flow_WITHDRAW_PENDING: '出金保留', flow_WITHDRAW_PAID: '出金完了', flow_WITHDRAW_REFUND: '出金差戻し',
+    flow_WITHDRAW_FEE: '出金手数料', flow_WITHDRAW_PENDING: '出金', flow_WITHDRAW_PAID: '出金完了', flow_WITHDRAW_REFUND: '出金差戻し',
     flow_FAUCET: 'テスト受取', flow_CHAIN_DEPOSIT: 'オンチェーン入金', flow_ISSUE: 'システム入金',
   },
 };
@@ -461,8 +464,7 @@ function renderMe() {
     const pct = Math.round((n.periodN / 100) * 100);
     return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
   }).join('') : '<p class="muted">—</p>';
-  // 提现流水只展示最终结果（手续费/到账/退回），不展示「提现在途 WITHDRAW_PENDING」；其他类型一律不动
-  $('flowList').innerHTML = me.flows.filter((f) => f.bizType !== 'WITHDRAW_PENDING').map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} 枚</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
+  $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} 枚</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
   const tip = $('chainModeTip');
   tip.classList.remove('hide');
   if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
@@ -621,7 +623,7 @@ async function withdraw() {
   try {
     await alignWallet(); // 动钱前对齐当前激活钱包，防止提到/扣到错误账号
     const r = await api('/withdraw', { uid: state.uid, amount: v });
-    if (r.paid === true) alert(`${t('wdOk')} ${fmt(r.arrive)} 枚\n${r.txHash || r.txhash || ''}`);
+    if (r.paid === true) alert(t('wdOk') + '\n' + t('wdCheckReceive') + (r.txHash ? '\n' + r.txHash : ''));
     else if (r.paid === false) alert(((r.broadcast ? '⚠ ' : '') + (r.payoutError || 'pending') + (r.txHash ? `\n${r.txHash}` : '')));
     else alert(t('wdPending'));
     $('wdInput').value = ''; refresh();
@@ -712,6 +714,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.1.4';
+const FE_BUILD = '2.1.5';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

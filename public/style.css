@@ -70,8 +70,9 @@ input[type=number], input[type=text], textarea { width: 100%; background: var(--
 .amount-card { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; }
 .amount-card label { flex: 0 0 100%; }
 .amount-card input { flex: 1 1 auto; width: auto; min-width: 0; }
-.ins-light { width: 16px; height: 16px; border-radius: 50%; flex: 0 0 auto; background: #8b8f96; transition: background .2s, box-shadow .2s; }
-.ins-light.on { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,.9); }
+.ins-label { font-size: 13px; color: var(--muted); flex: 0 0 auto; }
+.ins-light { width: 64px; height: 64px; border-radius: 50%; flex: 0 0 auto; background: #8b8f96; transition: background .2s, box-shadow .2s; }
+.ins-light.on { background: #22c55e; box-shadow: 0 0 14px rgba(34,197,94,.9); }
 textarea { resize: vertical; }
 
 /* 保险池公示 */

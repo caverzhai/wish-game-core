@@ -192,10 +192,12 @@ textarea { resize: vertical; }
 
 /* 创建房间弹窗 */
 .room-type-select { display: flex; gap: 10px; margin: 12px 0; }
-.room-type { flex: 1; padding: 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--card); cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
-.room-type.active { border-color: var(--primary); }
-.room-type b { font-size: 15px; }
-.room-type small { font-size: 11px; color: var(--muted); }
+.room-type { flex: 1; padding: 16px 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--card); cursor: pointer; display: flex; flex-direction: column; gap: 6px; color: var(--text); }
+.room-type.active { border-color: var(--primary); background: rgba(59,130,246,.12); }
+.room-type b { font-size: 17px; color: #fff; }
+.room-type small { font-size: 13px; color: #9ca3af; }
+.login-card .btn-ghost { color: #9ca3af; border-color: var(--border); }
+.login-card input { color: var(--text); }
 
 /* 房间内 */
 .room-mask { background: rgba(0,0,0,.85); z-index: 100; }

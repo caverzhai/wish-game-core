@@ -180,6 +180,14 @@ export class VoiceRoomService {
     return { micOn: m.micOn, members: this._members(r) };
   }
 
+  // ---------- 房主解散房间（退余额） ----------
+  async dissolve(roomId, uid) {
+    const r = this._get(roomId);
+    if (r.hostUid !== uid) throw new GameError(Codes.FORBIDDEN, '仅房主可解散房间');
+    await this._destroy(r, 'empty'); // 与空房销毁同逻辑：剩余余额退给房主
+    return { dissolved: true };
+  }
+
   // ---------- 每分钟扣费 / 空房销毁 ----------
   async tick() {
     const now = Date.now();

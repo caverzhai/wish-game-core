@@ -13,6 +13,7 @@
       roomClosed: 'Room closed', recording: 'Recording…', max30s: 'max 30s', sendVoice: 'Voice', sendImage: 'Image',
       chatDesc: 'Everyone: text / voice (≤30s) / image', meetDesc: 'Host+1 guest live audio, others text/image',
       minRecharge: 'Min recharge', balanceShort: 'Balance short', roomClosedTip: 'This room has been closed.',
+      share: 'Share', dissolveRoom: 'Dissolve', dissolveConfirm: 'Dissolve this room? Remaining balance will be refunded.', shareCopied: 'Share link copied!',
     },
     'zh-TW': {
       voiceTitle: '語音房', createRoom: '開房', chatRoom: '聊天室', meetingRoom: '會議室',
@@ -22,6 +23,7 @@
       roomClosed: '房間已關閉', recording: '錄音中…', max30s: '最長30秒', sendVoice: '語音', sendImage: '圖片',
       chatDesc: '所有人：文字/語音(≤30秒)/圖片', meetDesc: '主持+1嘉賓實時語音，其余打字/發圖',
       minRecharge: '最低充值', balanceShort: '餘額不足', roomClosedTip: '該房間已關閉。',
+      share: '分享', dissolveRoom: '解散', dissolveConfirm: '確定解散房間？剩餘餘額將退回。', shareCopied: '分享連結已複製！',
     },
     ja: {
       voiceTitle: 'ボイスルーム', createRoom: 'ルーム作成', chatRoom: 'チャットルーム', meetingRoom: '会議室',
@@ -31,6 +33,7 @@
       roomClosed: '部屋は終了しました', recording: '録音中…', max30s: '最長30秒', sendVoice: 'ボイス', sendImage: '画像',
       chatDesc: '全員：テキスト/音声(≤30秒)/画像', meetDesc: '主催+1ゲストがライブ音声、他はテキスト/画像',
       minRecharge: '最低チャージ', balanceShort: '残高不足', roomClosedTip: 'この部屋は終了しました。',
+      share: '共有', dissolveRoom: '解散', dissolveConfirm: '部屋を解散しますか？残高は返金されます。', shareCopied: '共有リンクをコピーしました！',
     },
   };
   for (const lang of Object.keys(V)) {
@@ -172,6 +175,8 @@
   function renderRoomInfo() {
     if (!curRoom) return;
     $('roomRemain').textContent = `${vt('remain')} ${fmtRemain(curRoom.remainSec)} · ${fmt(Number(curRoom.balance) / 1e6)} 枚`;
+    // 仅房主可见解散按钮
+    $('roomDissolveBtn').classList.toggle('hide', curRoom.hostUid !== state.uid);
   }
   function renderMembers() {
     $('roomMembers').innerHTML = curMembers.map((m) => {
@@ -330,6 +335,22 @@
     } catch (e) { alert(e.message); }
   }
 
+  // —— 分享房间（链接带 ref 绑定上下级 + room 自动进入）——
+  function shareRoom() {
+    if (!curRoom) return;
+    const link = `${location.origin}${location.pathname}?ref=${state.uid}&room=${curRoom.roomId}`;
+    navigator.clipboard?.writeText(link).then(() => alert(vt('shareCopied') + '\n' + link)).catch(() => prompt(vt('share'), link));
+  }
+  // —— 房主解散房间（二次确认）——
+  async function dissolveRoom() {
+    if (!curRoom || curRoom.hostUid !== state.uid) return;
+    if (!confirm(vt('dissolveConfirm'))) return;
+    try {
+      await api('/voice/dissolve', { uid: state.uid, roomId: curRoom.roomId });
+      leaveRoom();
+    } catch (e) { alert(e.message); }
+  }
+
   // —— 离开房间 ——
   function leaveRoom() {
     wsSend({ type: 'leave' });
@@ -439,6 +460,8 @@
     bindCreateRoom();
     $('roomBackBtn').onclick = leaveRoom;
     $('roomRechargeBtn').onclick = rechargeRoom;
+    $('roomShareBtn').onclick = shareRoom;
+    $('roomDissolveBtn').onclick = dissolveRoom;
     $('roomSendBtn').onclick = sendText;
     $('roomTextInput').onkeydown = (e) => { if (e.key === 'Enter') sendText(); };
     $('voiceRecordBtn').onclick = toggleRecord;
@@ -451,6 +474,18 @@
     $('roomNameInput').placeholder = vt('roomNamePh');
     $('roomRechargeInput').placeholder = vt('rechargeAmountPh');
     $('roomTextInput').placeholder = vt('saySomething');
+    // 分享链接自动进房间：?room=ROOM_ID（ref 参数已由登录逻辑绑定上下级）
+    const roomInvite = new URLSearchParams(location.search).get('room');
+    if (roomInvite) {
+      const t = setInterval(() => {
+        if (state.uid) {
+          clearInterval(t);
+          history.replaceState(null, '', location.pathname);
+          // 等主界面初始化完成
+          setTimeout(() => enterRoom(roomInvite), 800);
+        }
+      }, 300);
+    }
   }
 
   // 页面加载后初始化（app.js 已执行完）

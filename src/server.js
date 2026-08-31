@@ -15,7 +15,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.2.0'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '2.2.1'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -167,6 +167,12 @@ route('POST', '/voice/create', async (b) => {
 route('POST', '/voice/recharge', async (b) => {
   await assertNotBanned(b.uid);
   return voice.recharge(b.roomId, b.uid, coin(Number(b.amount)));
+});
+route('POST', '/voice/dissolve', async (b) => {
+  await assertNotBanned(b.uid);
+  await voice.dissolve(b.roomId, b.uid);
+  if (voice._broadcastClosed) voice._broadcastClosed(b.roomId);
+  return { dissolved: true };
 });
 // 上传语音/图片（base64），返回文件名，前端通过 /voice/media/:file 访问
 route('POST', '/voice/upload', async (b) => {

@@ -14,7 +14,7 @@
       chatDesc: 'Everyone: text / voice (≤30s) / image', meetDesc: 'Host+1 guest live audio, others text/image',
       minRecharge: 'Min recharge', balanceShort: 'Balance short', roomClosedTip: 'This room has been closed.',
       share: 'Share', dissolveRoom: 'Dissolve', dissolveConfirm: 'Dissolve this room?', shareCopied: 'Share link copied!', addTime: 'Add Time', addTimeTip: 'Enter amount to extend room time',
-      host: 'Host:', roomDescPh: 'Room description (optional, 200 chars)', editDescTip: 'Edit room description (200 chars):',
+      host: 'Host:', roomDescPh: 'Room description (optional, 200 chars)', editDescTip: 'Edit room description (200 chars):', hostNotice: 'Host Notice',
     },
     'zh-TW': {
       voiceTitle: '語音房', createRoom: '開房', chatRoom: '聊天室', meetingRoom: '會議室',
@@ -25,7 +25,7 @@
       chatDesc: '所有人：文字/語音(≤30秒)/圖片', meetDesc: '主持+1嘉賓實時語音，其余打字/發圖',
       minRecharge: '最低充值', balanceShort: '餘額不足', roomClosedTip: '該房間已關閉。',
       share: '分享', dissolveRoom: '解散', dissolveConfirm: '確定解散房間？', shareCopied: '分享連結已複製！', addTime: '增加時間', addTimeTip: '輸入枚數延長房間時間',
-      host: '房主：', roomDescPh: '房間說明（選填，200字內，話題/規則）', editDescTip: '編輯房間說明（200字）：',
+      host: '房主：', roomDescPh: '房間說明（選填，200字內，話題/規則）', editDescTip: '編輯房間說明（200字）：', hostNotice: '房主聲明',
     },
     ja: {
       voiceTitle: 'ボイスルーム', createRoom: 'ルーム作成', chatRoom: 'チャットルーム', meetingRoom: '会議室',
@@ -36,7 +36,7 @@
       chatDesc: '全員：テキスト/音声(≤30秒)/画像', meetDesc: '主催+1ゲストがライブ音声、他はテキスト/画像',
       minRecharge: '最低チャージ', balanceShort: '残高不足', roomClosedTip: 'この部屋は終了しました。',
       share: '共有', dissolveRoom: '解散', dissolveConfirm: '部屋を解散しますか？', shareCopied: '共有リンクをコピーしました！', addTime: '時間追加', addTimeTip: '時間延長のため枚数を入力',
-      host: '主：', roomDescPh: '部屋説明（任意、200文字以内）', editDescTip: '部屋説明を編集（200文字）：',
+      host: '主：', roomDescPh: '部屋説明（任意、200文字以内）', editDescTip: '部屋説明を編集（200文字）：', hostNotice: '主の宣言',
     },
   };
   for (const lang of Object.keys(V)) {
@@ -179,7 +179,7 @@
     $('roomDissolveBtn').classList.toggle('hide', curRoom.hostUid !== state.uid);
     const descEl = $('roomDesc');
     if (curRoom.description) {
-      descEl.textContent = curRoom.description;
+      $('roomDescBox').textContent = curRoom.description;
       descEl.classList.remove('hide');
     } else {
       descEl.classList.add('hide');
@@ -493,7 +493,7 @@
     $('roomNameInput').placeholder = vt('roomNamePh');
     $('roomDescInput').placeholder = vt('roomDescPh');
     $('roomTextInput').placeholder = vt('saySomething');
-    $('roomDesc').onclick = editRoomDesc;
+    $('roomDescBox').onclick = editRoomDesc;
     // 分享链接自动进房间：?room=ROOM_ID（ref 参数已由登录逻辑绑定上下级）
     const roomInvite = new URLSearchParams(location.search).get('room');
     if (roomInvite) {

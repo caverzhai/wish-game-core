@@ -205,20 +205,23 @@
     <div class="room-inner">
       <div class="room-top">
         <div class="room-top-row1">
-          <button id="roomBackBtn" class="btn-mini">←</button>
+          <button id="roomBackBtn" class="btn-mini room-back">←</button>
           <div class="room-title">
             <b id="roomName"></b>
             <span id="roomHost" class="room-host"></span>
           </div>
-          <button id="roomDissolveBtn" class="btn-mini btn-danger hide" data-i18n="dissolveRoom">解散</button>
         </div>
         <div class="room-top-row2">
           <span id="roomRemain" class="room-remain"></span>
-          <button id="roomShareBtn" class="btn-mini" data-i18n="share">分享</button>
-          <button id="roomRechargeBtn" class="btn-mini" data-i18n="addTime">增加时间</button>
+          <button id="roomDissolveBtn" class="room-action-btn btn-danger hide" data-i18n="dissolveRoom">解散</button>
+          <button id="roomShareBtn" class="room-action-btn" data-i18n="share">分享</button>
+          <button id="roomRechargeBtn" class="room-action-btn" data-i18n="addTime">增加时间</button>
         </div>
       </div>
-      <div id="roomDesc" class="room-desc hide"></div>
+      <div id="roomDesc" class="room-desc hide">
+        <span class="room-desc-label" data-i18n="hostNotice">房主声明</span>
+        <div class="room-desc-box" id="roomDescBox"></div>
+      </div>
       <div class="room-members" id="roomMembers"></div>
       <div class="room-msgs" id="roomMsgs"></div>
       <div id="meetingControls" class="meeting-controls hide">

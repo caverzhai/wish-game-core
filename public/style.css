@@ -53,11 +53,15 @@ body { display: flex; justify-content: center; }
 .bet-count b { color: var(--gold); font-size: 26px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 
 .pools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
-.pool { display: flex; flex-direction: column; gap: 4px; padding: 16px 8px; border-radius: var(--radius); cursor: pointer; border: 2px solid var(--line); background: var(--card); color: var(--txt); }
+.pool { display: flex; flex-direction: column; gap: 4px; padding: 17px 8px; border-radius: var(--radius); cursor: pointer; border: 2px solid var(--line); background: var(--card); color: var(--txt); transition: background .15s, box-shadow .15s; }
 .pool small { color: var(--muted); font-size: 11px; }
 .pool .pool-name { font-size: 18px; font-weight: 800; }
-.pool.red.sel { border-color: var(--red); background: rgba(229,72,77,.12); }
-.pool.green.sel { border-color: var(--green); background: rgba(47,184,111,.12); }
+.pool.red { background: rgba(229,72,77,.16); border-color: rgba(229,72,77,.4); }
+.pool.red .pool-name { color: #ff6b6b; }
+.pool.red.sel { background: rgba(229,72,77,.34); border-color: var(--red); box-shadow: 0 0 14px rgba(229,72,77,.35); }
+.pool.green { background: rgba(47,184,111,.16); border-color: rgba(47,184,111,.4); }
+.pool.green .pool-name { color: #4ade80; }
+.pool.green.sel { background: rgba(47,184,111,.34); border-color: var(--green); box-shadow: 0 0 14px rgba(47,184,111,.35); }
 
 .pick-card, .amount-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; margin-bottom: 12px; }
 .pick-label { font-size: 13px; color: var(--muted); margin-bottom: 10px; }

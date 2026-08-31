@@ -13,7 +13,7 @@
       roomClosed: 'Room closed', recording: 'Recording…', max30s: 'max 30s', sendVoice: 'Voice', sendImage: 'Image',
       chatDesc: 'Everyone: text / voice (≤30s) / image', meetDesc: 'Host+1 guest live audio, others text/image',
       minRecharge: 'Min recharge', balanceShort: 'Balance short', roomClosedTip: 'This room has been closed.',
-      share: 'Share', dissolveRoom: 'Dissolve', dissolveConfirm: 'Dissolve this room? Remaining balance will be refunded.', shareCopied: 'Share link copied!',
+      share: 'Share', dissolveRoom: 'Dissolve', dissolveConfirm: 'Dissolve this room?', shareCopied: 'Share link copied!', addTime: 'Add Time', addTimeTip: 'Enter amount to extend room time',
     },
     'zh-TW': {
       voiceTitle: '語音房', createRoom: '開房', chatRoom: '聊天室', meetingRoom: '會議室',
@@ -23,7 +23,7 @@
       roomClosed: '房間已關閉', recording: '錄音中…', max30s: '最長30秒', sendVoice: '語音', sendImage: '圖片',
       chatDesc: '所有人：文字/語音(≤30秒)/圖片', meetDesc: '主持+1嘉賓實時語音，其余打字/發圖',
       minRecharge: '最低充值', balanceShort: '餘額不足', roomClosedTip: '該房間已關閉。',
-      share: '分享', dissolveRoom: '解散', dissolveConfirm: '確定解散房間？剩餘餘額將退回。', shareCopied: '分享連結已複製！',
+      share: '分享', dissolveRoom: '解散', dissolveConfirm: '確定解散房間？', shareCopied: '分享連結已複製！', addTime: '增加時間', addTimeTip: '輸入枚數延長房間時間',
     },
     ja: {
       voiceTitle: 'ボイスルーム', createRoom: 'ルーム作成', chatRoom: 'チャットルーム', meetingRoom: '会議室',
@@ -33,7 +33,7 @@
       roomClosed: '部屋は終了しました', recording: '録音中…', max30s: '最長30秒', sendVoice: 'ボイス', sendImage: '画像',
       chatDesc: '全員：テキスト/音声(≤30秒)/画像', meetDesc: '主催+1ゲストがライブ音声、他はテキスト/画像',
       minRecharge: '最低チャージ', balanceShort: '残高不足', roomClosedTip: 'この部屋は終了しました。',
-      share: '共有', dissolveRoom: '解散', dissolveConfirm: '部屋を解散しますか？残高は返金されます。', shareCopied: '共有リンクをコピーしました！',
+      share: '共有', dissolveRoom: '解散', dissolveConfirm: '部屋を解散しますか？', shareCopied: '共有リンクをコピーしました！', addTime: '時間追加', addTimeTip: '時間延長のため枚数を入力',
     },
   };
   for (const lang of Object.keys(V)) {
@@ -75,7 +75,6 @@
           <div class="room-card-meta">
             <span>${r.memberCount} ${vt('people')}</span>
             <span>${vt('remain')} ${fmtRemain(r.remainSec)}</span>
-            <span>${fmt(Number(r.balance) / 1e6)} 枚</span>
           </div>
         </div>`).join('') : `<p class="muted">${vt('noRooms')}</p>`;
       $('roomList').querySelectorAll('.room-card').forEach((c) => c.onclick = () => enterRoom(c.dataset.rid));
@@ -172,7 +171,7 @@
 
   function renderRoomInfo() {
     if (!curRoom) return;
-    $('roomRemain').textContent = `${vt('remain')} ${fmtRemain(curRoom.remainSec)} · ${fmt(Number(curRoom.balance) / 1e6)} 枚`;
+    $('roomRemain').textContent = `${vt('remain')} ${fmtRemain(curRoom.remainSec)}`;
     // 仅房主可见解散按钮
     $('roomDissolveBtn').classList.toggle('hide', curRoom.hostUid !== state.uid);
   }
@@ -324,7 +323,7 @@
 
   // —— 充值 ——
   async function rechargeRoom() {
-    const v = prompt(vt('recharge') + '（枚）：');
+    const v = prompt(vt('addTimeTip') + '（枚）：');
     const amount = Number(v);
     if (!Number.isInteger(amount) || amount <= 0) return;
     try {

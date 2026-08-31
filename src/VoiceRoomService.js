@@ -184,7 +184,7 @@ export class VoiceRoomService {
   async dissolve(roomId, uid) {
     const r = this._get(roomId);
     if (r.hostUid !== uid) throw new GameError(Codes.FORBIDDEN, '仅房主可解散房间');
-    await this._destroy(r, 'empty'); // 与空房销毁同逻辑：剩余余额退给房主
+    await this._destroy(r, 'dissolve'); // 任何方式解散均不退款
     return { dissolved: true };
   }
 
@@ -217,10 +217,7 @@ export class VoiceRoomService {
 
   async _destroy(r, reason) {
     r.destroyed = true;
-    if (r.balance > 0n && reason === 'empty') {
-      await this.store.applyAccount(r.hostUid, { avail: r.balance }).catch(() => {});
-      await this.store.addFlow(r.hostUid, 'ROOM_REFUND', r.balance, { roomId: r.roomId, reason }).catch(() => {});
-    }
+    // 任何方式解散均不退款：房间余额归平台
     for (const m of r.messages) if (m.file) this._deleteMedia(m.file);
     this.rooms.delete(r.roomId);
   }

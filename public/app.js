@@ -24,6 +24,7 @@ const I18N = {
   winCongrats: '🎉 Wish placed successfully! Wishing you great fortune every day!',
   insLightOn: 'Insurance active', insLightOff: 'Insurance inactive (switch ON and keep ≥20 枚 premium)',
   insStatusLabel: 'Insurance status',
+  insOnBar: 'Insurance active', insOffBar: 'Insurance off',
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
@@ -60,6 +61,7 @@ const I18N = {
   winCongrats: '🎉 恭喜許願成功，祝您天天發大財！',
   insLightOn: '保險生效中', insLightOff: '保險未生效（開關開且保費≥20枚才生效）',
   insStatusLabel: '保險狀態',
+  insOnBar: '保險生效中', insOffBar: '保險關閉中',
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
@@ -96,6 +98,7 @@ const I18N = {
   winCongrats: '🎉 願いの投稿に成功しました！毎日たくさんの幸運が訪れますように！',
   insLightOn: '保険有効中', insLightOff: '保険無効（スイッチONかつ保険料20枚以上で有効）',
   insStatusLabel: '保険状態',
+  insOnBar: '保険有効中', insOffBar: '保険OFF',
     myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
@@ -132,6 +135,7 @@ const I18N = {
     winCongrats: '🎉 تم تقديم الأمنية بنجاح! نتمنى لك الثروة كل يوم!',
     insLightOn: 'التأمين ساري', insLightOff: 'التأمين غير ساري (شغّله واحتفظ بـ≥20 عملة رسم تأمين)',
     insStatusLabel: 'حالة التأمين',
+    insOnBar: 'التأمين ساري', insOffBar: 'التأمين متوقف',
     myNodes: 'عقود التعويض الخاصة بي', poolTotal: 'إجمالي بركة التأمين', poolNext: 'إجمالي الإصدار القادم', poolNextAt: 'وقت الإصدار القادم', nextReleaseIn: 'القادم بعد', poolActiveNodes: 'العقود النشطة',
     poolSufficient: 'كافٍ', poolShort: 'عجز', poolCover: 'نسبة التغطية',
     meWallet: 'المحفظة', meInvite: 'الدعوة', copy: 'نسخ', qualifiedInvitees: 'المؤهلون', curRate: 'النسبة', invTotal: 'الإجمالي',
@@ -167,6 +171,7 @@ const I18N = {
     winCongrats: '🎉 Keinginan berhasil dikirim! Semoga rezeki melimpah setiap hari!',
     insLightOn: 'Asuransi aktif', insLightOff: 'Asuransi nonaktif (aktifkan dan simpan ≥20 koin premi)',
     insStatusLabel: 'Status asuransi',
+    insOnBar: 'Asuransi aktif', insOffBar: 'Asuransi nonaktif',
     myNodes: 'Node kompensasi saya', poolTotal: 'Total kolam asuransi', poolNext: 'Total rilis berikutnya', poolNextAt: 'Waktu rilis berikutnya', nextReleaseIn: 'Berikutnya dalam', poolActiveNodes: 'Node aktif',
     poolSufficient: 'Cukup', poolShort: 'Kekurangan', poolCover: 'Cakupan',
     meWallet: 'Dompet', meInvite: 'Undangan', copy: 'Salin', qualifiedInvitees: 'Memenuhi syarat', curRate: 'Rate', invTotal: 'Total',
@@ -202,6 +207,7 @@ const I18N = {
     winCongrats: '🎉 소원이 성공적으로 접수되었습니다! 매일 큰 재물운이 있기를!',
     insLightOn: '보험 적용 중', insLightOff: '보험 미적용 (스위치 ON, 보험료 ≥20 코인 유지)',
     insStatusLabel: '보험 상태',
+    insOnBar: '보험 적용 중', insOffBar: '보험 꺼짐',
     myNodes: '나의 보상 노드', poolTotal: '보험 풀 총액', poolNext: '다음 지급 총액', poolNextAt: '다음 지급 시각', nextReleaseIn: '다음까지', poolActiveNodes: '활성 노드',
     poolSufficient: '충분', poolShort: '부족', poolCover: '커버율',
     meWallet: '지갑', meInvite: '초대', copy: '복사', qualifiedInvitees: '조건 달성', curRate: '비율', invTotal: '누적',
@@ -237,6 +243,7 @@ const I18N = {
     winCongrats: '🎉 Желание успешно отправлено! Желаю богатства каждый день!',
     insLightOn: 'Страховка активна', insLightOff: 'Страховка неактивна (включите и храните ≥20 монет премии)',
     insStatusLabel: 'Статус страховки',
+    insOnBar: 'Страховка активна', insOffBar: 'Страховка выключена',
     myNodes: 'Мои узлы выплат', poolTotal: 'Общая сумма страхового пула', poolNext: 'Общая сумма следующего выпуска', poolNextAt: 'Время следующего выпуска', nextReleaseIn: 'Следующий через', poolActiveNodes: 'Активные узлы',
     poolSufficient: 'Достаточно', poolShort: 'Недостаток', poolCover: 'Покрытие',
     meWallet: 'Кошелёк', meInvite: 'Приглашения', copy: 'Копировать', qualifiedInvitees: 'Квалифицированные', curRate: 'Ставка', invTotal: 'Всего',
@@ -272,6 +279,7 @@ const I18N = {
     winCongrats: '🎉 विश सफलतापूर्वक सबमिट हुआ! आपको हर दिन बड़ी संपत्ति मिले!',
     insLightOn: 'बीमा सक्रिय', insLightOff: 'बीमा निष्क्रिय (चालू करें और ≥20 सिक्के प्रीमियम रखें)',
     insStatusLabel: 'बीमा स्थिति',
+    insOnBar: 'बीमा सक्रिय', insOffBar: 'बीमा बंद',
     myNodes: 'मेरे भुगतान नोड', poolTotal: 'बीमा पूल कुल', poolNext: 'अगली रिलीज़ कुल', poolNextAt: 'अगली रिलीज़ का समय', nextReleaseIn: 'अगली में', poolActiveNodes: 'सक्रिय नोड',
     poolSufficient: 'पर्याप्त', poolShort: 'कमी', poolCover: 'कवरेज',
     meWallet: 'वॉलेट', meInvite: 'निमंत्रण', copy: 'कॉपी', qualifiedInvitees: 'योग्य', curRate: 'दर', invTotal: 'कुल',
@@ -307,6 +315,7 @@ const I18N = {
     winCongrats: '🎉 خواہش کامیابی سے جمع ہو گئی! آپ کو ہر روز بڑی دولت نصیب ہو!',
     insLightOn: 'انشورنس فعال', insLightOff: 'انشورنس غیر فعال (آن کریں اور ≥20 سکے پریمیم رکھیں)',
     insStatusLabel: 'انشورنس کی حالت',
+    insOnBar: 'انشورنس فعال ہے', insOffBar: 'انشورنس بند ہے',
     myNodes: 'میرے ادائیگی نوڈ', poolTotal: 'انشورنس پول کل', poolNext: 'اگلی ریلیز کل', poolNextAt: 'اگلی ریلیز کا وقت', nextReleaseIn: 'اگلی میں', poolActiveNodes: 'فعال نوڈ',
     poolSufficient: 'کافی', poolShort: 'کمی', poolCover: 'کوریج',
     meWallet: 'والیٹ', meInvite: 'دعوت', copy: 'کاپی', qualifiedInvitees: 'اہل', curRate: 'شرح', invTotal: 'کل',
@@ -661,10 +670,10 @@ function renderMe() {
   $('lossAccum').textContent = fmt(a.lossAccum) + ' 枚';
   $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
   $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
-  // 许愿金额框后的保险生效状态灯：开关开 且 保费≥20枚 才绿色生效，否则灰色
+  // 保险状态横长条：开关开 且 保费≥20枚 → 绿色「保险生效中」，否则灰色「保险关闭中」
   const insActive = !!me.user.insSwitch && Number(a.premium) >= 20;
-  const insLight = $('insLight');
-  if (insLight) { insLight.classList.toggle('on', insActive); insLight.title = insActive ? t('insLightOn') : t('insLightOff'); }
+  const insBar = $('insStatusBar');
+  if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
   const invRate = (me.invite.perMille / 10).toFixed(1) + '%';
   $('invCount').textContent = me.invite.nodeInviteeCount;
   $('invRate').textContent = invRate;
@@ -925,6 +934,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.1.6';
+const FE_BUILD = '2.1.7';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

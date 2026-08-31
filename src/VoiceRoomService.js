@@ -48,8 +48,10 @@ export class VoiceRoomService {
     if (recharge < cfg.minOpen) throw new GameError(Codes.BAD_INPUT, `开房最低充值 ${Number(cfg.minOpen) / Number(SCALE)} 枚`);
     const acc = await this.store.getAccount(uid);
     if (acc.available < recharge) throw new GameError(Codes.BAD_INPUT, '余额不足，请先充值');
-    await this.store.applyAccount(uid, { avail: -recharge });
     const roomId = this._newId();
+    await this.store.applyAccount(uid, { avail: -recharge });
+    await this.store.applyLedger({ plat: recharge }); // 预付费归平台，保持总帐守恒
+    await this.store.addFlow(uid, 'ROOM_PAY', -recharge, { roomId, type }).catch(() => {});
     const room = {
       roomId, type, name: title, hostUid: uid,
       balance: recharge, perMinute: cfg.perMinute,
@@ -115,9 +117,10 @@ export class VoiceRoomService {
     const acc = await this.store.getAccount(uid);
     if (acc.available < amount) throw new GameError(Codes.BAD_INPUT, '余额不足');
     await this.store.applyAccount(uid, { avail: -amount });
+    await this.store.applyLedger({ plat: amount }); // 增加时间也是预付费，归平台
     r.balance += amount;
     r.lastActiveAt = Date.now();
-    await this.store.addFlow(uid, 'ROOM_RECHARGE', amount, { roomId }).catch(() => {});
+    await this.store.addFlow(uid, 'ROOM_PAY', -amount, { roomId, type: r.type, op: 'recharge' }).catch(() => {});
     return { balance: r.balance, remainSec: this._remainSec(r) };
   }
 
@@ -210,11 +213,8 @@ export class VoiceRoomService {
       }
       if (r.members.size > 0 && !r.emptySince) {
         if (r.balance > r.perMinute) {
-          r.balance -= r.perMinute;
-          await this.store.applyLedger({ plat: r.perMinute }).catch(() => {});
+          r.balance -= r.perMinute; // 预付费已在开房时全额记平台收入，这里只减虚拟余额
         } else {
-          const rest = r.balance;
-          if (rest > 0n) await this.store.applyLedger({ plat: rest }).catch(() => {});
           r.balance = 0n;
           await this._destroy(r, 'balance');
           destroyed.push(r.roomId);

@@ -428,10 +428,22 @@ function enterMain() {
 }
 
 // ---------------- 免责声明 ----------------
-const DISCLAIMER_VERSION = 1;
+const DISCLAIMER_VERSION = 2;
+const DISCLAIMER_CONTENT = {
+  en: 'This platform is provided solely for pure entertainment purposes. If you are from Mainland China, Saudi Arabia, Iran, Afghanistan, Brunei, Thailand, Uzbekistan, Tajikistan, Kyrgyzstan, Turkmenistan, North Korea, Yemen, Kuwait, Qatar, Oman, Jordan, Lebanon, Syria, Somalia, Mauritania, or other related regions, please exit this application immediately. Your continued use will be deemed as full understanding and agreement to all terms of this statement. All copyrights and related content of this website are protected under Dutch law.',
+  'zh-TW': '本平台僅供純娛樂用途。若您來自中國（大陸地區）、沙烏地阿拉伯、伊朗、阿富汗、汶萊、泰國、烏茲別克、塔吉克、吉爾吉斯、土庫曼、北韓、葉門、科威特、卡達、阿曼、約旦、黎巴嫩、敘利亞、索馬利亞、茅利塔尼亞等地區，請立即退出本軟件。您的繼續使用將被視為已充分理解並同意本聲明的全部內容。本網站所有著作權等相關內容受荷蘭法律保護。',
+  ja: '本プラットフォームは純粋なエンターテイメント目的のみで提供されています。中国（中国本土）、サウジアラビア、イラン、アフガニスタン、ブルネイ、タイ、ウズベキスタン、タジキスタン、キルギス、トルクメニスタン、北朝鮮、イエメン、クウェート、カタール、オマーン、ヨルダン、レバノン、シリア、ソマリア、モーリタニアなどの地域からお越しの方は、直ちに本アプリケーションを終了してください。引き続き利用される場合、本声明の全内容を十分に理解し同意したものとみなされます。本ウェブサイトのすべての著作権および関連コンテンツはオランダ法の下で保護されています。',
+  ar: 'هذه المنصة مخصصة لأغراض ترفيهية بحتة فقط. إذا كنت قادماً من الصين (البر الرئيسي)، السعودية، إيران، أفغانستان، بروناي، تايلاند، أوزبكستان، طاجيكستان، قيرغيزستان، تركمانستان، كوريا الشمالية، اليمن، الكويت، قطر، عمان، الأردن، لبنان، سوريا، الصومال، موريتانيا أو المناطق ذات الصلة الأخرى، فيرجى الخروج من هذا التطبيق فوراً. سيُعتبر استمرارك في الاستخدام دليلاً على فهمك الكامل والموافقة على جميع شروط هذا البيان. جميع حقوق النشر والمحتويات ذات الصلة في هذا الموقع محمية بموجب قانون هولندا.',
+  id: 'Platform ini hanya untuk tujuan hiburan murni. Jika Anda berasal dari Tiongkok (Daratan), Arab Saudi, Iran, Afghanistan, Brunei, Thailand, Uzbekistan, Tajikistan, Kirgistan, Turkmenistan, Korea Utara, Yaman, Kuwait, Qatar, Oman, Yordania, Lebanon, Suriah, Somalia, Mauritania atau wilayah terkait lainnya, silakan keluar dari aplikasi ini segera. Kelanjutan penggunaan Anda akan dianggap sebagai pemahaman dan persetujuan penuh terhadap semua ketentuan dalam pernyataan ini. Semua hak cipta dan konten terkait situs web ini dilindungi oleh hukum Belanda.',
+  ko: '본 플랫폼은 순수한 오락 목적으로만 제공됩니다. 중국(중국 본토), 사우디아라비아, 이란, 아프가니스탄, 브루나이, 태국, 우즈베키스탄, 타지키스탄, 키르기스스탄, 투르크메니스탄, 북한, 예멘, 쿠웨이트, 카타르, 오만, 요르단, 레바논, 시리아, 소말리아, 모리타니아 등 지역에서 오신 분은 즉시 본 애플리케이션을 종료해 주십시오. 계속 사용하시는 경우 본 고지의 모든 내용을 충분히 이해하고 동의한 것으로 간주됩니다. 본 웹사이트의 모든 저작권 및 관련 콘텐츠는 네덜란드 법률에 의해 보호됩니다.',
+  ru: 'Эта платформа предназначена исключительно для развлекательных целей. Если вы находитесь из материковой части Китая, Саудовской Аравии, Ирана, Афганистана, Брунея, Таиланда, Узбекистана, Таджикистана, Киргизии, Туркменистана, Северной Кореи, Йемена, Кувейта, Катара, Омана, Иордании, Ливана, Сирии, Сомали, Мавритании или других соответствующих регионов, немедленно выйдите из этого приложения. Продолжение использования будет считаться вашим полным согласием со всеми условиями данного заявления. Все авторские права и связанный с ними контент этого веб-сайта защищены законодательством Нидерландов.',
+  hi: 'यह प्लेटफॉर्म केवल शुद्ध मनोरंजन के उद्देश्यों के लिए है। यदि आप मुख्यभूमि चीन, सऊदी अरब, ईरान, अफगानिस्तान, ब्रुनेई, थाईलैंड, उज्बेकिस्तान, ताजिकिस्तान, किर्गिस्तान, तुर्कमेनिस्तान, उत्तर कोरिया, यमन, कुवैत, कतर, ओमान, जॉर्डन, लेबनान, सीरिया, सोमालिया, मॉरिटानिया या अन्य संबंधित क्षेत्रों से हैं, तो कृपया इस एप्लिकेशन को तुरंत बंद करें। आपका निरंतर उपयोग इस बात का प्रमाण माना जाएगा कि आप इस विवरण की सभी शर्तों को पूरी तरह से समझ चुके हैं और उनसे सहमत हैं। इस वेबसाइट के सभी कॉपीराइट और संबंधित सामग्री नीदरलैंड के कानून द्वारा संरक्षित हैं।',
+  ur: 'یہ پلیٹ فارم صرف خالص تفریحی مقاصد کے لیے ہے۔ اگر آپ چین (مین لینڈ)، سعودی عرب، ایران، افغانستان، برونائی، تھائی لینڈ، ازبکستان، تاجکستان، کرغزستان، ترکمانستان، شمالی کوریا، یمن، کویت، قطر، عمان، اردن، لبنان، شام، صومالیہ، موریتانیا یا دیگر متعلقہ علاقوں سے ہیں، تو براہ کرم اس ایپلیکیشن سے فوراً باہر نکل جائیں۔ آپ کا مسلسل استعمال اس بات کی علامت سمجھا جائے گا کہ آپ اس بیان کی تمام شرائط کو پوری طرح سمجھ چکے ہیں اور ان سے اتفاق کرتے ہیں۔ اس ویب سائٹ کے تمام کاپی رائٹ اور متعلقہ مواد ہالینڈ کے قانون کے تحت محفوظ ہیں۔',
+};
 function checkDisclaimer() {
   if (!state.uid) return;
   if (localStorage.getItem('disclaimerAgreed') !== String(DISCLAIMER_VERSION)) {
+    $('disclaimerContent').textContent = DISCLAIMER_CONTENT[state.lang] || DISCLAIMER_CONTENT.en;
     $('disclaimerMask').classList.remove('hide');
   }
 }
@@ -977,6 +989,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.2';
+const FE_BUILD = '2.3.3';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

@@ -21,7 +21,8 @@ const I18N = {
     amountLabel: 'Wish amount (1-99 枚, integer)', confirmWish: 'Confirm Wish', waitingStart: 'Waiting for the first wish…', historyTitle: 'Past rounds',
     insTitle: 'Wish Insurance', insSwitch: 'Insurance', premium: 'Premium', lossAccum: 'Net loss', depositPremium: 'Deposit premium',
     insRule: 'Active only when switched on and premium ≥ 20 枚. Insured winners contribute 10% to the pool; every 100 枚 net loss opens a payout node (costs 20 枚), returned over 100 periods.',
-  winCongrats: '🎉 Congratulations! Your wish came true. Wishing you great fortune every day!',
+  winCongrats: '🎉 Wish placed successfully! Wishing you great fortune every day!',
+  insLightOn: 'Insurance active', insLightOff: 'Insurance inactive (switch ON and keep ≥20 枚 premium)',
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
@@ -56,6 +57,7 @@ const I18N = {
     insTitle: '願望保險', insSwitch: '保險開關', premium: '保費餘額', lossAccum: '淨虧累計', depositPremium: '存入保費',
     insRule: '開關開且保費≥20枚才生效；生效贏家收益再扣10%入保池；淨虧每滿100枚生成一個賠付節點並扣20枚保費，節點分100期返還。',
   winCongrats: '🎉 恭喜許願成功，祝您天天發大財！',
+  insLightOn: '保險生效中', insLightOff: '保險未生效（開關開且保費≥20枚才生效）',
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
@@ -89,7 +91,8 @@ const I18N = {
     amountLabel: '願い金（1-99 枚、整数）', confirmWish: '願いを確定', waitingStart: '最初の願いを待っています…', historyTitle: '過去の記録',
     insTitle: '願い保険', insSwitch: '保険スイッチ', premium: '保険料残高', lossAccum: '純損失累計', depositPremium: '保険料を入れる',
     insRule: 'スイッチONかつ保険料≥20枚で有効。適用勝者は利益の10%を保険池へ。純損失100枚ごとに返還ノード生成（保険料20枚差引）、100期で返還。',
-  winCongrats: '🎉 願いが叶いました！毎日たくさんの幸運が訪れますように！',
+  winCongrats: '🎉 願いの投稿に成功しました！毎日たくさんの幸運が訪れますように！',
+  insLightOn: '保険有効中', insLightOff: '保険無効（スイッチONかつ保険料20枚以上で有効）',
     myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
@@ -444,6 +447,10 @@ function renderMe() {
   $('lossAccum').textContent = fmt(a.lossAccum) + ' 枚';
   $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
   $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
+  // 许愿金额框后的保险生效状态灯：开关开 且 保费≥20枚 才绿色生效，否则灰色
+  const insActive = !!me.user.insSwitch && Number(a.premium) >= 20;
+  const insLight = $('insLight');
+  if (insLight) { insLight.classList.toggle('on', insActive); insLight.title = insActive ? t('insLightOn') : t('insLightOff'); }
   const invRate = (me.invite.perMille / 10).toFixed(1) + '%';
   $('invCount').textContent = me.invite.nodeInviteeCount;
   $('invRate').textContent = invRate;
@@ -454,7 +461,8 @@ function renderMe() {
     const pct = Math.round((n.periodN / 100) * 100);
     return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
   }).join('') : '<p class="muted">—</p>';
-  $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} 枚</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
+  // 提现流水只展示最终结果（手续费/到账/退回），不展示「提现在途 WITHDRAW_PENDING」；其他类型一律不动
+  $('flowList').innerHTML = me.flows.filter((f) => f.bizType !== 'WITHDRAW_PENDING').map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} 枚</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
   const tip = $('chainModeTip');
   tip.classList.remove('hide');
   if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
@@ -704,6 +712,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.1.3';
+const FE_BUILD = '2.1.4';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

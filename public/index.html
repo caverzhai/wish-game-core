@@ -82,24 +82,36 @@
 
     <!-- 广场 -->
     <section id="tab-bbs" class="panel">
-      <h3 data-i18n="bbsTitle">Board (plain text, up to 100 chars)</h3>
-      <!-- 管理员治理面板（仅管理员钱包可见） -->
-      <div id="adminPanel" class="admin-panel hide">
-        <div class="admin-title" data-i18n="adminModeration">Moderation</div>
-        <div class="row">
-          <input id="wordInput" maxlength="32" placeholder="" />
-          <button id="wordAddBtn" class="btn-primary" data-i18n="addBlockedWord">Block word</button>
-        </div>
-        <div id="wordTags" class="word-tags"></div>
+      <div class="sub-tab">
+        <button id="subTabBbs" class="sub-tab-btn active" data-i18n="bbsTitle">Board</button>
+        <button id="subTabVoice" class="sub-tab-btn" data-i18n="voiceTitle">Voice Rooms</button>
       </div>
-      <div class="bbs-post">
-        <textarea id="bbsInput" maxlength="1024" rows="3" placeholder=""></textarea>
-        <div class="bbs-bar">
-          <span id="bbsChar">0/1024</span>
-          <button id="bbsSend" class="btn-primary" data-i18n="bbsSend">Post</button>
+      <div id="bbsView">
+        <!-- 管理员治理面板（仅管理员钱包可见） -->
+        <div id="adminPanel" class="admin-panel hide">
+          <div class="admin-title" data-i18n="adminModeration">Moderation</div>
+          <div class="row">
+            <input id="wordInput" maxlength="32" placeholder="" />
+            <button id="wordAddBtn" class="btn-primary" data-i18n="addBlockedWord">Block word</button>
+          </div>
+          <div id="wordTags" class="word-tags"></div>
         </div>
+        <div class="bbs-post">
+          <textarea id="bbsInput" maxlength="1024" rows="3" placeholder=""></textarea>
+          <div class="bbs-bar">
+            <span id="bbsChar">0/1024</span>
+            <button id="bbsSend" class="btn-primary" data-i18n="bbsSend">Post</button>
+          </div>
+        </div>
+        <div id="bbsList" class="bbs-list"></div>
       </div>
-      <div id="bbsList" class="bbs-list"></div>
+      <!-- 语音房 -->
+      <div id="voiceView" class="hide">
+        <div class="voice-head">
+          <button id="createRoomBtn" class="btn-primary" data-i18n="createRoom">Create Room</button>
+        </div>
+        <div id="roomList" class="room-list"></div>
+      </div>
     </section>
 
     <!-- 保险 -->
@@ -170,6 +182,49 @@
     </section>
   </main>
 
+  <!-- 创建房间弹窗 -->
+  <div id="createRoomMask" class="mask hide">
+    <div class="login-card">
+      <h3 data-i18n="createRoom">Create Room</h3>
+      <div class="room-type-select">
+        <button class="room-type active" data-type="chat"><b data-i18n="chatRoom">Chat Room</b><small>1枚 · 0.0001/分</small></button>
+        <button class="room-type" data-type="meeting"><b data-i18n="meetingRoom">Meeting</b><small>5枚 · 0.01/分</small></button>
+      </div>
+      <input id="roomNameInput" maxlength="30" data-i18n-placeholder="roomNamePh" placeholder="房间名（可选）" />
+      <input id="roomRechargeInput" type="number" min="1" step="1" inputmode="numeric" data-i18n-placeholder="rechargeAmountPh" placeholder="充值枚数（最低1/5）" />
+      <button id="confirmCreateRoom" class="btn-primary big" data-i18n="confirmCreate">确认创建</button>
+      <button id="cancelCreateRoom" class="btn-ghost" data-i18n="cancel">取消</button>
+    </div>
+  </div>
+
+  <!-- 房间内覆盖层 -->
+  <div id="roomMask" class="mask hide room-mask">
+    <div class="room-inner">
+      <div class="room-top">
+        <button id="roomBackBtn" class="btn-mini">←</button>
+        <div class="room-title">
+          <b id="roomName"></b>
+          <span id="roomRemain" class="room-remain"></span>
+        </div>
+        <button id="roomRechargeBtn" class="btn-mini" data-i18n="recharge">充值</button>
+      </div>
+      <div class="room-members" id="roomMembers"></div>
+      <div class="room-msgs" id="roomMsgs"></div>
+      <div id="meetingControls" class="meeting-controls hide">
+        <button id="micBtn" class="btn-primary" data-i18n="micOn">开麦</button>
+        <button id="guestListBtn" class="btn-ghost hide" data-i18n="inviteGuest">邀请嘉宾</button>
+      </div>
+      <div class="room-input-bar">
+        <button id="voiceRecordBtn" class="btn-ghost room-ico" title="语音">🎤</button>
+        <button id="imageBtn" class="btn-ghost room-ico" title="图片">🖼</button>
+        <input id="roomTextInput" data-i18n-placeholder="saySomething" placeholder="说点什么..." />
+        <button id="roomSendBtn" class="btn-primary" data-i18n="send">发送</button>
+      </div>
+      <input type="file" id="imageFileInput" accept="image/*" class="hide" />
+      <div id="recordTip" class="record-tip hide">录音中… <span id="recordTime">0</span>s（最长30秒）</div>
+    </div>
+  </div>
+
   <!-- 底部 Dock -->
   <nav id="dock" class="dock hide">
     <button data-dock="home" class="dock-item active"><span class="dock-ico">⌂</span><span data-i18n="dockHome">Home</span></button>
@@ -179,5 +234,6 @@
   </nav>
 </div>
 <script src="/app.js"></script>
+<script src="/voice.js"></script>
 </body>
 </html>

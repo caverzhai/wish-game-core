@@ -12,8 +12,10 @@ import { coin, SCALE, needTopUp } from './money.js';
 import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
+import { createWSServer } from './WSServer.js';
+import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.1.8'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '2.2.0'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -30,7 +32,7 @@ function readBody(req) {
 }
 
 const app = await createApp();
-const { game, wallet, insurance, social, chain, store, cfg } = app;
+const { game, wallet, insurance, social, chain, store, cfg, voice } = app;
 const scheduler = new Scheduler(app);
 setInterval(() => { scheduler.tick(now()).catch((e) => console.error('[tick]', e.message)); }, 2000);
 
@@ -155,6 +157,36 @@ route('GET', '/recent', () => game.recentRounds(100));
 route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
 route('POST', '/bbs/reply', (b) => social.reply(b.uid, b.postId, b.content));
 route('GET', '/bbs/list', () => social.list());
+// —— 语音房 ——
+route('GET', '/voice/rooms', () => voice.listRooms());
+route('GET', /^\/voice\/room\/(.+)$/, (b, m) => voice.getRoomDetail(m[1]));
+route('POST', '/voice/create', async (b) => {
+  await assertNotBanned(b.uid);
+  return voice.createRoom(b.uid, b.type, b.name, coin(Number(b.amount)));
+});
+route('POST', '/voice/recharge', async (b) => {
+  await assertNotBanned(b.uid);
+  return voice.recharge(b.roomId, b.uid, coin(Number(b.amount)));
+});
+// 上传语音/图片（base64），返回文件名，前端通过 /voice/media/:file 访问
+route('POST', '/voice/upload', async (b) => {
+  await assertNotBanned(b.uid);
+  const mime = String(b.mime || '');
+  const ext = mime.includes('webm') ? 'webm' : mime.includes('ogg') ? 'ogg' : mime.includes('mp3') ? 'mp3' : mime.includes('png') ? 'png' : mime.includes('gif') ? 'gif' : 'jpg';
+  const buf = Buffer.from(String(b.data || ''), 'base64');
+  if (buf.length > 2 * 1024 * 1024) throw new GameError(Codes.BAD_INPUT, '文件过大（上限2MB）');
+  const file = voice.saveMedia(buf, ext);
+  return { file, mime, size: buf.length };
+});
+route('GET', /^\/voice\/media\/(.+)$/, (b, m, req, res) => {
+  const fp = voice.getMediaPath(m[1]);
+  if (!fs.existsSync(fp)) throw new GameError(Codes.NOT_FOUND, '文件不存在');
+  const ext = path.extname(fp).toLowerCase();
+  const ct = { '.webm': 'audio/webm', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg', '.png': 'image/png', '.gif': 'image/gif', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' }[ext] || 'application/octet-stream';
+  res.writeHead(200, { 'content-type': ct, 'Cache-Control': 'public, max-age=3600' });
+  res.end(fs.readFileSync(fp));
+  return { __raw: true };
+});
 // —— BBS 治理（仅 ADMIN_WALLETS 中的管理员钱包可操作）——
 route('GET', '/admin/words', () => store.listBlockedWords());
 route('POST', '/admin/word/add', async (b) => { await requireAdmin(b.uid); return { words: await store.addBlockedWord(b.word) }; });
@@ -204,7 +236,11 @@ route('GET', '/admin/overview', async () => {
   return { chain: chain.publicConfig(), ledger: await store.getLedger(), counts: { users: users.length, rounds: rounds.length, posts: posts.length } };
 });
 // —— 系统 ——
-route('GET', '/ledger', async () => { await store.assertBalanced('api'); return { ...(await store.getLedger()), storeKind: store.kind, balanced: true }; });
+route('GET', '/ledger', async () => {
+  const inside = (await store.totalInside()) + voice.totalRoomBalance();
+  const source = await store.totalSource();
+  return { ...(await store.getLedger()), roomBalance: voice.totalRoomBalance(), storeKind: store.kind, balanced: inside === source, diff: inside - source };
+});
 route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now() }));
 
 const server = http.createServer(async (req, res) => {
@@ -215,7 +251,8 @@ const server = http.createServer(async (req, res) => {
       for (const r of routes) {
         const match = typeof r.p === 'string' ? (r.p === url.pathname ? [] : null) : url.pathname.match(r.p);
         if (r.method === req.method && match) {
-          const out = await r.h(body, match);
+          const out = await r.h(body, match, req, res);
+          if (out && out.__raw) return; // 媒体等路由自行写响应
           res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' });
           return res.end(jstr(out));
         }
@@ -233,6 +270,15 @@ const server = http.createServer(async (req, res) => {
     res.end(jstr({ error: e.name, code: e.code ?? null, message: e.message }));
   }
 });
+
+// —— 语音房 WebSocket + 每分钟扣费 ——
+const wss = createWSServer(server, voice);
+setInterval(async () => {
+  try {
+    const destroyed = await voice.tick();
+    for (const rid of destroyed) if (voice._broadcastClosed) voice._broadcastClosed(rid);
+  } catch (e) { console.error('[voice-tick]', e.message); }
+}, 60000);
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, '0.0.0.0', () => console.log(`wish-game listening 0.0.0.0:${PORT} store=${store.kind} chain=${chain.enabled}`));

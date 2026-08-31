@@ -92,7 +92,7 @@
   function openCreateRoom() {
     createType = 'chat';
     document.querySelectorAll('.room-type').forEach((b) => b.classList.toggle('active', b.dataset.type === 'chat'));
-    $('roomNameInput').value = ''; $('roomRechargeInput').value = '';
+    $('roomNameInput').value = '';
     $('createRoomMask').classList.remove('hide');
   }
   function closeCreateRoom() { $('createRoomMask').classList.add('hide'); }
@@ -104,9 +104,7 @@
       document.querySelectorAll('.room-type').forEach((x) => x.classList.toggle('active', x === b));
     });
     $('confirmCreateRoom').onclick = async () => {
-      const amount = Number($('roomRechargeInput').value);
-      const min = createType === 'chat' ? 1 : 5;
-      if (!Number.isInteger(amount) || amount < min) { alert(vt('minRecharge') + ' ' + min + ' 枚'); return; }
+      const amount = createType === 'chat' ? 1 : 5; // 聊天室默认1枚，会议室默认5枚
       const btn = $('confirmCreateRoom'); btn.disabled = true;
       try {
         await alignWallet();
@@ -472,7 +470,6 @@
     // voice.js 动态补充的 i18n key 需要重新翻译一次
     applyI18n();
     $('roomNameInput').placeholder = vt('roomNamePh');
-    $('roomRechargeInput').placeholder = vt('rechargeAmountPh');
     $('roomTextInput').placeholder = vt('saySomething');
     // 分享链接自动进房间：?room=ROOM_ID（ref 参数已由登录逻辑绑定上下级）
     const roomInvite = new URLSearchParams(location.search).get('room');

@@ -198,6 +198,8 @@ textarea { resize: vertical; }
 .room-type small { font-size: 13px; color: #9ca3af; }
 .login-card .btn-ghost { color: #9ca3af; border-color: var(--border); }
 .login-card input { color: var(--text); }
+.room-name-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: #0f172a; color: #fff; font-size: 15px; margin-bottom: 12px; box-sizing: border-box; }
+.room-name-input::placeholder { color: #94a3b8; }
 
 /* 房间内 */
 .room-mask { background: rgba(0,0,0,.85); z-index: 100; }

@@ -29,7 +29,7 @@ export async function createApp(cfg = DEFAULT_CONFIG, env = process.env) {
     const source = await store.totalSource();
     if (inside < source) {
       const diff = source - inside;
-      store.ledger.platform += diff;
+      await store.applyLedger({ plat: diff }); // 必须用applyLedger才能在MySQL上持久化
       await store.addFlow('PLATFORM', 'ROOM_INCOME_FIX', diff, { note: 'fix historical room prepay' }).catch(() => {});
       console.log(`[ledger-fix] 补记语音房平台收入 diff=${diff} inside=${inside} source=${source}`);
     }

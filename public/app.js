@@ -322,7 +322,7 @@ async function submitWish() {
     // 第一优先：纯站内下注，由后端实时余额判定——够就直接成功，绝不碰外部钱包（避免前端快照过期误扣）
     try {
       await api('/bet', { uid, side, amount, pick });
-      $('amountInput').value = ''; await refresh(); return;
+      $('amountInput').value = ''; await refresh(); wishOkToast(); return;
     } catch (e) {
       if (e.code !== 'INSUFFICIENT_BALANCE') { $('playMsg').textContent = e.message || String(e); return; }
     }
@@ -352,7 +352,7 @@ async function submitWish() {
       try {
         await api('/bet/onchain', { uid, side, pick, totalAmount: amount, chainInner, txHash });
         removePending(txHash);
-        $('playMsg').textContent = '✓'; $('amountInput').value = ''; return refresh();
+        $('playMsg').textContent = '✓'; $('amountInput').value = ''; wishOkToast(); return refresh();
       } catch (e) {
         lastErr = e.message || String(e);
         if (!CHAIN_RETRY.test(lastErr)) break;
@@ -653,24 +653,8 @@ async function creditPending() {
   } finally { crediting = false; }
 }
 
-// 许愿成功祝贺：一局结算后，若我押中胜方颜色，弹一次祝贺（sessionStorage 保证同局不重复、刷新也不重弹）
-const congratInflight = new Set();
-// 已祝贺/已检查的局用集合独立记录（保留最近 20 个），避免连续不同局互相覆盖、同局重复弹
-function congratSet() { try { return new Set(JSON.parse(sessionStorage.getItem('congratSet_' + state.uid) || '[]')); } catch { return new Set(); } }
-function congratMark(id) { try { const s = congratSet(); s.add(id); sessionStorage.setItem('congratSet_' + state.uid, JSON.stringify([...s].slice(-20))); } catch { /* */ } }
-async function checkWinCongrat(r) {
-  try {
-    if (!r || r.state !== 'settled' || !r.result || !r.result.winSide) return;
-    if (congratSet().has(r.roundId) || congratInflight.has(r.roundId)) return;
-    congratInflight.add(r.roundId);
-    try {
-      const d = await api('/round/' + r.roundId); // 结算后才拉取，不破坏进行中的盲注
-      congratMark(r.roundId);
-      const mySides = (d.bets || []).filter((b) => b.uid === state.uid).map((b) => b.side);
-      if (mySides.includes(r.result.winSide)) setTimeout(() => alert(t('winCongrats')), 250);
-    } finally { congratInflight.delete(r.roundId); }
-  } catch { /* 祝贺不影响主流程 */ }
-}
+// 押注成功祝贺：确认许愿成功（站内立即成功 / 链上补差确认入账）后弹一次
+function wishOkToast() { setTimeout(() => alert(t('winCongrats')), 150); }
 async function refresh() {
   if (!state.uid) return;
   creditPending(); // 每轮自动补录已上链确认的在途单，确认后立即清 pending、解除在途锁
@@ -678,7 +662,6 @@ async function refresh() {
     const [r, recent, me, pool] = await Promise.all([api('/round/current'), api('/recent'), api('/user/' + state.uid), api('/insurance/pool')]);
     state.round = r; state.recent = recent; state.me = me; state.pool = pool;
     renderRound(); renderMe(); renderPoolPublic();
-    checkWinCongrat(r); // 本局结算且我押中 → 弹一次祝贺
     if ($('tab-home').classList.contains('active')) renderHistory();
   } catch (e) { /* 下一轮自愈 */ }
 }
@@ -721,6 +704,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.1.2';
+const FE_BUILD = '2.1.3';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

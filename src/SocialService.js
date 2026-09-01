@@ -4,8 +4,14 @@
 // 治理：被封禁账号禁止发言；内容命中屏蔽词（归一化后）拒绝
 // =============================================================
 import { GameError, Codes } from './errors.js';
+import { promises as fsp } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 export const POST_MAX_BYTES = 1024; // 单条内容上限：1024 字节（UTF-8，中文每字 3 字节）
+export const ANNOUNCE_MAX_BYTES = 8192; // 系统公告上限：8192 字节
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ANNOUNCE_FILE = join(__dirname, '..', 'data', 'announcement.json');
 /** 归一化：小写 + 去空白/标点/符号，防止用空格、符号插入绕开屏蔽词 */
 const norm = (s) => String(s ?? '').toLowerCase().normalize('NFKD').replace(/[\s\p{P}\p{S}]/gu, '');
 
@@ -54,6 +60,25 @@ export class SocialService {
     const ok = await this.store.deletePost(postId);
     if (!ok) throw new GameError(Codes.NOT_FOUND, '帖子不存在或已删除');
     return { postId, deleted: true };
+  }
+
+  // ---------------- 系统公告（管理员发布，长文不受 BBS 1024 字节限制） ----------------
+  async getAnnouncement() {
+    try {
+      const raw = await fsp.readFile(ANNOUNCE_FILE, 'utf8');
+      return JSON.parse(raw);
+    } catch { return null; }
+  }
+  async setAnnouncement(uid, content) {
+    const text = String(content ?? '').trim();
+    const bytes = Buffer.byteLength(text, 'utf8');
+    if (bytes < 1) throw new GameError(Codes.BAD_INPUT, '公告内容不能为空');
+    if (bytes > ANNOUNCE_MAX_BYTES) throw new GameError(Codes.BAD_INPUT, `公告最多 ${ANNOUNCE_MAX_BYTES} 字节，当前 ${bytes} 字节`);
+    const u = await this.store.getUser(uid);
+    const ann = { content: text, at: Date.now(), uid, wallet: u.wallet || uid };
+    await fsp.mkdir(dirname(ANNOUNCE_FILE), { recursive: true });
+    await fsp.writeFile(ANNOUNCE_FILE, JSON.stringify(ann, null, 2), 'utf8');
+    return ann;
   }
 
   /** 主题列表：内嵌回复（时间升序），主题按最后活跃时间降序 */

@@ -15,7 +15,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.3.4'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
+const BUILD = '2.3.5'; // 部署版本标记：/health 与前端可见，用于核对线上是否更新
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -157,6 +157,9 @@ route('GET', '/recent', () => game.recentRounds(100));
 route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
 route('POST', '/bbs/reply', (b) => social.reply(b.uid, b.postId, b.content));
 route('GET', '/bbs/list', () => social.list());
+// 系统公告（管理员发布，长文 8192 字节，不占 BBS 额度）
+route('GET', '/announcement', () => social.getAnnouncement());
+route('POST', '/announcement', async (b) => { await requireAdmin(b.uid); return social.setAnnouncement(b.uid, b.content); });
 // —— 语音房 ——
 route('GET', '/voice/rooms', () => voice.listRooms());
 route('GET', /^\/voice\/room\/(.+)$/, (b, m) => voice.getRoomDetail(m[1]));

@@ -239,6 +239,14 @@ textarea { resize: vertical; }
 .disclaimer-box { max-width: 92%; max-height: 82vh; overflow-y: auto; background: var(--card); border-radius: 16px; padding: 24px 20px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
 .disclaimer-box h3 { font-size: 20px; color: #fbbf24; text-align: center; margin: 0 0 16px; }
 .disclaimer-content { font-size: 14px; line-height: 1.8; color: #cbd5e1; text-align: left; margin: 0 0 20px; white-space: pre-wrap; word-break: break-word; }
+
+/* 系统公告 */
+.announcement-box { background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #fbbf24; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+.announcement-title { font-size: 14px; font-weight: 700; color: #fbbf24; margin-bottom: 8px; }
+.announcement-content { font-size: 13px; line-height: 1.7; color: #e2e8f0; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow-y: auto; }
+.announcement-time { font-size: 11px; color: #94a3b8; margin-top: 8px; text-align: right; }
+.admin-announce { margin-bottom: 12px; }
+.admin-announce textarea { width: 100%; background: #0f172a; border: 1px solid var(--border); border-radius: 8px; color: #e2e8f0; padding: 10px; font-size: 13px; resize: vertical; box-sizing: border-box; }
 .room-members { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--border); max-height: 80px; overflow-y: auto; }
 .member-chip { font-size: 12px; padding: 3px 10px; background: var(--card); border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; cursor: default; }
 .mic-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; }

@@ -15,7 +15,7 @@ const pad2 = (n) => String(n).padStart(2, '0');
 const I18N = {
   en: {
     appTitle: 'Three-Minute Wish Pool', loginTip: 'Connect a wallet to start. Invite links bind referrers automatically.', connectWallet: 'Connect Wallet', demoEnter: 'No wallet? Enter as demo', logout: 'Sign out',
-    dockHome: 'Home', dockBbs: 'Board', dockIns: 'Insurance', dockMe: 'Me', disclaimerTitle: 'Serious Statement', disclaimerAgree: 'I have read and agree',
+    dockHome: 'Home', dockBbs: 'Board', dockIns: 'Insurance', dockMe: 'Me', disclaimerTitle: 'Serious Statement', disclaimerAgree: 'I have read and agree', announcement: 'Announcement', publishAnnouncement: 'Publish',
     remainSec: 'seconds left', lockAt: 'closed at 150s', betCount: 'Wishes', redPool: 'Red Pool', greenPool: 'Green Pool',
     oddWin: 'Odd sum → Red', evenWin: 'Even sum → Green', pickLabel: 'Pick a number (0-9)',
     amountLabel: 'Wish amount (1-99 枚, integer)', confirmWish: 'Confirm Wish', waitingStart: 'Waiting for the first wish…', historyTitle: 'Past rounds',
@@ -52,7 +52,7 @@ const I18N = {
   },
   'zh-TW': {
     appTitle: '三分鐘願望池', loginTip: '連接錢包即可開始，邀請連結自動綁定推薦關係', connectWallet: '連接錢包', demoEnter: '未裝錢包？以演示身份進入', logout: '退出',
-    dockHome: '首頁', dockBbs: '廣場', dockIns: '保險', dockMe: '我的', disclaimerTitle: '嚴重聲明', disclaimerAgree: '我已閱讀並同意',
+    dockHome: '首頁', dockBbs: '廣場', dockIns: '保險', dockMe: '我的', disclaimerTitle: '嚴重聲明', disclaimerAgree: '我已閱讀並同意', announcement: '系統公告', publishAnnouncement: '發布公告',
     remainSec: '剩餘秒數', lockAt: '150秒停止許願', betCount: '許願筆數', redPool: '紅願池', greenPool: '綠願池',
     oddWin: '選號總和為單 → 紅勝', evenWin: '選號總和為雙 → 綠勝', pickLabel: '選擇一個數字（0-9）',
     amountLabel: '許願金（1-99 枚，正整數）', confirmWish: '確認許願', waitingStart: '等待第一個願望進場…', historyTitle: '往期記錄',
@@ -89,7 +89,7 @@ const I18N = {
   },
   ja: {
     appTitle: '3分間願い池', loginTip: 'ウォレット接続で開始。招待リンクで紹介者を自動登録します', connectWallet: 'ウォレット接続', demoEnter: 'ウォレットなし？デモで入る', logout: 'ログアウト',
-    dockHome: 'ホーム', dockBbs: '広場', dockIns: '保険', dockMe: 'マイ', disclaimerTitle: '重大声明', disclaimerAgree: '読んで同意します',
+    dockHome: 'ホーム', dockBbs: '広場', dockIns: '保険', dockMe: 'マイ', disclaimerTitle: '重大声明', disclaimerAgree: '読んで同意します', announcement: 'お知らせ', publishAnnouncement: '公開する',
     remainSec: '残り秒数', lockAt: '150秒で締切', betCount: '願い数', redPool: '赤の願い池', greenPool: '緑の願い池',
     oddWin: '合計が奇数 → 赤の勝ち', evenWin: '合計が偶数 → 緑の勝ち', pickLabel: '数字を選ぶ（0-9）',
     amountLabel: '願い金（1-99 枚、整数）', confirmWish: '願いを確定', waitingStart: '最初の願いを待っています…', historyTitle: '過去の記録',
@@ -126,7 +126,7 @@ const I18N = {
   },
   ar: {
     appTitle: 'بركة الأمنيات لمدة ثلاث دقائق', loginTip: 'اتصل بالمحفظة للبدء. روابط الدعوة تربط المُحيل تلقائياً.', connectWallet: 'اتصال بالمحفظة', demoEnter: 'لا توجد محفظة؟ ادخل كزائر', logout: 'خروج',
-    dockHome: 'الرئيسية', dockBbs: 'المنتدى', dockIns: 'التأمين', dockMe: 'حسابي', disclaimerTitle: 'بيان جاد', disclaimerAgree: 'لقد قرأت وأوافق',
+    dockHome: 'الرئيسية', dockBbs: 'المنتدى', dockIns: 'التأمين', dockMe: 'حسابي', disclaimerTitle: 'بيان جاد', disclaimerAgree: 'لقد قرأت وأوافق', announcement: 'إعلان', publishAnnouncement: 'نشر',
     remainSec: 'ثانية متبقية', lockAt: 'يُغلق عند 150 ثانية', betCount: 'الأمنيات', redPool: 'بركة الأحمر', greenPool: 'بركة الأخضر',
     oddWin: 'مجموع الأرقام فردي → يفوز الأحمر', evenWin: 'مجموع الأرقام زوجي → يفوز الأخضر', pickLabel: 'اختر رقماً (0-9)',
     amountLabel: 'مبلغ الأمنية (1-99 عملة، عدد صحيح)', confirmWish: 'تأكيد الأمنية', waitingStart: 'في انتظار أول أمنية…', historyTitle: 'الجولات السابقة',
@@ -162,7 +162,7 @@ const I18N = {
   },
   id: {
     appTitle: 'Kumpulan Keinginan 3 Menit', loginTip: 'Hubungkan dompet untuk memulai. Tautan undangan mengikat perujuk secara otomatis.', connectWallet: 'Hubungkan Dompet', demoEnter: 'Tidak ada dompet? Masuk sebagai demo', logout: 'Keluar',
-    dockHome: 'Beranda', dockBbs: 'Forum', dockIns: 'Asuransi', dockMe: 'Saya', disclaimerTitle: 'Pernyataan Serius', disclaimerAgree: 'Saya telah membaca dan setuju',
+    dockHome: 'Beranda', dockBbs: 'Forum', dockIns: 'Asuransi', dockMe: 'Saya', disclaimerTitle: 'Pernyataan Serius', disclaimerAgree: 'Saya telah membaca dan setuju', announcement: 'Pengumuman', publishAnnouncement: 'Terbitkan',
     remainSec: 'detik tersisa', lockAt: 'tutup pada 150 detik', betCount: 'Keinginan', redPool: 'Kolam Merah', greenPool: 'Kolam Hijau',
     oddWin: 'Jumlah angka ganjil → Merah menang', evenWin: 'Jumlah angka genap → Hijau menang', pickLabel: 'Pilih angka (0-9)',
     amountLabel: 'Jumlah keinginan (1-99 koin, bilangan bulat)', confirmWish: 'Konfirmasi Keinginan', waitingStart: 'Menunggu keinginan pertama…', historyTitle: 'Riwayat ronde',
@@ -198,7 +198,7 @@ const I18N = {
   },
   ko: {
     appTitle: '3분 소원 풀', loginTip: '지갑을 연결하면 시작됩니다. 초대 링크로 추천인이 자동 연결됩니다.', connectWallet: '지갑 연결', demoEnter: '지갑 없음? 데모로 입장', logout: '로그아웃',
-    dockHome: '홈', dockBbs: '게시판', dockIns: '보험', dockMe: '나의', disclaimerTitle: '엄중 고지', disclaimerAgree: '읽었으며 동의합니다',
+    dockHome: '홈', dockBbs: '게시판', dockIns: '보험', dockMe: '나의', disclaimerTitle: '엄중 고지', disclaimerAgree: '읽었으며 동의합니다', announcement: '공지', publishAnnouncement: '발행',
     remainSec: '초 남음', lockAt: '150초에 마감', betCount: '소원', redPool: '레드 풀', greenPool: '그린 풀',
     oddWin: '숫자 합이 홀수 → 레드 승', evenWin: '숫자 합이 짝수 → 그린 승', pickLabel: '숫자 선택 (0-9)',
     amountLabel: '소원 금액 (1-99 코인, 정수)', confirmWish: '소원 확정', waitingStart: '첫 소원을 기다리는 중…', historyTitle: '지난 라운드',
@@ -234,7 +234,7 @@ const I18N = {
   },
   ru: {
     appTitle: 'Колода желаний на 3 минуты', loginTip: 'Подключите кошелёк, чтобы начать. Пригласительные ссылки автоматически привязывают реферера.', connectWallet: 'Подключить кошелёк', demoEnter: 'Нет кошелька? Войти как демо', logout: 'Выход',
-    dockHome: 'Главная', dockBbs: 'Форум', dockIns: 'Страховка', dockMe: 'Профиль', disclaimerTitle: 'Серьёзное заявление', disclaimerAgree: 'Я прочитал и согласен',
+    dockHome: 'Главная', dockBbs: 'Форум', dockIns: 'Страховка', dockMe: 'Профиль', disclaimerTitle: 'Серьёзное заявление', disclaimerAgree: 'Я прочитал и согласен', announcement: 'Объявление', publishAnnouncement: 'Опубликовать',
     remainSec: 'секунд осталось', lockAt: 'закрывается на 150-й секунде', betCount: 'Желаний', redPool: 'Красный пул', greenPool: 'Зелёный пул',
     oddWin: 'Сумма чисел нечётная → победа красных', evenWin: 'Сумма чисел чётная → победа зелёных', pickLabel: 'Выберите число (0-9)',
     amountLabel: 'Сумма желания (1-99 монет, целое)', confirmWish: 'Подтвердить желание', waitingStart: 'Ожидание первого желания…', historyTitle: 'Прошлые раунды',
@@ -270,7 +270,7 @@ const I18N = {
   },
   hi: {
     appTitle: '3 मिनट विश पूल', loginTip: 'शुरू करने के लिए वॉलेट कनेक्ट करें. आमंत्रण लिंक स्वचालित रूप से रेफ़रर को बाँधते हैं.', connectWallet: 'वॉलेट कनेक्ट करें', demoEnter: 'वॉलेट नहीं है? डेमो के रूप में प्रवेश करें', logout: 'लॉग आउट',
-    dockHome: 'होम', dockBbs: 'बोर्ड', dockIns: 'बीमा', dockMe: 'मेरा', disclaimerTitle: 'गंभीर विवरण', disclaimerAgree: 'मैंने पढ़ लिया और सहमत हूं',
+    dockHome: 'होम', dockBbs: 'बोर्ड', dockIns: 'बीमा', dockMe: 'मेरा', disclaimerTitle: 'गंभीर विवरण', disclaimerAgree: 'मैंने पढ़ लिया और सहमत हूं', announcement: 'घोषणा', publishAnnouncement: 'प्रकाशित करें',
     remainSec: 'सेकंड शेष', lockAt: '150 सेकंड पर बंद', betCount: 'विशें', redPool: 'लाल पूल', greenPool: 'हरा पूल',
     oddWin: 'अंकों का योग विषम → लाल जीतता है', evenWin: 'अंकों का योग सम → हरा जीतता है', pickLabel: 'अंक चुनें (0-9)',
     amountLabel: 'विश राशि (1-99 सिक्के, पूर्णांक)', confirmWish: 'विश की पुष्टि करें', waitingStart: 'पहले विश की प्रतीक्षा में…', historyTitle: 'पिछले राउंड',
@@ -306,7 +306,7 @@ const I18N = {
   },
   ur: {
     appTitle: 'تین منٹ کی خواہش پول', loginTip: 'شروع کرنے کے لیے والیٹ منسلک کریں. دعوتی لنکس خود بخود ریفرر کو جوڑ دیتے ہیں.', connectWallet: 'والیٹ منسلک کریں', demoEnter: 'والیٹ نہیں؟ ڈیمو کے طور پر داخل ہوں', logout: 'لاگ آؤٹ',
-    dockHome: 'ہوم', dockBbs: 'بورڈ', dockIns: 'انشورنس', dockMe: 'میرا', disclaimerTitle: 'سنگین بیان', disclaimerAgree: 'میں نے پڑھ لیا اور اتفاق کرتا ہوں',
+    dockHome: 'ہوم', dockBbs: 'بورڈ', dockIns: 'انشورنس', dockMe: 'میرا', disclaimerTitle: 'سنگین بیان', disclaimerAgree: 'میں نے پڑھ لیا اور اتفاق کرتا ہوں', announcement: 'اعلان', publishAnnouncement: 'شائع کریں',
     remainSec: 'سیکنڈ باقی', lockAt: '150 سیکنڈ پر بند', betCount: 'خواہشیں', redPool: 'سرخ پول', greenPool: 'سبز پول',
     oddWin: 'اعداد کا مجموعہ طاق → سرخ جیتتا ہے', evenWin: 'اعداد کا مجموعہ زوج → سبز جیتتا ہے', pickLabel: 'عدد منتخب کریں (0-9)',
     amountLabel: 'خواہش کی رقم (1-99 سکے، عدد صحیح)', confirmWish: 'خواہش کی تصدیق کریں', waitingStart: 'پہلی خواہش کا انتظار…', historyTitle: 'پچھلے راؤنڈ',
@@ -754,7 +754,22 @@ function syncAdmin(isAdmin) {
   if (isAdmin === undefined) isAdmin = state.isAdmin;
   state.isAdmin = !!isAdmin;
   $('adminPanel').classList.toggle('hide', !state.isAdmin);
+  $('adminAnnounceBox').classList.toggle('hide', !state.isAdmin);
   if (state.isAdmin) loadAdminWords();
+}
+
+// ---------------- 系统公告 ----------------
+async function loadAnnouncement() {
+  try {
+    const ann = await api('/announcement');
+    if (ann && ann.content) {
+      $('announcementContent').textContent = ann.content;
+      $('announcementTime').textContent = new Date(ann.at).toLocaleString();
+      $('announcementBox').classList.remove('hide');
+    } else {
+      $('announcementBox').classList.add('hide');
+    }
+  } catch { $('announcementBox').classList.add('hide'); }
 }
 
 // ---------------- 广场（发帖 / 回复 / 管理员治理） ----------------
@@ -762,6 +777,7 @@ async function loadBbs(auto = false) {
   if (!$('tab-bbs').classList.contains('active')) return;
   // 自动轮询时保护正在进行的输入：有展开的回复框、焦点在输入框、或主输入框有草稿，就跳过本次重绘
   if (auto && (document.querySelector('.reply-box:not(.hide)') || document.querySelector('#tab-bbs textarea:focus') || $('bbsInput').value)) return;
+  loadAnnouncement();
   const posts = await api('/bbs/list');
   $('bbsList').innerHTML = posts.length ? posts.map((p) => `
     <div class="bbs-item">
@@ -960,6 +976,14 @@ function init() {
   document.querySelectorAll('.dock-item').forEach((d) => d.onclick = () => switchDock(d.dataset.dock));
   bindSwipe();
   $('disclaimerConfirm').onclick = confirmDisclaimer;
+  // 系统公告发布（管理员）
+  $('announceInput').addEventListener('input', () => { $('announceChar').textContent = byteLen($('announceInput').value) + '/8192'; });
+  $('announceSend').onclick = async () => {
+    const content = $('announceInput').value.trim();
+    if (byteLen(content) < 1 || byteLen(content) > 8192) { alert('公告 1-8192 字节'); return; }
+    try { await api('/announcement', { uid: state.uid, content }); $('announceInput').value = ''; $('announceChar').textContent = '0/8192'; await loadAnnouncement(); alert('公告已发布'); }
+    catch (e) { alert(e.message); }
+  };
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
   $('premiumOutBtn').onclick = withdrawPremium;
   $('wdBtn').onclick = withdraw;
@@ -989,6 +1013,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.4';
+const FE_BUILD = '2.3.5';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

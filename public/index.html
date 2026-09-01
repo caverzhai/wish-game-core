@@ -90,6 +90,20 @@
         <button id="subTabVoice" class="sub-tab-btn" data-i18n="voiceTitle">Voice Rooms</button>
       </div>
       <div id="bbsView">
+        <!-- 系统公告（管理员发布，长文 8192 字节） -->
+        <div id="announcementBox" class="announcement-box hide">
+          <div class="announcement-title" data-i18n="announcement">Announcement</div>
+          <div class="announcement-content" id="announcementContent"></div>
+          <div class="announcement-time" id="announcementTime"></div>
+        </div>
+        <!-- 管理员发布公告（仅管理员可见） -->
+        <div id="adminAnnounceBox" class="admin-announce hide">
+          <textarea id="announceInput" maxlength="8192" rows="4" placeholder=""></textarea>
+          <div class="bbs-bar">
+            <span id="announceChar">0/8192</span>
+            <button id="announceSend" class="btn-primary" data-i18n="publishAnnouncement">Publish</button>
+          </div>
+        </div>
         <!-- 管理员治理面板（仅管理员钱包可见） -->
         <div id="adminPanel" class="admin-panel hide">
           <div class="admin-title" data-i18n="adminModeration">Moderation</div>

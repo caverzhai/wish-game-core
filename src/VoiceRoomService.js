@@ -1,10 +1,10 @@
-// =============================================================
-// VoiceRoomService.js —— 语音房（聊天室 + 会议室）
-// 聊天室：所有人可发文字/语音包(≤30秒)/图片(≤200K)，开房1枚，0.0001枚/分钟
-// 会议室：主持+1嘉宾实时通话(WebRTC)，其余打字/发图，开房5枚，0.01枚/分钟
-// 预付费：房间余额按分钟扣，余额为0自动关房；空房保留5分钟后退余额给主持
-// 消息缓存：每房间300条，满了覆盖最旧（连带删媒体文件）；违规词过滤
-// 金额：inner6 BigInt
+﻿// =============================================================
+// VoiceRoomService.js - voice rooms (chat rooms + meeting rooms)
+// Chat room: everyone can send text/voice clips (<=30s)/images (<=200K), open 1 unit, 0.0001 unit/min
+// Meeting room: host+1 guest real-time call (WebRTC), others text/image, open 5 units, 0.01 unit/min
+// Prepaid: room balance deducted per minute, auto-close at 0; empty room kept 5 min then balance refunded to host
+// Message cache: 300 per room, oldest overwritten when full (with media file deletion); blocked word filter
+// Amount: inner6 BigInt
 // =============================================================
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,12 +15,12 @@ import { coin, toInner, SCALE } from './money.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MEDIA_DIR = path.resolve(__dirname, '../tmp-voice');
 const MSG_CACHE = 300;
-const EMPTY_GRACE_MS = 5 * 60 * 1000; // 空房保留5分钟
+const EMPTY_GRACE_MS = 5 * 60 * 1000; // empty room kept 5 min
 const TEXT_MAX_BYTES = 1024;
 
 export const ROOM_CFG = {
-  chat:    { minOpen: coin(1),  perMinute: toInner('0.0001'), label: '语音聊天室' },
-  meeting: { minOpen: coin(5),  perMinute: toInner('0.01'),   label: '会议室' },
+  chat:    { minOpen: coin(1),  perMinute: toInner('0.0001'), label: 'Chat Room' },
+  meeting: { minOpen: coin(5),  perMinute: toInner('0.01'),   label: 'Meeting Room' },
 };
 
 const norm = (s) => String(s ?? '').toLowerCase().normalize('NFKD').replace(/[\s\p{P}\p{S}]/gu, '');
@@ -36,21 +36,21 @@ export class VoiceRoomService {
 
   _newId() { this._seq++; return 'R' + Date.now().toString(36) + this._seq.toString(36); }
 
-  // ---------- 创建房间 ----------
+  // ---------- Create room ----------
   async createRoom(uid, type, name, rechargeInner, description) {
     const u = await this.store.getUser(uid);
-    if (u.banned) throw new GameError(Codes.BANNED, '账号已被封禁，无法开房');
+    if (u.banned) throw new GameError(Codes.BANNED, 'Account banned, cannot create room');
     const cfg = ROOM_CFG[type];
-    if (!cfg) throw new GameError(Codes.BAD_INPUT, '房间类型错误');
+    if (!cfg) throw new GameError(Codes.BAD_INPUT, 'Invalid room type');
     const title = String(name ?? '').trim().slice(0, 30) || cfg.label;
     const desc = String(description ?? '').trim().slice(0, 200);
     const recharge = BigInt(rechargeInner ?? 0);
-    if (recharge < cfg.minOpen) throw new GameError(Codes.BAD_INPUT, `开房最低充值 ${Number(cfg.minOpen) / Number(SCALE)} 枚`);
+    if (recharge < cfg.minOpen) throw new GameError(Codes.BAD_INPUT, `Minimum room open recharge ${Number(cfg.minOpen) / Number(SCALE)} units`);
     const acc = await this.store.getAccount(uid);
-    if (acc.available < recharge) throw new GameError(Codes.BAD_INPUT, '余额不足，请先充值');
+    if (acc.available < recharge) throw new GameError(Codes.BAD_INPUT, 'Insufficient balance, please recharge first');
     const roomId = this._newId();
     await this.store.applyAccount(uid, { avail: -recharge });
-    await this.store.applyLedger({ plat: recharge }); // 预付费归平台，保持总帐守恒
+    await this.store.applyLedger({ plat: recharge }); // prepaid goes to platform, maintains ledger balance
     await this.store.addFlow(uid, 'ROOM_PAY', -recharge, { roomId, type }).catch(() => {});
     const room = {
       roomId, type, name: title, hostUid: uid,
@@ -65,18 +65,32 @@ export class VoiceRoomService {
     return this._public(room);
   }
 
-  // ---------- 房间列表 ----------
+  // ---------- Room list ----------
   async listRooms() {
-    return [...this.rooms.values()].filter((r) => !r.destroyed).map((r) => ({
+    const all = [...this.rooms.values()].filter((r) => !r.destroyed);
+    // Chat rooms sorted by member count descending; meetings keep creation order
+    const chats = all.filter((r) => r.type === 'chat').sort((a, b) => b.members.size - a.members.size);
+    const meetings = all.filter((r) => r.type === 'meeting');
+    return [...chats, ...meetings].map((r) => ({
       roomId: r.roomId, type: r.type, name: r.name, hostUid: r.hostUid,
       memberCount: r.members.size, balance: r.balance, perMinute: r.perMinute,
+      rateMultiplier: this._chatMultiplier(r),
       remainSec: this._remainSec(r), emptySince: r.emptySince,
     }));
   }
 
+  // Chat room dynamic rate: doubles every 10 members (1-10=1x, 11-20=2x, 21-30=4x...)
+  _chatMultiplier(r) {
+    if (r.type !== 'chat') return 1;
+    return 2 ** Math.floor(Math.max(0, r.members.size - 1) / 10);
+  }
+  _chatRate(r) {
+    return r.perMinute * BigInt(this._chatMultiplier(r));
+  }
+
   _get(roomId) {
     const r = this.rooms.get(roomId);
-    if (!r || r.destroyed) throw new GameError(Codes.NOT_FOUND, '房间不存在或已关闭');
+    if (!r || r.destroyed) throw new GameError(Codes.NOT_FOUND, 'Room not found or closed');
     return r;
   }
 
@@ -85,11 +99,11 @@ export class VoiceRoomService {
     return { room: this._public(r), members: this._members(r), messages: r.messages.slice(-100) };
   }
 
-  // ---------- 进出 ----------
+  // ---------- Join/leave ----------
   async join(roomId, uid) {
     const r = this._get(roomId);
     const u = await this.store.getUser(uid);
-    if (u.banned) throw new GameError(Codes.BANNED, '账号已被封禁');
+    if (u.banned) throw new GameError(Codes.BANNED, 'Account banned');
     if (!r.members.has(uid)) {
       r.members.set(uid, { uid, name: shortName(u.wallet), role: 'listener', micOn: false });
     }
@@ -109,38 +123,38 @@ export class VoiceRoomService {
     return { left: true, memberCount: r.members.size };
   }
 
-  // ---------- 充值（房间内任何人可充） ----------
+  // ---------- Recharge (anyone in room can recharge) ----------
   async recharge(roomId, uid, amountInner) {
     const r = this._get(roomId);
     const amount = BigInt(amountInner);
-    if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, '充值金额必须大于0');
+    if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, 'Recharge amount must be greater than 0');
     const acc = await this.store.getAccount(uid);
-    if (acc.available < amount) throw new GameError(Codes.BAD_INPUT, '余额不足');
+    if (acc.available < amount) throw new GameError(Codes.BAD_INPUT, 'Insufficient balance');
     await this.store.applyAccount(uid, { avail: -amount });
-    await this.store.applyLedger({ plat: amount }); // 增加时间也是预付费，归平台
+    await this.store.applyLedger({ plat: amount }); // adding time is also prepaid, goes to platform
     r.balance += amount;
     r.lastActiveAt = Date.now();
     await this.store.addFlow(uid, 'ROOM_PAY', -amount, { roomId, type: r.type, op: 'recharge' }).catch(() => {});
     return { balance: r.balance, remainSec: this._remainSec(r) };
   }
 
-  // ---------- 发消息 ----------
+  // ---------- Send message ----------
   async sendMessage(roomId, uid, msg) {
     const r = this._get(roomId);
     const m = r.members.get(uid);
-    if (!m) throw new GameError(Codes.FORBIDDEN, '请先加入房间');
+    if (!m) throw new GameError(Codes.FORBIDDEN, 'Please join the room first');
     if (r.type === 'meeting' && msg.type === 'voice' && m.role === 'listener') {
-      throw new GameError(Codes.FORBIDDEN, '会议室仅主持和嘉宾可发语音');
+      throw new GameError(Codes.FORBIDDEN, 'Only host and guest can send voice in meeting room');
     }
     let content = '';
     if (msg.type === 'text') {
       content = String(msg.content ?? '').trim();
       const bytes = Buffer.byteLength(content, 'utf8');
-      if (bytes < 1) throw new GameError(Codes.BAD_INPUT, '内容不能为空');
-      if (bytes > TEXT_MAX_BYTES) throw new GameError(Codes.BAD_INPUT, `最多 ${TEXT_MAX_BYTES} 字节`);
+      if (bytes < 1) throw new GameError(Codes.BAD_INPUT, 'Content cannot be empty');
+      if (bytes > TEXT_MAX_BYTES) throw new GameError(Codes.BAD_INPUT, `Max  ${TEXT_MAX_BYTES}  bytes`);
       const words = await this.store.listBlockedWords();
       const n = norm(content);
-      for (const w of words) { const nw = norm(w); if (nw && n.includes(nw)) throw new GameError(Codes.BAD_INPUT, '内容包含被屏蔽的词语'); }
+      for (const w of words) { const nw = norm(w); if (nw && n.includes(nw)) throw new GameError(Codes.BAD_INPUT, 'Content contains blocked words'); }
     }
     const msgId = 'M' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const item = {
@@ -156,13 +170,13 @@ export class VoiceRoomService {
     return item;
   }
 
-  // ---------- 会议室嘉宾管理（主持操作） ----------
+  // ---------- Meeting room guest management (host only) ----------
   async setGuest(roomId, hostUid, guestUid, on) {
     const r = this._get(roomId);
-    if (r.type !== 'meeting') throw new GameError(Codes.BAD_INPUT, '仅会议室可设置嘉宾');
-    if (r.hostUid !== hostUid) throw new GameError(Codes.FORBIDDEN, '仅主持可操作');
+    if (r.type !== 'meeting') throw new GameError(Codes.BAD_INPUT, 'Only meeting rooms can set guests');
+    if (r.hostUid !== hostUid) throw new GameError(Codes.FORBIDDEN, 'Only host can operate');
     if (on) {
-      if (r.guestUid && r.guestUid !== guestUid) throw new GameError(Codes.BAD_INPUT, '已有嘉宾，请先让当前嘉宾下麦');
+      if (r.guestUid && r.guestUid !== guestUid) throw new GameError(Codes.BAD_INPUT, 'Already has a guest, ask current guest to leave mic first');
       r.guestUid = guestUid;
       const m = r.members.get(guestUid);
       if (m) { m.role = 'guest'; m.micOn = true; }
@@ -174,38 +188,51 @@ export class VoiceRoomService {
     return { guestUid: r.guestUid, members: this._members(r) };
   }
 
-  // ---------- 上麦/下麦 ----------
+  // ---------- Join/leave mic ----------
   async setMic(roomId, uid, on) {
     const r = this._get(roomId);
     const m = r.members.get(uid);
-    if (!m) throw new GameError(Codes.FORBIDDEN, '请先加入房间');
-    if (r.type === 'meeting' && m.role === 'listener') throw new GameError(Codes.FORBIDDEN, '请先向主持申请上麦');
+    if (!m) throw new GameError(Codes.FORBIDDEN, 'Please join the room first');
+    if (r.type === 'meeting' && m.role === 'listener') throw new GameError(Codes.FORBIDDEN, 'Please ask host to join mic first');
     m.micOn = !!on;
     return { micOn: m.micOn, members: this._members(r) };
   }
 
-  // ---------- 房主解散房间（退余额） ----------
+  // ---------- Host dissolves room (refund balance) ----------
   async dissolve(roomId, uid) {
     const r = this._get(roomId);
-    if (r.hostUid !== uid) throw new GameError(Codes.FORBIDDEN, '仅房主可解散房间');
-    await this._destroy(r, 'dissolve'); // 任何方式解散均不退款
+    if (r.hostUid !== uid) throw new GameError(Codes.FORBIDDEN, 'Only host can dissolve room');
+    await this._destroy(r, 'dissolve'); // no refund regardless of dissolve method
     return { dissolved: true };
   }
 
-  // ---------- 房主编辑房间说明（200字） ----------
+  // ---------- Host edits room description (200 chars) ----------
   editDescription(roomId, uid, description) {
     const r = this._get(roomId);
-    if (r.hostUid !== uid) throw new GameError(Codes.FORBIDDEN, '仅房主可编辑说明');
+    if (r.hostUid !== uid) throw new GameError(Codes.FORBIDDEN, 'Only host can edit description');
     r.description = String(description ?? '').trim().slice(0, 200);
     return { description: r.description };
   }
 
-  // ---------- 每分钟扣费 / 空房销毁 ----------
+  // ---------- Per-minute billing / empty room destruction ----------
   async tick() {
     const now = Date.now();
     const destroyed = [];
     for (const r of [...this.rooms.values()]) {
       if (r.destroyed) continue;
+      // Chat rooms: stay open as long as balance > 0, even when empty (no auto-destroy on empty)
+      if (r.type === 'chat') {
+        const rate = this._chatRate(r);
+        if (r.balance > rate) {
+          r.balance -= rate;
+        } else {
+          r.balance = 0n;
+          await this._destroy(r, 'balance');
+          destroyed.push(r.roomId);
+        }
+        continue;
+      }
+      // Meeting rooms: empty 5 min grace -> destroy; balance 0 -> destroy
       if (r.emptySince && now - r.emptySince >= EMPTY_GRACE_MS) {
         await this._destroy(r, 'empty');
         destroyed.push(r.roomId);
@@ -213,7 +240,7 @@ export class VoiceRoomService {
       }
       if (r.members.size > 0 && !r.emptySince) {
         if (r.balance > r.perMinute) {
-          r.balance -= r.perMinute; // 预付费已在开房时全额记平台收入，这里只减虚拟余额
+          r.balance -= r.perMinute; // prepaid already recorded as platform revenue at room creation, only deduct virtual balance here
         } else {
           r.balance = 0n;
           await this._destroy(r, 'balance');
@@ -226,12 +253,12 @@ export class VoiceRoomService {
 
   async _destroy(r, reason) {
     r.destroyed = true;
-    // 任何方式解散均不退款：房间余额归平台
+    // no refund regardless of dissolve method: room balance goes to platform
     for (const m of r.messages) if (m.file) this._deleteMedia(m.file);
     this.rooms.delete(r.roomId);
   }
 
-  // ---------- 媒体文件 ----------
+  // ---------- Media files ----------
   saveMedia(buf, ext) {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
     const file = id + '.' + String(ext || 'webm').replace(/[^a-z0-9]/gi, '');
@@ -243,18 +270,19 @@ export class VoiceRoomService {
     return path.join(MEDIA_DIR, safe);
   }
   _deleteMedia(file) {
-    try { fs.unlinkSync(this.getMediaPath(file)); } catch { /* 已删或不存在 */ }
+    try { fs.unlinkSync(this.getMediaPath(file)); } catch { /* already deleted or not found */ }
   }
 
-  // ---------- 工具 ----------
+  // ---------- Utilities ----------
   totalRoomBalance() {
     let s = 0n;
     for (const r of this.rooms.values()) if (!r.destroyed) s += r.balance;
     return s;
   }
   _remainSec(r) {
-    if (r.perMinute <= 0n || r.balance <= 0n) return 0;
-    return Math.floor(Number(r.balance * 60n / r.perMinute));
+    const rate = this._chatRate(r);
+    if (rate <= 0n || r.balance <= 0n) return 0;
+    return Math.floor(Number(r.balance * 60n / rate));
   }
   _members(r) {
     return [...r.members.values()].map((m) => ({ uid: m.uid, name: m.name, role: m.role, micOn: m.micOn }));

@@ -1,5 +1,5 @@
-// =============================================================
-// mixed-pay.test.js —— 混合支付：站内余额精确用尽、链上补差、余额清零
+﻿// =============================================================
+// mixed-pay.test.js - mixed payment: in-site balance fully used, on-chain top-up, balance zeroed
 // =============================================================
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -8,7 +8,7 @@ import { coin, toInner, needTopUp } from '../src/money.js';
 
 const mk = () => createApp();
 
-test('needTopUp：站内不足时返回精确差额（含小数），足够时为0', () => {
+test('needTopUp: returns precise delta (with decimals) when insufficient, 0 when sufficient', () => {
   assert.equal(needTopUp(0n, coin(10)), coin(10));
   assert.equal(needTopUp(coin(10), coin(10)), 0n);
   assert.equal(needTopUp(coin(20), coin(10)), 0n);
@@ -16,25 +16,25 @@ test('needTopUp：站内不足时返回精确差额（含小数），足够时�
   assert.equal(needTopUp(toInner('7.999999'), coin(10)), toInner('2.000001'));
 });
 
-test('混合支付：站内余额(含小数零头)被精确用尽、链上只补差额，下注后可用余额精确清零', async () => {
+test('Mixed payment: in-site balance (with decimal remainder) fully used, on-chain only tops delta, available balance zeroed exactly after bet', async () => {
   const cases = [['5', 10], ['5.3', 10], ['7.999999', 10], ['0.000001', 1], ['0', 99]];
   for (const [start, total] of cases) {
     const app = await mk();
     const U = (await app.game.register('0xM' + start)).uid;
     const init = toInner(start);
-    if (init > 0n) await app.wallet.issueInner(U, init, 'INIT');            // 初始站内余额（可能带小数/为0）
+    if (init > 0n) await app.wallet.issueInner(U, init, 'INIT');            // initial in-site balance (may have decimals/be 0)
     const acc0 = await app.store.getAccount(U);
-    const need = needTopUp(acc0.available, coin(total));                    // 与 /bet/onchain 路由完全相同的补差计算
-    if (need > 0n) await app.wallet.issueInner(U, need, 'CHAIN_DEPOSIT');   // 链上差额精确入账
-    await app.game.bet(U, 'red', total, 1, 10);                            // 冻结全额
+    const need = needTopUp(acc0.available, coin(total));                    // same delta calc as /bet/onchain route
+    if (need > 0n) await app.wallet.issueInner(U, need, 'CHAIN_DEPOSIT');   // on-chain delta credited precisely
+    await app.game.bet(U, 'red', total, 1, 10);                            // freeze full amount
     const after = await app.store.getAccount(U);
-    assert.equal(after.available, 0n, `start=${start} 应精确清零，实剩 ${after.available}`);
-    assert.equal(after.frozen, coin(total), `start=${start} 冻结应=${coin(total)}`);
-    assert.equal(await app.store.totalInside(), await app.store.totalSource(), `start=${start} 守恒`);
+    assert.equal(after.available, 0n, `start=${start} should be zeroed, actual  ${after.available}`);
+    assert.equal(after.frozen, coin(total), `start=${start} frozen should=${coin(total)}`);
+    assert.equal(await app.store.totalInside(), await app.store.totalSource(), `start=${start} conserved`);
   }
 });
 
-test('混合支付：站内余额足够则不补链上，下注后仅扣下注额、剩余保留', async () => {
+test('Mixed payment: sufficient in-site balance means no on-chain top-up, only bet amount deducted, remainder kept', async () => {
   const app = await mk();
   const U = (await app.game.register('0xN')).uid;
   await app.wallet.issueInner(U, toInner('15.25'), 'INIT');
@@ -47,12 +47,12 @@ test('混合支付：站内余额足够则不补链上，下注后仅扣下注�
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('链上掉单补录幂等：同一 txHash 只入账一次，重复提交返回 already 且余额不翻倍', async () => {
+test('On-chain missing-order recovery idempotent: same txHash credited once, duplicate returns already and balance not doubled', async () => {
   const app = await mk();
   const U = (await app.game.register('0xC')).uid;
-  app.chain.verifyIncoming = async () => ({ inner: toInner('4.7') }); // stub：链上实收 4.7 枚
+  app.chain.verifyIncoming = async () => ({ inner: toInner('4.7') }); // stub: on-chain actual received 4.7 units
   const tx = '0xabc';
-  // 与 /wallet/credit 路由相同的编排：已入账则幂等返回，否则核验→入账→登记
+  // same orchestration as /wallet/credit route: idempotent return if credited, else verify->credit->register
   const creditOnce = async () => {
     if (await app.store.isChainTxUsed(tx)) return 'already';
     const hit = await app.chain.verifyIncoming({ txHash: tx });
@@ -63,19 +63,19 @@ test('链上掉单补录幂等：同一 txHash 只入账一次，重复提交返
   assert.equal(await creditOnce(), 'credited');
   assert.equal((await app.store.getAccount(U)).available, toInner('4.7'));
   assert.equal(await creditOnce(), 'already');
-  assert.equal((await app.store.getAccount(U)).available, toInner('4.7')); // 不重复入账
+  assert.equal((await app.store.getAccount(U)).available, toInner('4.7')); // no double credit
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('保费提回：保险开启时拒绝，关闭后可提回余额，用户总账守恒', async () => {
+test('Premium withdrawal: rejected when insurance on, allowed when off, user ledger conserved', async () => {
   const app = await mk();
   const U = (await app.game.register('0xP')).uid;
   await app.wallet.issueInner(U, coin(50), 'INIT');
   await app.insurance.depositPremium(U, coin(30)); // available 20 / premium 30
   await app.insurance.setSwitch(U, true);
-  await assert.rejects(() => app.insurance.withdrawPremium(U), /关闭/);
+  await assert.rejects(() => app.insurance.withdrawPremium(U), /turn off/);
   await app.insurance.setSwitch(U, false);
-  await app.insurance.withdrawPremium(U); // 留空=全部提回
+  await app.insurance.withdrawPremium(U); // empty = withdraw all
   const a = await app.store.getAccount(U);
   assert.equal(a.premium, 0n);
   assert.equal(a.available, coin(50));

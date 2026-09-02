@@ -1,6 +1,6 @@
-// =============================================================
-// WalletService.js —— 发放(充值入账/领币) / 提现 / 链上结果回写（async）
-// 提现：2-500 枚/笔，固定 1 枚手续费归平台
+﻿// =============================================================
+// WalletService.js - issuance (deposit credit) / withdrawal / on-chain result writeback (async)
+// Withdrawal: 2-500 units/tx, fixed 1 unit fee to platform
 // =============================================================
 import { GameError, Codes } from './errors.js';
 import { coin } from './money.js';
@@ -12,7 +12,7 @@ export class WalletService {
   constructor(store, cfg) { this.store = store; this.cfg = cfg; }
 
   async issue(uid, amountCoin, note = 'ISSUE') {
-    if (!Number.isInteger(amountCoin) || amountCoin <= 0) throw new GameError(Codes.BAD_INPUT, '发放数量必须为正整数（枚）');
+    if (!Number.isInteger(amountCoin) || amountCoin <= 0) throw new GameError(Codes.BAD_INPUT, 'Issuance amount must be a positive integer (units)');
     const amount = coin(amountCoin);
     return await this.store.transaction(async () => {
       await this.store.getUser(uid);
@@ -23,10 +23,10 @@ export class WalletService {
     }, 'issue');
   }
 
-  /** 按站内最小单位（6位定点 BigInt）入账，允许非整数枚（链上补差用，精确清零） */
+  /** Credit by in-site min unit (6-decimal BigInt), allows non-integer units (for on-chain delta, precise zeroing) */
   async issueInner(uid, inner, note = 'CHAIN_DEPOSIT') {
     const amount = BigInt(inner);
-    if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, '入账金额必须为正');
+    if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, 'Credit amount must be positive');
     return await this.store.transaction(async () => {
       await this.store.getUser(uid);
       const a = await this.store.applyAccount(uid, { avail: amount });
@@ -38,13 +38,13 @@ export class WalletService {
 
   async withdraw(uid, amountCoin, toWallet) {
     const cfg = this.cfg, s = this.store;
-    if (!Number.isInteger(amountCoin)) throw new GameError(Codes.BAD_INPUT, '提现数量必须为整数（枚）');
+    if (!Number.isInteger(amountCoin)) throw new GameError(Codes.BAD_INPUT, 'Withdrawal amount must be an integer (units)');
     const amount = coin(amountCoin);
-    if (amount < cfg.withdrawMin || amount > cfg.withdrawMax) throw new GameError(Codes.WITHDRAW_RANGE, '每笔提现 2-500 枚');
+    if (amount < cfg.withdrawMin || amount > cfg.withdrawMax) throw new GameError(Codes.WITHDRAW_RANGE, 'Withdrawal 2-500 units per tx');
     return await s.transaction(async () => {
       const u = await s.getUser(uid);
       const a = await s.getAccount(uid);
-      if (a.available < amount) throw new GameError(Codes.INSUFFICIENT_BALANCE, '可用余额不足');
+      if (a.available < amount) throw new GameError(Codes.INSUFFICIENT_BALANCE, 'Insufficient available balance');
       const fee = cfg.withdrawFee, arrive = amount - fee;
       await s.applyAccount(uid, { avail: -amount });
       await s.applyLedger({ plat: fee, pending: arrive });
@@ -63,8 +63,8 @@ export class WalletService {
     const s = this.store;
     return await s.transaction(async () => {
       const wd = await s.findWithdraw(withdrawId);
-      if (!wd) throw new GameError(Codes.NOT_FOUND, '提现单不存在');
-      if (wd.state !== 'pending') return wd; // 已确认或其它终态：幂等返回，绝不重复记账、不抛错
+      if (!wd) throw new GameError(Codes.NOT_FOUND, 'Withdrawal order not found');
+      if (wd.state !== 'pending') return wd; // confirmed or other terminal state: idempotent return, never double-post, no error
       await s.applyLedger({ pending: -wd.arrive, withdrawn: wd.arrive });
       await s.updateWithdraw(withdrawId, { state: 'paid', txhash: txhash ?? null });
       await s.addFlow(wd.uid, 'WITHDRAW_PAID', wd.arrive, { withdrawId, txhash });
@@ -72,23 +72,23 @@ export class WalletService {
     }, 'confirmWithdraw');
   }
 
-  /** 自愈：把本用户「未广播成功（无哈希）」的遗留在途单全部退回可用余额 */
+  /** Self-heal: refund all stuck pending orders of this user that failed to broadcast (no hash) back to available balance */
   async reapUnbroadcast(uid) {
     const stale = await this.store.listStalePending(uid, STALE_WITHDRAW_MS);
     const out = [];
     for (const wd of stale) {
       try { out.push(await this.failWithdraw(wd.withdrawId)); }
-      catch { /* 单笔自愈异常不阻断其它单，更不阻断本次提现 */ }
+      catch { /* single self-heal error does not block other orders, nor this withdrawal */ }
     }
     return out;
   }
 
-  /** 对账：把「已广播(有哈希)但仍 pending」的单补确认为 paid（钱已打出，回执延迟不应一直挂在途） */
+  /** Reconcile: mark broadcast (has hash) but still pending orders as paid (money was sent, receipt delay should not keep it pending forever) */
   async reconcileBroadcasted(uid) {
     const out = [];
     for (const wd of await this.store.listBroadcastedPending(uid)) {
       try { out.push(await this.confirmWithdraw(wd.withdrawId, wd.txhash)); }
-      catch { /* 单笔异常不阻断 */ }
+      catch { /* single error does not block */ }
     }
     return out;
   }
@@ -97,8 +97,8 @@ export class WalletService {
     const s = this.store;
     return await s.transaction(async () => {
       const wd = await s.findWithdraw(withdrawId);
-      if (!wd) throw new GameError(Codes.NOT_FOUND, '提现单不存在');
-      // 幂等且永不因状态抛错打断用户：只有 pending 才执行退款；failed/paid/其它终态一律直接返回
+      if (!wd) throw new GameError(Codes.NOT_FOUND, 'Withdrawal order not found');
+      // idempotent and never interrupt user with state errors: only pending orders get refunded; failed/paid/other terminal states return directly
       if (wd.state !== 'pending') return wd;
       await s.applyLedger({ pending: -wd.arrive, plat: -wd.fee });
       await s.applyAccount(wd.uid, { avail: wd.amount });

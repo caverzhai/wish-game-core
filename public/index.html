@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -26,7 +26,7 @@
     </div>
   </header>
 
-  <!-- 登录：连接钱包即用 -->
+  <!-- Login: connect wallet to use -->
   <div id="loginMask" class="mask">
     <div class="login-card">
       <div class="login-logo">✦</div>
@@ -39,7 +39,7 @@
   </div>
 
   <main id="main" class="hide">
-    <!-- 首页：对局 + 历史 -->
+    <!-- Home: rounds + history -->
     <section id="tab-home" class="panel active">
       <div class="round-card">
         <div class="hist-strip" id="histDots"></div>
@@ -63,7 +63,7 @@
       </div>
 
       <div class="amount-card">
-        <label data-i18n="amountLabel">Wish amount (1-99 枚, integer)</label>
+        <label data-i18n="amountLabel">Wish amount (1-99 units, integer)</label>
         <div class="bet-row">
           <input id="amountInput" type="number" min="1" max="99" step="1" inputmode="numeric" placeholder="1-99" />
           <span class="bet-label" data-i18n="confirmWish">Confirm Wish</span>
@@ -72,31 +72,40 @@
       </div>
 
       <div id="insStatusBar" class="ins-status-bar off"></div>
+
+      <!-- How to play guide -->
+      <div class="howto-box">
+        <div class="howto-title" data-i18n="howtoTitle">How to Play</div>
+        <div class="howto-item"><span class="howto-num">1</span><span data-i18n="howtoStep1">Pick Red or Green pool, enter 1-99 units, choose a number 0-9</span></div>
+        <div class="howto-item"><span class="howto-num">2</span><span data-i18n="howtoStep2">Sum of all picks: odd = Red wins, even = Green wins. Winners split pool after 2.5% fee</span></div>
+        <div class="howto-item"><span class="howto-num">3</span><span data-i18n="howtoStep3">No insurance: keep all winnings after fee. With insurance (premium ≥20 + switch on): pay 10% of winnings, but losses accumulate — every 100 units lost creates a payout node returned over 100 periods</span></div>
+      </div>
+
       <div id="playMsg" class="msg"></div>
       <button id="selfCheckBtn" class="btn-ghost self-check" data-i18n="selfCheck">Wallet environment check</button>
 
-      <!-- 精简保险池公示（人人可见、动态） -->
+      <!-- Compact insurance pool display (public, dynamic) -->
       <div class="pool-public-mini" id="poolPublicMini"></div>
 
-      <!-- 历史记录（确认许愿下方） -->
+      <!-- History (below confirm bet) -->
       <h4 class="hist-title" data-i18n="historyTitle">Past rounds</h4>
       <div id="historyList" class="history-list"></div>
     </section>
 
-    <!-- 广场 -->
+    <!-- Plaza -->
     <section id="tab-bbs" class="panel">
       <div class="sub-tab">
         <button id="subTabBbs" class="sub-tab-btn active" data-i18n="bbsTitle">Board</button>
         <button id="subTabVoice" class="sub-tab-btn" data-i18n="voiceTitle">Voice Rooms</button>
       </div>
       <div id="bbsView">
-        <!-- 系统公告（管理员发布，长文 8192 字节） -->
+        <!-- System announcement (admin-published, 8192 bytes) -->
         <div id="announcementBox" class="announcement-box hide">
           <div class="announcement-title" data-i18n="announcement">Announcement</div>
           <div class="announcement-content" id="announcementContent"></div>
           <div class="announcement-time" id="announcementTime"></div>
         </div>
-        <!-- 管理员发布公告（仅管理员可见） -->
+        <!-- Admin publish announcement (admin only) -->
         <div id="adminAnnounceBox" class="admin-announce hide">
           <textarea id="announceInput" maxlength="8192" rows="4" placeholder=""></textarea>
           <div class="bbs-bar">
@@ -104,7 +113,7 @@
             <button id="announceSend" class="btn-primary" data-i18n="publishAnnouncement">Publish</button>
           </div>
         </div>
-        <!-- 管理员治理面板（仅管理员钱包可见） -->
+        <!-- Admin moderation panel (admin wallet only) -->
         <div id="adminPanel" class="admin-panel hide">
           <div class="admin-title" data-i18n="adminModeration">Moderation</div>
           <div class="row">
@@ -122,7 +131,7 @@
         </div>
         <div id="bbsList" class="bbs-list"></div>
       </div>
-      <!-- 语音房 -->
+      <!-- Voice rooms -->
       <div id="voiceView" class="hide">
         <div class="voice-head">
           <button id="createRoomBtn" class="btn-primary" data-i18n="createRoom">Create Room</button>
@@ -131,10 +140,10 @@
       </div>
     </section>
 
-    <!-- 保险 -->
+    <!-- Insurance -->
     <section id="tab-insurance" class="panel">
       <h3 data-i18n="insTitle">Wish Insurance</h3>
-      <!-- 保险池总资金 / 下次应释放 公示（动态对比） -->
+      <!-- Insurance pool total / next pending release display (dynamic comparison) -->
       <div class="pool-public" id="poolPublicCard"></div>
 
       <div class="ins-status">
@@ -155,11 +164,22 @@
         <button id="premiumOutBtn" class="btn-ghost" data-i18n="premiumWithdraw">Premium back to balance</button>
       </div>
       <p class="muted" data-i18n="insRule"></p>
+
+      <!-- Insurance detailed guide -->
+      <div class="ins-guide-box">
+        <div class="howto-title" data-i18n="insGuideTitle">Insurance Guide</div>
+        <div class="howto-item"><span class="howto-num">1</span><span data-i18n="insGuide1">Activate: turn on the switch AND keep premium balance ≥ 20 units</span></div>
+        <div class="howto-item"><span class="howto-num">2</span><span data-i18n="insGuide2">When you win: 10% of your winnings goes to the insurance pool</span></div>
+        <div class="howto-item"><span class="howto-num">3</span><span data-i18n="insGuide3">When you lose: net loss accumulates. Every 100 units lost creates one payout node (20 units premium deducted), returned over 100 periods</span></div>
+        <div class="howto-item"><span class="howto-num">4</span><span data-i18n="insGuide4">Payout every 6 hours (UTC 3/9/15/21). Any new node within 168 hours revives all your nodes; otherwise current period is forfeited</span></div>
+        <div class="howto-item"><span class="howto-num">5</span><span data-i18n="insGuide5">Withdraw premium back to balance only when insurance switch is off</span></div>
+      </div>
+
       <h4 data-i18n="myNodes">My payout nodes</h4>
       <div id="nodeList" class="node-list"></div>
     </section>
 
-    <!-- 我的：钱包 + 邀请 -->
+    <!-- Me: wallet + invite -->
     <section id="tab-me" class="panel">
       <h3 data-i18n="meWallet">Wallet</h3>
       <div id="chainModeTip" class="chain-tip hide"></div>
@@ -199,22 +219,22 @@
     </section>
   </main>
 
-  <!-- 创建房间弹窗 -->
+  <!-- Create room modal -->
   <div id="createRoomMask" class="mask hide">
     <div class="login-card">
       <h3 data-i18n="createRoom">Create Room</h3>
       <div class="room-type-select">
-        <button class="room-type active" data-type="chat"><b data-i18n="chatRoom">Chat Room</b><small>1枚 · 0.0001/分</small></button>
-        <button class="room-type" data-type="meeting"><b data-i18n="meetingRoom">Meeting</b><small>5枚 · 0.01/分</small></button>
+        <button class="room-type active" data-type="chat"><b data-i18n="chatRoom">Chat Room</b><small>1 unit · 0.0001/min</small></button>
+        <button class="room-type" data-type="meeting"><b data-i18n="meetingRoom">Meeting</b><small>5 units · 0.01/min</small></button>
       </div>
-      <input id="roomNameInput" maxlength="30" class="room-name-input" data-i18n-placeholder="roomNamePh" placeholder="房间名（可选）" />
-      <textarea id="roomDescInput" maxlength="200" class="room-desc-input" data-i18n-placeholder="roomDescPh" placeholder="房间说明（可选，200字内，话题/规则）"></textarea>
-      <button id="confirmCreateRoom" class="btn-primary big" data-i18n="confirmCreate">确认创建</button>
-      <button id="cancelCreateRoom" class="btn-ghost" data-i18n="cancel">取消</button>
+      <input id="roomNameInput" maxlength="30" class="room-name-input" data-i18n-placeholder="roomNamePh" placeholder="Room name (optional)" />
+      <textarea id="roomDescInput" maxlength="200" class="room-desc-input" data-i18n-placeholder="roomDescPh" placeholder="Room description (optional, 200 chars, topic/rules)"></textarea>
+      <button id="confirmCreateRoom" class="btn-primary big" data-i18n="confirmCreate">Create</button>
+      <button id="cancelCreateRoom" class="btn-ghost" data-i18n="cancel">Cancel</button>
     </div>
   </div>
 
-  <!-- 房间内覆盖层 -->
+  <!-- In-room overlay -->
   <div id="roomMask" class="mask hide room-mask">
     <div class="room-inner">
       <div class="room-top">
@@ -227,33 +247,33 @@
         </div>
         <div class="room-top-row2">
           <span id="roomRemain" class="room-remain"></span>
-          <button id="roomDissolveBtn" class="room-action-btn btn-danger hide" data-i18n="dissolveRoom">解散</button>
-          <button id="roomShareBtn" class="room-action-btn" data-i18n="share">分享</button>
-          <button id="roomRechargeBtn" class="room-action-btn" data-i18n="addTime">增加时间</button>
+          <button id="roomDissolveBtn" class="room-action-btn btn-danger hide" data-i18n="dissolveRoom">Dissolve</button>
+          <button id="roomShareBtn" class="room-action-btn" data-i18n="share">Share</button>
+          <button id="roomRechargeBtn" class="room-action-btn" data-i18n="addTime">Add Time</button>
         </div>
       </div>
       <div id="roomDesc" class="room-desc hide">
-        <span class="room-desc-label" data-i18n="hostNotice">房主声明</span>
+        <span class="room-desc-label" data-i18n="hostNotice">Host Notice</span>
         <div class="room-desc-box" id="roomDescBox"></div>
       </div>
       <div class="room-members" id="roomMembers"></div>
       <div class="room-msgs" id="roomMsgs"></div>
       <div id="meetingControls" class="meeting-controls hide">
-        <button id="micBtn" class="btn-primary" data-i18n="micOn">开麦</button>
-        <button id="guestListBtn" class="btn-ghost hide" data-i18n="inviteGuest">邀请嘉宾</button>
+        <button id="micBtn" class="btn-primary" data-i18n="micOn">Mic On</button>
+        <button id="guestListBtn" class="btn-ghost hide" data-i18n="inviteGuest">Invite Guest</button>
       </div>
       <div class="room-input-bar">
-        <button id="voiceRecordBtn" class="btn-ghost room-ico" title="语音">🎤</button>
-        <button id="imageBtn" class="btn-ghost room-ico" title="图片">🖼</button>
-        <input id="roomTextInput" data-i18n-placeholder="saySomething" placeholder="说点什么..." />
-        <button id="roomSendBtn" class="btn-primary" data-i18n="send">发送</button>
+        <button id="voiceRecordBtn" class="btn-ghost room-ico" title="Voice">🎤</button>
+        <button id="imageBtn" class="btn-ghost room-ico" title="Image">🖼</button>
+        <input id="roomTextInput" data-i18n-placeholder="saySomething" placeholder="Say something..." />
+        <button id="roomSendBtn" class="btn-primary" data-i18n="send">Send</button>
       </div>
       <input type="file" id="imageFileInput" accept="image/*" class="hide" />
-      <div id="recordTip" class="record-tip hide">录音中… <span id="recordTime">0</span>s（最长30秒）</div>
+      <div id="recordTip" class="record-tip hide">Recording... <span id="recordTime">0</span>s (max 30s)</div>
     </div>
   </div>
 
-  <!-- 底部 Dock -->
+  <!-- Bottom dock -->
   <nav id="dock" class="dock hide">
     <button data-dock="home" class="dock-item active"><span class="dock-ico">⌂</span><span data-i18n="dockHome">Home</span></button>
     <button data-dock="bbs" class="dock-item"><span class="dock-ico">✎</span><span data-i18n="dockBbs">Board</span></button>
@@ -263,9 +283,9 @@
 </div>
 <div id="disclaimerMask" class="mask hide">
   <div class="disclaimer-box">
-    <h3 data-i18n="disclaimerTitle">免责声明</h3>
-    <div class="disclaimer-content" id="disclaimerContent">（免责声明内容待填写）</div>
-    <button id="disclaimerConfirm" class="btn-primary big" data-i18n="disclaimerAgree">我已阅读并同意</button>
+    <h3 data-i18n="disclaimerTitle">Disclaimer</h3>
+    <div class="disclaimer-content" id="disclaimerContent">(disclaimer content pending)</div>
+    <button id="disclaimerConfirm" class="btn-primary big" data-i18n="disclaimerAgree">I have read and agree</button>
   </div>
 </div>
 <script src="/app.js"></script>

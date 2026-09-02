@@ -1,7 +1,7 @@
-// =============================================================
-// store.js —— 内存仓储（async 接口，与 MysqlStore 同构）
-// 领域服务只依赖本文件声明的方法；生产换 MysqlStore 即可，业务代码不变
-// 金额一律 BigInt（枚的 1e-6 最小单位）
+﻿// =============================================================
+// store.js - in-memory store (async interface, isomorphic with MysqlStore)
+// Domain services only depend on methods declared here; production swaps to MysqlStore, business code unchanged
+// All amounts are BigInt (1e-6 min unit of units)
 // =============================================================
 import { GameError, Codes } from './errors.js';
 
@@ -20,12 +20,12 @@ export class MemoryStore {
     this.posts = [];
     this.replies = [];
     this.blockedWords = new Set();
-    this.chainTxs = new Map(); // 已入账的链上交易哈希 -> {uid,inner,at}，幂等去重（重启内存版会丢，生产用 MySQL）
+    this.chainTxs = new Map(); // credited on-chain tx hash -> {uid,inner,at}, idempotent dedup (in-memory loses on restart, production uses MySQL)
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
     this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0 };
   }
 
-  async init() { /* 内存版无需建表 */ }
+  async init() { /* in-memory version needs no tables */ }
   get kind() { return 'memory'; }
 
   nextId(kind, prefix) {
@@ -33,9 +33,9 @@ export class MemoryStore {
     return `${prefix}${this._seq[kind]}`;
   }
 
-  // -------- 用户 / 账户 --------
+  // -------- User / account --------
   async createUser({ wallet, inviterUid = null, createdAt = 0 }) {
-    if (await this.getUserByWallet(wallet)) throw new GameError(Codes.ALREADY_EXISTS, '该钱包已注册');
+    if (await this.getUserByWallet(wallet)) throw new GameError(Codes.ALREADY_EXISTS, 'This wallet already registered');
     const uid = await this.nextId('user', 'U');
     const user = { uid, wallet, inviterUid, insSwitch: false, banned: false, createdAt };
     this.users.set(uid, user);
@@ -48,21 +48,21 @@ export class MemoryStore {
   }
   async getUser(uid) {
     const u = this.users.get(uid);
-    if (!u) throw new GameError(Codes.NOT_FOUND, '用户不存在');
+    if (!u) throw new GameError(Codes.NOT_FOUND, 'User not found');
     return { ...u };
   }
   async listUsers() { return [...this.users.values()].map((u) => ({ ...u })); }
   async setUserSwitch(uid, on) { const u = this.users.get(uid); u.insSwitch = !!on; return u.insSwitch; }
-  async setBanned(uid, banned) { const u = this.users.get(uid); if (!u) throw new GameError(Codes.NOT_FOUND, '用户不存在'); u.banned = !!banned; return u.banned; }
+  async setBanned(uid, banned) { const u = this.users.get(uid); if (!u) throw new GameError(Codes.NOT_FOUND, 'User not found'); u.banned = !!banned; return u.banned; }
 
   async getAccount(uid) {
     const a = this.accounts.get(uid);
-    if (!a) throw new GameError(Codes.NOT_FOUND, '账户不存在');
+    if (!a) throw new GameError(Codes.NOT_FOUND, 'Account not found');
     return { ...a };
   }
   async applyAccount(uid, d = {}) {
     const a = this.accounts.get(uid);
-    if (!a) throw new GameError(Codes.NOT_FOUND, '账户不存在');
+    if (!a) throw new GameError(Codes.NOT_FOUND, 'Account not found');
     a.available += BigInt(d.avail ?? 0);
     a.frozen += BigInt(d.frozen ?? 0);
     a.premium += BigInt(d.premium ?? 0);
@@ -80,7 +80,7 @@ export class MemoryStore {
   }
   async getLedger() { return { ...this.ledger }; }
 
-  // -------- 对局 --------
+  // -------- Rounds --------
   async insertRound(r) { this.rounds.set(r.roundId, { ...r }); return r.roundId; }
   async updateRound(roundId, patch) { Object.assign(this.rounds.get(roundId), patch); }
   async getRound(roundId) {
@@ -99,7 +99,7 @@ export class MemoryStore {
   async countBetsOfRound(roundId) { return this.bets.filter((b) => b.roundId === roundId).length; }
   async markBetsSettled(roundId) { this.bets.filter((b) => b.roundId === roundId).forEach((b) => (b.settled = true)); }
 
-  // -------- 保险节点 --------
+  // -------- Insurance nodes --------
   async insertNode(n) { this.nodes.push({ ...n }); }
   async listNodes({ uid = null, active = null } = {}) {
     return this.nodes.filter((n) =>
@@ -109,11 +109,11 @@ export class MemoryStore {
   async addNodeLog(x) { this.nodeLogs.push({ ...x }); }
   async listNodeLogs(uid) { return this.nodeLogs.filter((x) => x.uid === uid).map((x) => ({ ...x })); }
 
-  // -------- 赔付批次 --------
+  // -------- Payout batches --------
   async addPayoutBatch(b) { this.payoutBatches.push({ ...b }); }
   async hasPaidBatch(seq) { return this.payoutBatches.some((b) => b.seq === seq && b.state === 'paid'); }
 
-  // -------- 邀请返佣 / 流水 / 提现 --------
+  // -------- Invite commission / ledger / withdrawal --------
   async addReferralLog(x) { this.referralLogs.push({ ...x }); }
   async referralSummary(inviterUid) {
     let total = 0n; const invitees = new Set();
@@ -131,12 +131,12 @@ export class MemoryStore {
   async insertWithdraw(w) { this.withdraws.push({ ...w }); }
   async findWithdraw(id) { const w = this.withdraws.find((x) => x.withdrawId === id); return w ? { ...w } : null; }
   async updateWithdraw(id, patch) { Object.assign(this.withdraws.find((x) => x.withdrawId === id), patch); }
-  /** 自动代付模式下「未广播成功」的遗留在途单（无交易哈希），用于自愈退回 */
+  /** Stuck pending orders that failed to broadcast (no tx hash) in auto-payout mode, for self-heal refund */
   async listStalePending(uid, staleMs = 120000) { const now = Date.now(); return this.withdraws.filter((w) => w.uid === uid && w.state === 'pending' && !w.txhash && (!w.at || now - w.at > staleMs)).map((w) => ({ ...w })); }
-  // 已广播（有哈希）但状态仍 pending 的单：钱已打出，用于对账补确认
+  // broadcasted (has hash) but still pending: money was sent, for reconciliation confirmation
   async listBroadcastedPending(uid) { return this.withdraws.filter((w) => w.uid === uid && w.state === 'pending' && !!w.txhash).map((w) => ({ ...w })); }
 
-  // -------- BBS 帖子 / 回复 --------
+  // -------- BBS posts / replies --------
   async addPost(p) { this.posts.push({ ...p }); }
   async listPosts(limit = 50) { return this.posts.slice(-limit).reverse().map((p) => ({ ...p })); }
   async getPost(postId) { const p = this.posts.find((x) => x.postId === postId); return p ? { ...p } : null; }
@@ -148,13 +148,13 @@ export class MemoryStore {
     this.replies = this.replies.filter((r) => r.postId !== postId);
     return before !== this.posts.length;
   }
-  // —— 屏蔽词 ——
+  // Blocked words
   async seedBlockedWords(words = []) { for (const w of words) if (w) this.blockedWords.add(String(w).trim().toLowerCase()); return [...this.blockedWords]; }
   async addBlockedWord(w) { const x = String(w ?? '').trim().toLowerCase(); if (x) this.blockedWords.add(x); return [...this.blockedWords]; }
   async removeBlockedWord(w) { this.blockedWords.delete(String(w ?? '').trim().toLowerCase()); return [...this.blockedWords]; }
   async listBlockedWords() { return [...this.blockedWords]; }
 
-  // —— 链上入账交易幂等去重 ——
+  // On-chain credit tx idempotent dedup
   async isChainTxUsed(tx) { return this.chainTxs.has(String(tx ?? '').toLowerCase()); }
   async markChainTxUsed(tx, uid, inner) {
     const k = String(tx ?? '').toLowerCase();
@@ -164,7 +164,7 @@ export class MemoryStore {
   }
 
 
-  // -------- 守恒 --------
+  // -------- Conservation --------
   async totalInside() {
     let userSum = 0n;
     for (const a of this.accounts.values()) userSum += a.available + a.frozen + a.premium;
@@ -175,7 +175,7 @@ export class MemoryStore {
   async assertBalanced(tag = '') {
     const inside = await this.totalInside();
     const source = await this.totalSource();
-    if (inside !== source) throw new GameError(Codes.LEDGER_UNBALANCED, `总账不平[${tag}]：差额=${inside - source}`);
+    if (inside !== source) throw new GameError(Codes.LEDGER_UNBALANCED, `Ledger unbalanced[${tag}]: delta=${inside - source}`);
   }
 
   async transaction(fn, tag = 'tx') {

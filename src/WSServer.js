@@ -1,7 +1,7 @@
-// =============================================================
-// WSServer.js —— 语音房 WebSocket 实时通道
-// 消息：join/leave/text/voice/image/recharge/mic/setGuest/rtc(信令)
-// 广播：msg/members/room/rtc/closed
+﻿// =============================================================
+// WSServer.js - voice room WebSocket realtime channel
+// Messages: join/leave/text/voice/image/recharge/mic/setGuest/rtc(signaling)
+// Broadcast: msg/members/room/rtc/closed
 // =============================================================
 import { WebSocketServer } from 'ws';
 
@@ -26,12 +26,12 @@ export function createWSServer(server, voice) {
           await voice.leave(ws.roomId, ws.uid);
           const detail = voice.getRoomDetail(ws.roomId);
           broadcastRoom(wss, ws.roomId, { type: 'members', members: detail.members });
-        } catch { /* 房间已销毁 */ }
+        } catch { /* room already destroyed */ }
       }
     });
   });
 
-  // 心跳：30秒 ping，无响应断开
+  // Heartbeat: 30s ping, disconnect on no response
   setInterval(() => {
     wss.clients.forEach((ws) => {
       if (!ws.isAlive) return ws.terminate();
@@ -40,9 +40,9 @@ export function createWSServer(server, voice) {
     });
   }, 30000);
 
-  // 房间被 tick 销毁时通知
+  // Notify when room destroyed by tick
   voice._broadcastClosed = (roomId) => {
-    broadcastRoom(wss, roomId, { type: 'closed', reason: '房间已关闭' });
+    broadcastRoom(wss, roomId, { type: 'closed', reason: 'Room closed' });
   };
 
   return wss;
@@ -52,7 +52,7 @@ async function handleMessage(ws, msg, voice, wss) {
   switch (msg.type) {
     case 'join': {
       const { roomId, uid } = msg;
-      if (!roomId || !uid) throw new Error('缺少房间或用户');
+      if (!roomId || !uid) throw new Error('Missing room or user');
       const { room, members } = await voice.join(roomId, uid);
       ws.uid = uid; ws.roomId = roomId;
       const detail = voice.getRoomDetail(roomId);
@@ -66,7 +66,7 @@ async function handleMessage(ws, msg, voice, wss) {
         try {
           const detail = voice.getRoomDetail(ws.roomId);
           broadcastRoom(wss, ws.roomId, { type: 'members', members: detail.members });
-        } catch { /* 已销毁 */ }
+        } catch { /* already destroyed */ }
         ws.roomId = null;
       }
       break;
@@ -103,7 +103,7 @@ async function handleMessage(ws, msg, voice, wss) {
       break;
     }
     case 'rtc': {
-      // WebRTC 信令转发：{to, data}
+      // WebRTC signaling relay: {to, data}
       sendToUser(wss, msg.to, { type: 'rtc', from: ws.uid, data: msg.data });
       break;
     }

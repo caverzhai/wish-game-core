@@ -1,5 +1,5 @@
-// =============================================================
-// InsuranceService.js —— 可选保险：保费、Q5 节点生成、6h 定点赔付（async）
+﻿// =============================================================
+// InsuranceService.js - optional insurance: premium, Q5 node creation, 6h scheduled payout (async)
 // =============================================================
 import { GameError, Codes } from './errors.js';
 import { nextDue, batchSeqAt, isAlive } from './engine-payout.js';
@@ -18,10 +18,10 @@ export class InsuranceService {
   }
 
   async depositPremium(uid, amount) {
-    if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, '存入保费必须为正数（枚）');
+    if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, 'Premium deposit must be positive (units)');
     return await this.store.transaction(async () => {
       const a = await this.store.getAccount(uid);
-      if (a.available < amount) throw new GameError(Codes.INSUFFICIENT_BALANCE, '可用余额不足');
+      if (a.available < amount) throw new GameError(Codes.INSUFFICIENT_BALANCE, 'Insufficient available balance');
       const after = await this.store.applyAccount(uid, { avail: -amount, premium: amount });
       await this.store.addFlow(uid, 'PREMIUM_IN', amount);
       return after.premium;
@@ -29,24 +29,24 @@ export class InsuranceService {
   }
 
   /**
-   * 保费提回可用余额：仅在「保险开关关闭」时允许（避免一边承保一边抽走保费）。
-   * amountInner 不传则提回全部保费；用户内部账户 available/premium 互转，总账守恒。
+   * Premium withdrawal to available: only allowed when insurance switch is off (prevents withdrawing while insured).
+   * If amountInner omitted, withdraw all premium; internal account available/premium transfer, ledger conserved.
    */
   async withdrawPremium(uid, amountInner = null) {
     return await this.store.transaction(async () => {
       const u = await this.store.getUser(uid);
-      if (u.insSwitch) throw new GameError(Codes.BAD_INPUT, '请先关闭保险开关，才能把保费提回余额');
+      if (u.insSwitch) throw new GameError(Codes.BAD_INPUT, 'Please turn off insurance switch before withdrawing premium');
       const a = await this.store.getAccount(uid);
       const amount = amountInner == null ? a.premium : BigInt(amountInner);
-      if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, '没有可提回的保费');
-      if (amount > a.premium) throw new GameError(Codes.BAD_INPUT, '提回金额超过保费余额');
+      if (amount <= 0n) throw new GameError(Codes.BAD_INPUT, 'No premium to withdraw');
+      if (amount > a.premium) throw new GameError(Codes.BAD_INPUT, 'Withdrawal amount exceeds premium balance');
       const after = await this.store.applyAccount(uid, { avail: amount, premium: -amount });
       await this.store.addFlow(uid, 'PREMIUM_OUT', amount);
       return after;
     }, 'withdrawPremium');
   }
 
-  /** 邀请人名下「生成过节点的去重直邀人数」 */
+  /** Distinct direct invitees with nodes under an inviter */
   async countDistinctNodeInvitees(inviterUid) {
     const nodes = await this.store.listNodes({});
     const set = new Set();
@@ -63,7 +63,7 @@ export class InsuranceService {
     return seq;
   }
 
-  /** Q5 内部记账（由结算事务包裹，自身不开事务） */
+  /** Q5 internal posting (wrapped by settlement transaction, no own transaction) */
   async accrueLossInternal(uid, lossAdd, atSec) {
     if (lossAdd <= 0n) return [];
     const cfg = this.cfg, s = this.store;
@@ -71,7 +71,7 @@ export class InsuranceService {
     const created = [];
     while (a.lossAccum >= cfg.nodeThreshold && a.premium >= cfg.nodePremium) {
       await s.applyAccount(uid, { premium: -cfg.nodePremium, loss: -cfg.nodeThreshold });
-      await s.applyLedger({ ins: cfg.nodePremium }); // 20 枚保费进保险池
+      await s.applyLedger({ ins: cfg.nodePremium }); // 20 units premium to insurance pool
       const node = {
         nodeId: await s.nextId('node', 'N'), uid, total: cfg.nodeTotal, periodN: 0, paidAmount: 0n,
         paidToUserAmount: 0n, forfeitedAmount: 0n, state: 'active', createdAtSec: atSec, batchSeq: batchSeqAt(atSec, cfg),
@@ -82,12 +82,12 @@ export class InsuranceService {
       a = await s.getAccount(uid);
     }
     if (a.premium < cfg.nodePremium && a.lossAccum > 0n) {
-      await s.applyAccount(uid, { loss: -a.lossAccum }); // 保费不足，零头清零
+      await s.applyAccount(uid, { loss: -a.lossAccum }); // premium insufficient, remainder zeroed
     }
     return created;
   }
 
-  /** 6h 全局赔付，幂等（同一批次只成功一次） */
+  /** 6h global payout, idempotent (each batch succeeds once) */
   async runPayoutBatch(currentSec) {
     const s = this.store, cfg = this.cfg;
     const currentSeq = batchSeqAt(currentSec, cfg);
@@ -133,7 +133,7 @@ export class InsuranceService {
     }, 'runPayoutBatch');
   }
 
-  /** 保险池公示：总资金 + 下一批次应释放总额 + 差额对比（每次请求实时计算，全员看到同一结果） */
+  /** Insurance pool public: total + next batch pending total + delta comparison (real-time per request, all see same result) */
   async poolPublic(nowSec = Math.floor(Date.now() / 1000)) {
     const s = this.store, cfg = this.cfg;
     const ledger = await s.getLedger();
@@ -148,7 +148,7 @@ export class InsuranceService {
     return {
       poolBalance: ledger.insurancePool,
       nextBatchSeq: seq,
-      nextBatchAt: (seq + 1) * cfg.payoutEverySec, // 下一个 3/9/15/21 点(UTC)
+      nextBatchAt: (seq + 1) * cfg.payoutEverySec, // next 3/9/15/21 UTC
       nextDueTotal,
       activeNodeCount: active.length,
       nextPayNodeCount,

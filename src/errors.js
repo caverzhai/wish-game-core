@@ -1,4 +1,4 @@
-// 统一业务错误，带错误码，便于前端按码提示
+﻿// Unified business errors with codes for frontend handling
 export class GameError extends Error {
   constructor(code, message) {
     super(message);

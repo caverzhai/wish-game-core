@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --bg: #0d1117; --card: #161d29; --card2: #1d2635; --line: #2a3446;
   --txt: #e8edf5; --muted: #8b97ab; --red: #e5484d; --green: #2fb86f;
   --gold: #e6b450; --primary: #4c8dff; --ok: #2fb86f; --bad: #e5484d; --radius: 14px;
@@ -70,7 +70,7 @@ body { display: flex; justify-content: center; }
 .num-btn.sel { background: var(--gold); color: #1a1a1a; border-color: var(--gold); }
 .amount-card label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 8px; }
 input[type=number], input[type=text], textarea { width: 100%; background: var(--card2); border: 1px solid var(--line); border-radius: 10px; color: var(--txt); padding: 11px; font-size: 15px; }
-/* 许愿金额框：输入框与保险生效状态灯同一行 */
+/* Bet amount box: input and insurance status light on same row */
 .amount-card { display: flex; flex-wrap: wrap; align-items: center; }
 .amount-card label { flex: 0 0 100%; }
 .bet-row { display: flex; align-items: center; gap: 10px; width: 100%; }
@@ -79,7 +79,7 @@ input[type=number], input[type=text], textarea { width: 100%; background: var(--
 .ins-label { font-size: 13px; color: var(--muted); flex: 0 0 auto; }
 .ins-light { width: 64px; height: 64px; border-radius: 50%; flex: 0 0 auto; background: #8b8f96; transition: background .2s, box-shadow .2s; }
 .ins-light.on { background: #22c55e; box-shadow: 0 0 14px rgba(34,197,94,.9); }
-/* 确认键：立体绿色圆形，纯箭头图标，文字在左侧 */
+/* Confirm button: 3D green circle, no icon, label on left */
 .bet-circle { flex: 0 0 auto; width: 58px; height: 58px; padding: 0; margin: 0; border-radius: 50%; border: none; cursor: pointer;
   background: linear-gradient(145deg, #4ade80, #16a34a);
   color: #fff; font-size: 26px; font-weight: 700; line-height: 1;
@@ -88,13 +88,20 @@ input[type=number], input[type=text], textarea { width: 100%; background: var(--
   transition: transform .1s, box-shadow .1s; }
 .bet-circle:active { transform: translateY(2px); box-shadow: 0 2px 6px rgba(34,197,94,.4), inset 0 1px 0 rgba(255,255,255,.3); }
 .bet-circle:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-/* 保险状态横长条：绿色=生效中，灰色=关闭中 */
+/* Insurance status bar: green=active, gray=off */
 .ins-status-bar { width: 100%; padding: 14px; border-radius: 10px; text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 12px; color: #fff; box-sizing: border-box; }
 .ins-status-bar.on { background: #22c55e; }
 .ins-status-bar.off { background: #6b7280; }
+/* How to play guide box */
+.howto-box { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+.howto-title { font-size: 14px; font-weight: 700; color: var(--gold); margin-bottom: 8px; }
+.howto-item { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 4px; }
+.howto-item:last-child { margin-bottom: 0; }
+.howto-num { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); color: #000; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.ins-guide-box { background: var(--card); border: 1px solid var(--gold); border-radius: 12px; padding: 12px 14px; margin: 12px 0; }
 textarea { resize: vertical; }
 
-/* 保险池公示 */
+/* Insurance pool display */
 .pool-public { background: linear-gradient(160deg, #1a2233, #141b28); border: 1px solid var(--gold); border-radius: var(--radius); padding: 14px; margin-bottom: 14px; }
 .pp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pp-box { background: rgba(255,255,255,.03); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
@@ -115,7 +122,7 @@ textarea { resize: vertical; }
 .mini-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 4px; }
 .mini-card span { font-size: 11px; color: var(--muted); }
 .mini-card b { font-size: 15px; }
-/* 邀请返佣档位表 */
+/* Invite commission tier table */
 .inv-tiers { margin: 6px 0 4px; }
 .inv-tip { font-size: 12px; color: var(--muted); line-height: 1.55; margin-bottom: 8px; }
 .it-grid { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
@@ -176,7 +183,7 @@ textarea { resize: vertical; }
 .self-check { width: 100%; margin-top: 6px; font-size: 12px; opacity: .85; padding: 8px; }
 .chain-tip { font-size: 12px; color: var(--gold); background: rgba(230,180,80,.1); border: 1px solid rgba(230,180,80,.3); border-radius: 8px; padding: 8px; margin-bottom: 10px; }
 
-/* 底部 Dock */
+/* Bottom dock */
 .dock { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 520px; height: calc(var(--dock-h) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); display: grid; grid-template-columns: repeat(4,1fr); background: rgba(20,27,40,.96); backdrop-filter: blur(8px); border-top: 1px solid var(--line); z-index: 10; }
 .dock-item { background: none; border: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; cursor: pointer; }
 .dock-item .dock-ico { font-size: 18px; line-height: 1; }
@@ -188,7 +195,7 @@ textarea { resize: vertical; }
   .grid3 .mini-card b { font-size: 13px; }
 }
 
-/* ========== 语音房 ========== */
+/* ========== Voice rooms ========== */
 .sub-tab { display: flex; gap: 8px; margin-bottom: 12px; }
 .sub-tab-btn { flex: 1; padding: 10px; border: 1px solid var(--border); background: var(--card); color: var(--muted); border-radius: 10px; font-size: 14px; cursor: pointer; }
 .sub-tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -202,8 +209,9 @@ textarea { resize: vertical; }
 .room-type-tag.chat { background: #3b82f6; }
 .room-type-tag.meeting { background: #f59e0b; }
 .room-card-meta { display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+.rate-tag { background: var(--gold); color: #000; font-weight: 700; padding: 1px 6px; border-radius: 4px; font-size: 11px; }
 
-/* 创建房间弹窗 */
+/* Create room modal */
 .room-type-select { display: flex; gap: 10px; margin: 12px 0; }
 .room-type { flex: 1; padding: 16px 14px; border: 2px solid var(--border); border-radius: 12px; background: var(--card); cursor: pointer; display: flex; flex-direction: column; gap: 6px; color: var(--text); }
 .room-type.active { border-color: var(--primary); background: rgba(59,130,246,.12); }
@@ -214,7 +222,7 @@ textarea { resize: vertical; }
 .room-name-input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: #0f172a; color: #fff; font-size: 15px; margin-bottom: 12px; box-sizing: border-box; }
 .room-name-input::placeholder { color: #94a3b8; }
 
-/* 房间内 */
+/* Inside room */
 .room-mask { background: rgba(0,0,0,.85); z-index: 100; }
 .room-inner { position: fixed; inset: 0; display: flex; flex-direction: column; background: var(--bg); max-width: 480px; margin: 0 auto; }
 .room-top { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-bottom: 1px solid var(--border); background: var(--card); }
@@ -235,12 +243,12 @@ textarea { resize: vertical; }
 .room-desc-input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #0f172a; color: #fff; font-size: 13px; margin-bottom: 12px; box-sizing: border-box; resize: vertical; min-height: 60px; font-family: inherit; }
 .room-desc-input::placeholder { color: #94a3b8; }
 
-/* 免责声明 */
+/* Disclaimer */
 .disclaimer-box { max-width: 92%; max-height: 82vh; overflow-y: auto; background: var(--card); border-radius: 16px; padding: 24px 20px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
 .disclaimer-box h3 { font-size: 20px; color: #fbbf24; text-align: center; margin: 0 0 16px; }
 .disclaimer-content { font-size: 14px; line-height: 1.8; color: #cbd5e1; text-align: left; margin: 0 0 20px; white-space: pre-wrap; word-break: break-word; }
 
-/* 系统公告 */
+/* System announcement */
 .announcement-box { background: linear-gradient(145deg, #1e293b, #0f172a); border: 1px solid #fbbf24; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
 .announcement-title { font-size: 14px; font-weight: 700; color: #fbbf24; margin-bottom: 8px; }
 .announcement-content { font-size: 13px; line-height: 1.7; color: #e2e8f0; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow-y: auto; }

@@ -1,14 +1,14 @@
 ﻿// =============================================================
-// app.js —— English / 繁體 / 日本語；底部Dock：首页(许愿+历史)/广场/保险/我的
-// 支付：站内余额优先，不足差额调外部钱包；BBS 含管理员删帖/封号/屏蔽词治理
+// app.js - English / Traditional Chinese / Japanese; bottom dock: Home(wish+history)/Board/Insurance/Me
+// Payment: in-site balance first, external wallet covers shortfall; BBS with admin delete/ban/blocked-word moderation
 // =============================================================
 const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const shortAddr = (a = '') => (a.length > 12 ? a.slice(0, 6) + '…' + a.slice(-4) : a);
 const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 6 });
 const codeLen = (s) => [...String(s)].length;
-const byteLen = (s) => new TextEncoder().encode(String(s ?? '')).length; // UTF-8 字节数
-const BBS_MAX_BYTES = 1024; // BBS 单条上限 1024 字节
+const byteLen = (s) => new TextEncoder().encode(String(s ?? '')).length; // UTF-8 byte count
+const BBS_MAX_BYTES = 1024; // BBS per-post limit 1024 bytes
 const utcHM = (sec) => new Date(sec * 1000).toISOString().slice(11, 16) + ' UTC';
 const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -25,6 +25,8 @@ const I18N = {
   insLightOn: 'Insurance active', insLightOff: 'Insurance inactive (switch ON and keep ≥20 枚 premium)',
   insStatusLabel: 'Insurance status',
   insOnBar: 'Insurance active', insOffBar: 'Insurance off',
+    howtoTitle: 'How to Play', howtoStep1: 'Pick Red or Green pool, enter 1-99 units, choose a number 0-9', howtoStep2: 'Sum of all picks: odd = Red wins, even = Green wins. Winners split pool after 2.5% fee', howtoStep3: 'No insurance: keep all winnings after fee. With insurance (premium >=20 + switch on): pay 10% of winnings, but losses accumulate - every 100 units lost creates a payout node returned over 100 periods',
+    insGuideTitle: 'Insurance Guide', insGuide1: 'Activate: turn on the switch AND keep premium balance >= 20 units', insGuide2: 'When you win: 10% of your winnings goes to the insurance pool', insGuide3: 'When you lose: net loss accumulates. Every 100 units lost creates one payout node (20 units premium deducted), returned over 100 periods', insGuide4: 'Payout every 6 hours (UTC 3/9/15/21). Any new node within 168 hours revives all your nodes; otherwise current period is forfeited', insGuide5: 'Withdraw premium back to balance only when insurance switch is off',
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
@@ -62,6 +64,8 @@ const I18N = {
   insLightOn: '保險生效中', insLightOff: '保險未生效（開關開且保費≥20枚才生效）',
   insStatusLabel: '保險狀態',
   insOnBar: '保險生效中', insOffBar: '保險關閉中',
+    howtoTitle: '玩法介紹', howtoStep1: '選擇紅願池或綠願池，輸入1-99枚，選擇0-9的數字', howtoStep2: '所有人選號相加：單數→紅勝，雙數→綠勝。勝方扣除2.5%手續費後按投入比例分配', howtoStep3: '不保險：贏了扣除手續費後全拿。買保險（保費≥20枚且開關開）：贏了再扣10%入保池，但輸了累計淨虧，每滿100枚生成一個賠付節點分100期返還',
+    insGuideTitle: '保險玩法說明', insGuide1: '生效條件：開關打開且保費餘額≥20枚', insGuide2: '贏了：收益的10%進入保險池', insGuide3: '輸了：淨虧累計，每滿100枚生成一個賠付節點（扣20枚保費），分100期返還', insGuide4: '每6小時賠付一次（UTC 3/9/15/21點）。168小時內有新節點則全部續命，否則當期充公', insGuide5: '保險開關關閉時，可將保費提回餘額',
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
@@ -99,6 +103,8 @@ const I18N = {
   insLightOn: '保険有効中', insLightOff: '保険無効（スイッチONかつ保険料20枚以上で有効）',
   insStatusLabel: '保険状態',
   insOnBar: '保険有効中', insOffBar: '保険OFF',
+    howtoTitle: '遊び方', howtoStep1: '赤か緑のプールを選び、1-99枚を入力、0-9の数字を選ぶ', howtoStep2: '全員の数字の合計：奇数→赤の勝ち、偶数→緑の勝ち。勝者は2.5%手数料後に分配', howtoStep3: '保険なし：手数料後の勝利金を全額受け取る。保険あり（保険料≥20枚＋スイッチオン）：勝利金の10%を保険プールへ、負けたら損失が累積し100枚ごとに返済ノードが生成され100期で返還',
+    insGuideTitle: '保険ガイド', insGuide1: '有効化：スイッチオン＋保険料残高≥20枚', insGuide2: '勝った場合：勝利金の10%が保険プールへ', insGuide3: '負けた場合：純損失が累積。100枚ごとに返済ノード（保険料20枚控除）、100期で返還', insGuide4: '6時間ごとに返済（UTC 3/9/15/21）。168時間以内に新ノードがあれば全て継続、なければ当期は没収', insGuide5: '保険スイッチオフ時のみ保険料を残高へ戻せる',
     myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
@@ -136,6 +142,8 @@ const I18N = {
     insLightOn: 'التأمين ساري', insLightOff: 'التأمين غير ساري (شغّله واحتفظ بـ≥20 عملة رسم تأمين)',
     insStatusLabel: 'حالة التأمين',
     insOnBar: 'التأمين ساري', insOffBar: 'التأمين متوقف',
+    howtoTitle: 'كيفية اللعب', howtoStep1: 'اختر تجمع الأحمر أو الأخضر، أدخل 1-99 وحدة، اختر رقماً 0-9', howtoStep2: 'مجموع جميع الأرقام: فردي = يفوز الأحمر، زوجي = يفوز الأخضر. يشارك الفائزون بعد خصم 2.5%', howtoStep3: 'بدون تأمين: تحصل على كل أرباحك بعد الرسوم. مع التأمين (قسط ≥20 + التشغيل): تدفع 10% من الأرباح، لكن الخسائر تتراكم - كل 100 وحدة خسارة تنشئ عقد سداد يُعاد على 100 فترة',
+    insGuideTitle: 'دليل التأمين', insGuide1: 'التفعيل: شغل المفتاح واحتفظ برصيد قسط ≥20 وحدة', insGuide2: 'عند الفوز: 10% من أرباحك تذهب إلى تجمع التأمين', insGuide3: 'عند الخسارة: تتراكم الخسارة الصافية. كل 100 وحدة خسارة تنشئ عقد سداد (يُخصم 20 وحدة قسط)، يُعاد على 100 فترة', insGuide4: 'السداد كل 6 ساعات (UTC 3/9/15/21). أي عقد جديد خلال 168 ساعة ينشط جميع عقودك؛ وإلا تُصادر الفترة الحالية', insGuide5: 'يمكن إرجاع القسط إلى الرصيد فقط عند إيقاف تشغيل التأمين',
     myNodes: 'عقود التعويض الخاصة بي', poolTotal: 'إجمالي بركة التأمين', poolNext: 'إجمالي الإصدار القادم', poolNextAt: 'وقت الإصدار القادم', nextReleaseIn: 'القادم بعد', poolActiveNodes: 'العقود النشطة',
     poolSufficient: 'كافٍ', poolShort: 'عجز', poolCover: 'نسبة التغطية',
     meWallet: 'المحفظة', meInvite: 'الدعوة', copy: 'نسخ', qualifiedInvitees: 'المؤهلون', curRate: 'النسبة', invTotal: 'الإجمالي',
@@ -172,6 +180,8 @@ const I18N = {
     insLightOn: 'Asuransi aktif', insLightOff: 'Asuransi nonaktif (aktifkan dan simpan ≥20 koin premi)',
     insStatusLabel: 'Status asuransi',
     insOnBar: 'Asuransi aktif', insOffBar: 'Asuransi nonaktif',
+    howtoTitle: 'Cara Bermain', howtoStep1: 'Pilih kolam Merah atau Hijau, masukkan 1-99 unit, pilih angka 0-9', howtoStep2: 'Jumlah semua angka: ganjil = Merah menang, genap = Hijau menang. Pemenang bagi hasil setelah potongan 2.5%', howtoStep3: 'Tanpa asuransi: terima semua kemenangan setelah potongan. Dengan asuransi (premi >=20 + sakelar on): bayar 10% kemenangan, tapi kerugian terakumulasi - setiap 100 unit rugi membuat node pengembalian selama 100 periode',
+    insGuideTitle: 'Panduan Asuransi', insGuide1: 'Aktifkan: nyalakan sakelar DAN jaga saldo premi >=20 unit', insGuide2: 'Saat menang: 10% kemenangan masuk ke kolam asuransi', insGuide3: 'Saat kalah: kerugian bersih terakumulasi. Setiap 100 unit rugi membuat satu node pengembalian (potong premi 20 unit), dikembalikan selama 100 periode', insGuide4: 'Pengembalian setiap 6 jam (UTC 3/9/15/21). Node baru dalam 168 jam menghidupkan semua node Anda; jika tidak, periode ini hangus', insGuide5: 'Tarik premi kembali ke saldo hanya saat sakelar asuransi mati',
     myNodes: 'Node kompensasi saya', poolTotal: 'Total kolam asuransi', poolNext: 'Total rilis berikutnya', poolNextAt: 'Waktu rilis berikutnya', nextReleaseIn: 'Berikutnya dalam', poolActiveNodes: 'Node aktif',
     poolSufficient: 'Cukup', poolShort: 'Kekurangan', poolCover: 'Cakupan',
     meWallet: 'Dompet', meInvite: 'Undangan', copy: 'Salin', qualifiedInvitees: 'Memenuhi syarat', curRate: 'Rate', invTotal: 'Total',
@@ -208,6 +218,8 @@ const I18N = {
     insLightOn: '보험 적용 중', insLightOff: '보험 미적용 (스위치 ON, 보험료 ≥20 코인 유지)',
     insStatusLabel: '보험 상태',
     insOnBar: '보험 적용 중', insOffBar: '보험 꺼짐',
+    howtoTitle: '게임 방법', howtoStep1: '레드 또는 그린 풀을 선택하고 1-99단위를 입력한 뒤 0-9 숫자를 고르세요', howtoStep2: '모든 선택 숫자의 합: 홀수 = 레드 승, 짝수 = 그린 승. 승자는 2.5% 수수료 후 비율대로 분배', howtoStep3: '보험 없음: 수수료 후 당첨금 전액 수령. 보험 있음 (보험료 >=20 + 스위치 on): 당첨금의 10%를 보험풀에 납부, 대신 손실이 누적되어 100단위마다 지급 노드가 생성되어 100기간에 걸쳐 반환',
+    insGuideTitle: '보험 가이드', insGuide1: '활성화: 스위치를 켜고 보험료 잔액 >=20단위 유지', insGuide2: '당첨 시: 당첨금의 10%가 보험풀로 들어감', insGuide3: '낙첨 시: 순손실이 누적됨. 100단위마다 지급 노드 생성(보험료 20단위 차감), 100기간에 걸쳐 반환', insGuide4: '6시간마다 지급 (UTC 3/9/15/21). 168시간 이내 새 노드가 있으면 모든 노드가 유지됨; 없으면 해당 기간은 몰수', insGuide5: '보험 스위치가 꺼져 있을 때만 보험료를 잔액으로 돌릴 수 있음',
     myNodes: '나의 보상 노드', poolTotal: '보험 풀 총액', poolNext: '다음 지급 총액', poolNextAt: '다음 지급 시각', nextReleaseIn: '다음까지', poolActiveNodes: '활성 노드',
     poolSufficient: '충분', poolShort: '부족', poolCover: '커버율',
     meWallet: '지갑', meInvite: '초대', copy: '복사', qualifiedInvitees: '조건 달성', curRate: '비율', invTotal: '누적',
@@ -244,6 +256,8 @@ const I18N = {
     insLightOn: 'Страховка активна', insLightOff: 'Страховка неактивна (включите и храните ≥20 монет премии)',
     insStatusLabel: 'Статус страховки',
     insOnBar: 'Страховка активна', insOffBar: 'Страховка выключена',
+    howtoTitle: 'Как играть', howtoStep1: 'Выберите красный или зелёный пул, введите 1-99 единиц, выберите число 0-9', howtoStep2: 'Сумма всех чисел: нечётная = победа красных, чётная = победа зелёных. Победители делят пул после комиссии 2.5%', howtoStep3: 'Без страховки: получаете весь выигрыш после комиссии. Со страховкой (премия >=20 + включатель): платите 10% выигрыша, но потери накапливаются - каждые 100 единиц потерь создают узел выплат, возвращаемый за 100 периодов',
+    insGuideTitle: 'Руководство по страховке', insGuide1: 'Активация: включите переключатель И поддерживайте баланс премии >=20 единиц', insGuide2: 'При выигрыше: 10% вашего выигрыша идёт в страховой пул', insGuide3: 'При проигрыше: чистый убыток накапливается. Каждые 100 единиц убытка создают узел выплат (вычитается 20 единиц премии), возвращаемый за 100 периодов', insGuide4: 'Выплаты каждые 6 часов (UTC 3/9/15/21). Любой новый узел в течение 168 часов продлевает все ваши узлы; иначе текущий период конфискуется', insGuide5: 'Вернуть премию на баланс можно только при выключенной страховке',
     myNodes: 'Мои узлы выплат', poolTotal: 'Общая сумма страхового пула', poolNext: 'Общая сумма следующего выпуска', poolNextAt: 'Время следующего выпуска', nextReleaseIn: 'Следующий через', poolActiveNodes: 'Активные узлы',
     poolSufficient: 'Достаточно', poolShort: 'Недостаток', poolCover: 'Покрытие',
     meWallet: 'Кошелёк', meInvite: 'Приглашения', copy: 'Копировать', qualifiedInvitees: 'Квалифицированные', curRate: 'Ставка', invTotal: 'Всего',
@@ -280,6 +294,8 @@ const I18N = {
     insLightOn: 'बीमा सक्रिय', insLightOff: 'बीमा निष्क्रिय (चालू करें और ≥20 सिक्के प्रीमियम रखें)',
     insStatusLabel: 'बीमा स्थिति',
     insOnBar: 'बीमा सक्रिय', insOffBar: 'बीमा बंद',
+    howtoTitle: 'कैसे खेलें', howtoStep1: 'लाल या हरा पूल चुनें, 1-99 यूनिट दर्ज करें, 0-9 कोई संख्या चुनें', howtoStep2: 'सभी संख्याओं का योग: विषम = लाल जीतता है, सम = हरा जीतता है। विजेता 2.5% शुल्क के बाद बांटते हैं', howtoStep3: 'बिना बीमा: शुल्क के बाद पूरा जीतमूल्य प्राप्त करें। बीमा के साथ (प्रीमियम >=20 + स्विच on): जीतमूल्य का 10% बीमा पूल में, लेकिन हानि जमा होती है - हर 100 यूनिट हानि एक भुगतान नोड बनाती है जो 100 अवधियों में वापस होती है',
+    insGuideTitle: 'बीमा गाइड', insGuide1: 'सक्रिय करें: स्विच चालू करें और प्रीमियम शेष >=20 यूनिट रखें', insGuide2: 'जीतने पर: आपके जीतमूल्य का 10% बीमा पूल में जाता है', insGuide3: 'हारने पर: शुद्ध हानि जमा होती है। हर 100 यूनिट हानि एक भुगतान नोड बनाती है (20 यूनिट प्रीमियम कटौती), 100 अवधियों में वापस', insGuide4: 'हर 6 घंटे में भुगतान (UTC 3/9/15/21)। 168 घंटे के भीतर कोई नया नोड आपके सभी नोड्स को जारी रखता है; अन्यथा वर्तमान अवधि जब्त हो जाती है', insGuide5: 'बीमा स्विच बंद होने पर ही प्रीमियम को शेष में वापस कर सकते हैं',
     myNodes: 'मेरे भुगतान नोड', poolTotal: 'बीमा पूल कुल', poolNext: 'अगली रिलीज़ कुल', poolNextAt: 'अगली रिलीज़ का समय', nextReleaseIn: 'अगली में', poolActiveNodes: 'सक्रिय नोड',
     poolSufficient: 'पर्याप्त', poolShort: 'कमी', poolCover: 'कवरेज',
     meWallet: 'वॉलेट', meInvite: 'निमंत्रण', copy: 'कॉपी', qualifiedInvitees: 'योग्य', curRate: 'दर', invTotal: 'कुल',
@@ -316,6 +332,8 @@ const I18N = {
     insLightOn: 'انشورنس فعال', insLightOff: 'انشورنس غیر فعال (آن کریں اور ≥20 سکے پریمیم رکھیں)',
     insStatusLabel: 'انشورنس کی حالت',
     insOnBar: 'انشورنس فعال ہے', insOffBar: 'انشورنس بند ہے',
+    howtoTitle: 'کیسے کھیلیں', howtoStep1: 'سرا یا سبز پول منتخب کریں، 1-99 یونٹ درج کریں، 0-9 کوئی نمبر منتخب کریں', howtoStep2: 'تمام نمبروں کا مجموعہ: طاق = سرا جیتتا ہے، جوڑ = سبز جیتتا ہے۔ فاتح 2.5% فیس کے بعد بانٹتے ہیں', howtoStep3: 'بغیر بیمہ: فیس کے بعد پوری جیت وصول کریں۔ بیمہ کے ساتھ (پریمیم >=20 + سوئچ آن): جیت کا 10% بیمہ پول میں، لیکن نقصان جمع ہوتا ہے - ہر 100 یونٹ نقصان ایک ادائیگی نوڈ بناتا ہے جو 100 ادوار میں واپس ہوتا ہے',
+    insGuideTitle: 'بیمہ گائیڈ', insGuide1: 'فعال کریں: سوئچ آن کریں اور پریمیم بیلنس >=20 یونٹ رکھیں', insGuide2: 'جیتنے پر: آپ کی جیت کا 10% بیمہ پول میں جاتا ہے', insGuide3: 'ہارنے پر: خالص نقصان جمع ہوتا ہے۔ ہر 100 یونٹ نقصان ایک ادائیگی نوڈ بناتا ہے (20 یونٹ پریمیم کٹوتی)، 100 ادوار میں واپس', insGuide4: 'ہر 6 گھنٹے میں ادائیگی (UTC 3/9/15/21)۔ 168 گھنٹے کے اندر کوئی نیا نوڈ آپ کے تمام نوڈز کو جاری رکھتا ہے؛ بصورت دیگر موجودہ ادوار ضبط ہو جاتی ہے', insGuide5: 'بیمہ سوئچ بند ہونے پر ہی پریمیم کو بیلنس میں واپس کر سکتے ہیں',
     myNodes: 'میرے ادائیگی نوڈ', poolTotal: 'انشورنس پول کل', poolNext: 'اگلی ریلیز کل', poolNextAt: 'اگلی ریلیز کا وقت', nextReleaseIn: 'اگلی میں', poolActiveNodes: 'فعال نوڈ',
     poolSufficient: 'کافی', poolShort: 'کمی', poolCover: 'کوریج',
     meWallet: 'والیٹ', meInvite: 'دعوت', copy: 'کاپی', qualifiedInvitees: 'اہل', curRate: 'شرح', invTotal: 'کل',
@@ -427,7 +445,7 @@ function enterMain() {
   checkDisclaimer();
 }
 
-// ---------------- 免责声明 ----------------
+// ---------------- Disclaimer ----------------
 const DISCLAIMER_VERSION = 3;
 const DISCLAIMER_CONTENT = {
   en: 'Section 1 - Nature of Platform. This platform is designed and operated exclusively for pure entertainment and social interaction purposes. It is not a financial institution, investment platform, gambling service, or any form of regulated financial service. All activities within this platform, including but not limited to wish pools, voice rooms, chat rooms, and social features, are intended solely for recreational enjoyment. Users acknowledge that participation is entirely voluntary and at their own discretion, and that the platform does not guarantee any specific outcome or result. Section 2 - Restricted Regions. If you are accessing this platform from any of the following regions, you must exit this application immediately and cease all use: Iran, Somalia, Saudi Arabia, Afghanistan, Tajikistan, Kuwait, Mainland China, Thailand, North Korea, Oman, Mauritania, Uzbekistan, Lebanon, Brunei, Yemen, Jordan, Kyrgyzstan, Syria, Qatar, and Turkmenistan, as well as any other jurisdiction where the use of this platform may be restricted or prohibited by applicable law. Continued access from these regions constitutes a material violation of this statement and may result in immediate and permanent account termination without refund. Section 3 - User Conduct and Voice Room Rules. All users are required to comply with the laws and regulations of their respective jurisdictions at all times while using this platform. In voice rooms, chat rooms, and all communication features, the following behaviors are strictly prohibited: (a) any content that violates the laws of any relevant country or region; (b) personal attacks, harassment, insults, threats, defamation, or any form of abusive or discriminatory behavior toward other users; (c) dissemination of illegal, harmful, obscene, or inappropriate content. Any violation of these rules will result in permanent account suspension without prior notice, and the platform reserves the right to report serious violations to relevant law enforcement authorities. Section 4 - Prohibition of Illegal Use. Users shall not use this platform for any purpose that is illegal under their local law, including but not limited to money laundering, fraud, illegal fundraising, terrorist financing, or any other activities that violate applicable laws and regulations. The platform is not liable for any illegal use by users, and users shall bear full legal responsibility for their own actions and consequences. Section 5 - Acknowledgment and Consent. By continuing to use this platform, you irrevocably confirm that you have fully read, understood, and agreed to all terms and conditions of this statement. You acknowledge and warrant that you are not accessing from any restricted region listed above, and that you will comply with all applicable laws, regulations, and platform rules during your use. Section 6 - Legal Protection. All copyrights, trademarks, and related intellectual property content of this website are protected under the laws of the Netherlands. Any unauthorized reproduction, distribution, modification, or commercial use is strictly prohibited and may result in legal action.',
@@ -464,7 +482,7 @@ function switchDock(name) {
   if (name === 'me' && state.uid) { renderPending(); creditPending(); api('/withdraw/reap', { uid: state.uid }).then(refresh).catch(() => {}); }
 }
 
-// ---------------- 左右划动切换 dock ----------------
+// ---------------- Swipe to switch dock ----------------
 const DOCK_ORDER = ['home', 'bbs', 'insurance', 'me'];
 function bindSwipe() {
   let sx = 0, sy = 0, active = false;
@@ -483,15 +501,15 @@ function bindSwipe() {
     const next = dx < 0 ? (idx + 1) % DOCK_ORDER.length : (idx - 1 + DOCK_ORDER.length) % DOCK_ORDER.length;
     switchDock(DOCK_ORDER[next]);
   }
-  // 触摸事件（手机/TP钱包等WebView）
+  // Touch events (mobile/TP wallet WebView)
   document.addEventListener('touchstart', (e) => swipeStart(e.touches[0].clientX, e.touches[0].clientY, e.target), { passive: true });
   document.addEventListener('touchend', (e) => swipeEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY), { passive: true });
-  // 鼠标事件（仅桌面，pointerType=mouse，避免和touch重复）
+  // Mouse events (desktop only, pointerType=mouse, avoids duplicate with touch)
   document.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') swipeStart(e.clientX, e.clientY, e.target); }, { passive: true });
   document.addEventListener('pointerup', (e) => { if (e.pointerType === 'mouse') swipeEnd(e.clientX, e.clientY); }, { passive: true });
 }
 
-// ---------------- 许愿 ----------------
+// ---------------- Wish ----------------
 function buildNumGrid() {
   const g = $('numGrid'); g.innerHTML = '';
   for (let n = 0; n <= 9; n++) {
@@ -528,9 +546,9 @@ function renderRound() {
   const dots = state.recent.filter((x) => x.state === 'settled').slice(0, 100).map((x) => `<span class="dot ${x.result && x.result.winSide}" title="${x.roundId}"></span>`).join('');
   $('histDots').innerHTML = dots || '<span class="muted">—</span>';
 }
-// 链上核验「暂时性错误」白名单：节点超时/无响应/尚未索引/等待确认 → 持续重试
+// On-chain verification transient error whitelist: node timeout/no response/not indexed/waiting confirm -> keep retrying
 const CHAIN_RETRY = /尚未|確認|确认|稍後|稍后|無響應|无响应|未找到|查到|等待|中$|waiting|confirm|pending|timeout|no response|receipt|not found|indexed/i;
-// inner6 = 站内 6 位定点最小单位；链上代币多为 18 位，需乘 10^(decimals-6)
+// inner6 = in-site 6-decimal min unit; on-chain tokens mostly 18 decimals, multiply by 10^(decimals-6)
 function erc20TransferData(to, inner6, decimals) {
   const addr = to.toLowerCase().replace('0x', '').padStart(64, '0');
   const v = BigInt(inner6) * (10n ** BigInt((decimals || 18) - 6));
@@ -542,7 +560,7 @@ async function walletTokenWei() {
   const hex = await window.ethereum.request({ method: 'eth_call', params: [{ to: cfg.tokenContract, data }, 'latest'] });
   return BigInt(hex || '0x0');
 }
-// 发起钱包扣款前的统一就绪检查：站点已配链、检测到钱包、已授权账户、网络切到目标链(BSC=56)
+// Unified ready check before wallet deduction: site chain configured, wallet detected, account authorized, network on target chain (BSC=56)
 async function ensureWalletReady() {
   if (!(state.chainCfg && state.chainCfg.enabled)) throw new Error(t('chainNotConfigured'));
   const eth = window.ethereum;
@@ -551,19 +569,19 @@ async function ensureWalletReady() {
   try { accs = await eth.request({ method: 'eth_requestAccounts' }); }
   catch (e) { throw new Error(e.message || String(e)); }
   if (!accs || !accs.length) throw new Error(t('noWalletGap'));
-  // 同一台手机切换过钱包账户时，当前授权地址必须就是登录账号，否则会用错账户转账/串号
+  // When switching wallet accounts on same phone, current authorized address must match login account, else wrong account transfer/mixup
   const curAddr = String(accs[0] || '').toLowerCase();
   if (state.wallet && curAddr && curAddr !== String(state.wallet).toLowerCase()) throw new Error(t('walletChanged'));
   const want = '0x' + Number(state.chainCfg.chainId).toString(16);
   let cur = '';
-  try { cur = (await eth.request({ method: 'eth_chainId' }) || '').toLowerCase(); } catch { /* 取不到则跳过，交给发送时校验 */ }
+  try { cur = (await eth.request({ method: 'eth_chainId' }) || '').toLowerCase(); } catch { /* cannot get, skip, validate at send time */ }
   if (cur && cur !== want) {
     try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: want }] }); }
     catch (e) { throw new Error(t('wrongChain') + ' chainId=' + state.chainCfg.chainId); }
   }
   return eth;
 }
-// 钱包环境自检：站点配链 / 是否检测到钱包 / 当前网络 / 已授权账户 / 钱包类型，一眼定位卡点
+// Wallet env self-check: site chain / wallet detected / current network / authorized account / wallet type, quick diagnostics
 async function walletSelfCheck() {
   const lines = [];
   const cfg = state.chainCfg;
@@ -592,24 +610,24 @@ async function submitWish() {
   $('playMsg').className = 'msg'; $('playMsg').textContent = '';
   if (state.pick === null) { $('playMsg').textContent = t('needPick'); return; }
   if (!Number.isInteger(amount) || amount < 1 || amount > 99) { $('playMsg').textContent = t('needAmount'); return; }
-  if (livePending().length) { $('playMsg').textContent = t('pendingLock'); return; } // 上一笔链上未确认，禁止重复许愿
+  if (livePending().length) { $('playMsg').textContent = t('pendingLock'); return; } // previous on-chain tx unconfirmed, no duplicate bets
   const side = state.side, pick = state.pick, btn = $('betBtn');
   const S6 = 1_000_000;
   try {
     btn.disabled = true;
-    await alignWallet(); const uid = state.uid; // 动钱前强制对齐当前激活钱包，杜绝 A 账号下注/B 钱包出钱的串号
-    // 第一优先：纯站内下注，由后端实时余额判定——够就直接成功，绝不碰外部钱包（避免前端快照过期误扣）
+    await alignWallet(); const uid = state.uid; // force align current active wallet before money movement, prevents A-account-bet/B-wallet-pay mixup
+    // Priority 1: pure in-site bet, backend real-time balance decides - sufficient = instant success, never touch external wallet (avoids stale snapshot overcharge)
     try {
       await api('/bet', { uid, side, amount, pick });
       $('amountInput').value = ''; await refresh(); wishOkToast(); return;
     } catch (e) {
       if (e.code !== 'INSUFFICIENT_BALANCE') { $('playMsg').textContent = e.message || String(e); return; }
     }
-    // 后端确认余额不足：拉最新账户，精确计算链上补差
+    // Backend confirms insufficient: fetch latest account, precisely calculate on-chain top-up
     const fresh = await api('/user/' + uid);
     const availInner = Math.round(Number(fresh.account.available) * S6);
     const totalInner = amount * S6;
-    const chainInner = totalInner - Math.min(availInner, totalInner); // 只补真实差额
+    const chainInner = totalInner - Math.min(availInner, totalInner); // only top up actual shortfall
     await ensureWalletReady();
     const dec = state.chainCfg.decimals, diff = dec - 6;
     if (diff < 0) { $('playMsg').textContent = 'Token decimals < 6, unsupported'; return; }
@@ -646,8 +664,8 @@ async function submitWish() {
   finally { btn.disabled = false; }
 }
 
-// ---------------- 历史（首页） ----------------
-// 已展开的对局编号集合 + 明细缓存：定时刷新重绘后仍保持展开，不会“一点就收”
+// ---------------- History (home) ----------------
+// Expanded round ID set + detail cache: stays expanded after periodic refresh redraw, no click-to-collapse bug
 const expandedRounds = new Set();
 const roundDetailCache = new Map();
 async function fillHistDetail(id, box) {
@@ -673,11 +691,11 @@ async function renderHistory() {
     b.textContent = t('close'); box.classList.remove('hide');
     await fillHistDetail(id, box);
   });
-  // 重绘后恢复已展开对局的明细内容
+  // Restore expanded round details after redraw
   for (const id of expandedRounds) { const box = $('hd-' + id); if (box) fillHistDetail(id, box); }
 }
 
-// ---------------- 保险池公示 + 释放倒计时 ----------------
+// ---------------- Insurance pool display + release countdown ----------------
 function updatePoolCountdown() {
   const el = $('poolCountdown');
   if (!el || !state.pool) return;
@@ -703,18 +721,18 @@ function renderPoolPublic() {
   updatePoolCountdown();
 }
 
-// 邀请返佣档位表（醒目分行，当前档位高亮）
+// Invite commission tier table (clear rows, current tier highlighted)
 function renderInvTiers(curPerMille) {
   const box = $('invTiers'); if (!box) return;
   const unit = t('invPeopleUnit');
-  const tiers = [[1, '1'], [2, '5'], [3, '10'], [4, '20'], [5, '50+']]; // [perMille, 人数档]
+  const tiers = [[1, '1'], [2, '5'], [3, '10'], [4, '20'], [5, '50+']]; // [perMille, person tier]
   const rows = tiers.map(([pm, label]) =>
     `<div class="it-row ${Number(curPerMille) === pm ? 'active' : ''}"><span>${label}${unit}</span><b>${(pm / 10).toFixed(1)}%</b></div>`).join('');
   box.innerHTML = `<div class="inv-tip">${t('invTierTip')}</div>
     <div class="it-grid"><div class="it-head"><span>${t('invColPeople')}</span><span>${t('invColRate')}</span></div>${rows}</div>`;
 }
 
-// ---------------- 我的 ----------------
+// ---------------- Me ----------------
 function renderMe() {
   const me = state.me; if (!me) return;
   const a = me.account;
@@ -723,7 +741,7 @@ function renderMe() {
   $('lossAccum').textContent = fmt(a.lossAccum) + ' 枚';
   $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
   $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
-  // 保险状态横长条：开关开 且 保费≥20枚 → 绿色「保险生效中」，否则灰色「保险关闭中」
+  // Insurance status bar: switch on AND premium>=20 units -> green active, else gray off
   const insActive = !!me.user.insSwitch && Number(a.premium) >= 20;
   const insBar = $('insStatusBar');
   if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
@@ -742,7 +760,7 @@ function renderMe() {
   tip.classList.remove('hide');
   if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
     tip.style.color = '#ff6b6b';
-    tip.textContent = '⚠ 平台代付私鑰未正確配置（PAYOUT_PRIVATE_KEY 是佔位符或格式錯誤），提現無法打出，請管理員到環境变量填入平台錢包真實私鑰後重新部署';
+    tip.textContent = '⚠ Platform payout private key not configured correctly (PAYOUT_PRIVATE_KEY is placeholder or malformed). Withdrawals cannot be sent. Admin must set the real platform wallet private key in environment variables and redeploy.';
   } else {
     tip.style.color = '';
     tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
@@ -758,7 +776,7 @@ function syncAdmin(isAdmin) {
   if (state.isAdmin) loadAdminWords();
 }
 
-// ---------------- 系统公告 ----------------
+// ---------------- System announcement ----------------
 async function loadAnnouncement() {
   try {
     const ann = await api('/announcement');
@@ -772,10 +790,10 @@ async function loadAnnouncement() {
   } catch { $('announcementBox').classList.add('hide'); }
 }
 
-// ---------------- 广场（发帖 / 回复 / 管理员治理） ----------------
+// ---------------- Board (post / reply / admin moderation) ----------------
 async function loadBbs(auto = false) {
   if (!$('tab-bbs').classList.contains('active')) return;
-  // 自动轮询时保护正在进行的输入：有展开的回复框、焦点在输入框、或主输入框有草稿，就跳过本次重绘
+  // Protect active input during auto-poll: skip redraw if reply box expanded, focus in input, or main input has draft
   if (auto && (document.querySelector('.reply-box:not(.hide)') || document.querySelector('#tab-bbs textarea:focus') || $('bbsInput').value)) return;
   loadAnnouncement();
   const posts = await api('/bbs/list');
@@ -806,7 +824,7 @@ async function loadBbs(auto = false) {
     b.disabled = true;
     try {
       await api('/bbs/reply', { uid: state.uid, postId, content });
-      await loadBbs(); // 成功后整体重绘，新回复直接出现在该帖下方
+      await loadBbs(); // redraw all after success, new reply appears under the post
     } catch (e) { alert(e.message); b.disabled = false; }
   });
   $('bbsList').querySelectorAll('[data-delpost]').forEach((b) => b.onclick = async () => {
@@ -829,7 +847,7 @@ async function loadAdminWords() {
     $('wordTags').querySelectorAll('[data-wordrm]').forEach((b) => b.onclick = async () => {
       await api('/admin/word/remove', { uid: state.uid, word: b.dataset.wordrm }); loadAdminWords();
     });
-  } catch (e) { /* 非管理员或网络抖动，忽略 */ }
+  } catch (e) { /* not admin or network glitch, ignore */ }
 }
 async function adminAddWord() {
   const w = $('wordInput').value.trim();
@@ -845,19 +863,19 @@ async function postBbs() {
   $('bbsInput').value = ''; $('bbsChar').textContent = '0/' + BBS_MAX_BYTES; await loadBbs();
 }
 
-// ---------------- 动作 ----------------
+// ---------------- Actions ----------------
 async function switchIns() { await alignWallet(); const me = state.me; await api('/insurance/switch', { uid: state.uid, on: !me.user.insSwitch }); refresh(); }
 
-// 保费存入：先纯站内（后端实时余额判定），仅当后端明确余额不足才用外部钱包补差
+// Premium deposit: pure in-site first (backend real-time balance), external wallet top-up only when backend explicitly says insufficient
 async function depositPremium() {
   const amount = Number($('premiumInput').value);
   const msg = $('premiumMsg'); msg.className = 'msg'; msg.textContent = '';
   if (!Number.isInteger(amount) || amount <= 0) { msg.textContent = t('premiumNeed'); return; }
-  if (livePending().length) { msg.textContent = t('pendingLock'); return; } // 上一笔链上未确认，禁止重复存保费
+  if (livePending().length) { msg.textContent = t('pendingLock'); return; } // previous on-chain tx unconfirmed, no duplicate premium deposit
   const btn = $('premiumBtn'), S6 = 1_000_000;
   try {
     btn.disabled = true;
-    await alignWallet(); // 动钱前对齐当前激活钱包
+    await alignWallet(); // align current active wallet before money movement
     try {
       await api('/insurance/deposit', { uid: state.uid, amount });
       $('premiumInput').value = ''; await refresh(); return;
@@ -895,7 +913,7 @@ async function depositPremium() {
   finally { btn.disabled = false; }
 }
 
-// 保险关闭时，把保费提回可用余额（输入框留空=全部提回）
+// Insurance off: withdraw premium back to available (empty input = withdraw all)
 async function withdrawPremium() {
   const raw = $('premiumOutInput').value.trim();
   await alignWallet();
@@ -910,7 +928,7 @@ async function withdraw() {
   if (!v) return;
   const btn = $('wdBtn'); btn.disabled = true; btn.textContent = t('withdrawing');
   try {
-    await alignWallet(); // 动钱前对齐当前激活钱包，防止提到/扣到错误账号
+    await alignWallet(); // align current active wallet before money movement, prevents wrong account deduction
     const r = await api('/withdraw', { uid: state.uid, amount: v });
     if (r.paid === true) alert(t('wdOk') + '\n' + t('wdCheckReceive') + (r.txHash ? '\n' + r.txHash : ''));
     else if (r.paid === false) alert(((r.broadcast ? '⚠ ' : '') + (r.payoutError || 'pending') + (r.txHash ? `\n${r.txHash}` : '')));
@@ -921,9 +939,9 @@ async function withdraw() {
 }
 
 
-// —— 链上掉单补录：钱包已支付就一定能凭交易哈希入账，绝不丢钱 ——
+// On-chain missing-order recovery: wallet paid = always creditable by tx hash, money never lost
 function loadPending() { try { return JSON.parse(localStorage.getItem('pendingTxs') || '[]'); } catch { return []; } }
-// 是否存在「10 分钟内尚未确认到账」的链上在途单：在途期间禁止再次发起下注/存保费，防止确认慢时重复提交出第二注
+// Check for on-chain pending tx within 10 min: while pending, no new bet/premium deposit, prevents duplicate submission when confirmation is slow
 function livePending() {
   const TEN = 10 * 60 * 1000, now = Date.now();
   return loadPending().filter((x) => now - (x.ts || 0) < TEN);
@@ -947,25 +965,25 @@ async function creditPending() {
       try {
         await api('/wallet/credit', { uid: state.uid, txHash: item.txHash });
         removePending(item.txHash); await refresh();
-      } catch (e) { /* 链上尚未确认 / 节点超时：保留，下轮自动再补 */ }
+      } catch (e) { /* on-chain unconfirmed / node timeout: keep, auto-retry next round */ }
     }
   } finally { crediting = false; }
 }
 
-// 押注成功祝贺：确认许愿成功（站内立即成功 / 链上补差确认入账）后弹一次
+// Bet success toast: show once after wish confirmed (in-site instant / on-chain top-up confirmed)
 function wishOkToast() { setTimeout(() => alert(t('winCongrats')), 150); }
 async function refresh() {
   if (!state.uid) return;
-  creditPending(); // 每轮自动补录已上链确认的在途单，确认后立即清 pending、解除在途锁
+  creditPending(); // Auto-recover confirmed on-chain pending orders each round, clear pending and unlock immediately after confirmation
   try {
     const [r, recent, me, pool] = await Promise.all([api('/round/current'), api('/recent'), api('/user/' + state.uid), api('/insurance/pool')]);
     state.round = r; state.recent = recent; state.me = me; state.pool = pool;
     renderRound(); renderMe(); renderPoolPublic();
     if ($('tab-home').classList.contains('active')) renderHistory();
-  } catch (e) { /* 下一轮自愈 */ }
+  } catch (e) { /* self-heal next round */ }
 }
 
-// ---------------- 初始化 ----------------
+// ---------------- Init ----------------
 function init() {
   $('langSel').value = state.lang; applyI18n();
   $('langSel').onchange = (e) => { state.lang = e.target.value; localStorage.setItem('lang', state.lang); applyI18n(); refresh(); };
@@ -976,12 +994,12 @@ function init() {
   document.querySelectorAll('.dock-item').forEach((d) => d.onclick = () => switchDock(d.dataset.dock));
   bindSwipe();
   $('disclaimerConfirm').onclick = confirmDisclaimer;
-  // 系统公告发布（管理员）
+  // System announcement publish (admin)
   $('announceInput').addEventListener('input', () => { $('announceChar').textContent = byteLen($('announceInput').value) + '/8192'; });
   $('announceSend').onclick = async () => {
     const content = $('announceInput').value.trim();
-    if (byteLen(content) < 1 || byteLen(content) > 8192) { alert('公告 1-8192 字节'); return; }
-    try { await api('/announcement', { uid: state.uid, content }); $('announceInput').value = ''; $('announceChar').textContent = '0/8192'; await loadAnnouncement(); alert('公告已发布'); }
+    if (byteLen(content) < 1 || byteLen(content) > 8192) { alert('Announcement 1-8192 bytes'); return; }
+    try { await api('/announcement', { uid: state.uid, content }); $('announceInput').value = ''; $('announceChar').textContent = '0/8192'; await loadAnnouncement(); alert('Announcement published'); }
     catch (e) { alert(e.message); }
   };
   $('insSwitchBtn').onclick = switchIns; $('premiumBtn').onclick = depositPremium;
@@ -1005,7 +1023,7 @@ function init() {
   selectSide('red');
   bindWalletEvents();
   (async () => {
-    // 有钱包插件：以「当前激活账户」为准（切换过钱包也能直接登对账号）；无插件才回退本地缓存（演示）
+    // With wallet plugin: use current active account (switched wallet still logs in correctly); no plugin falls back to local cache (demo)
     const active = await activeWalletAddr().catch(() => null);
     const addr = active || localStorage.getItem('wallet');
     if (!addr) return;
@@ -1013,6 +1031,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.5';
+const FE_BUILD = '2.3.6';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

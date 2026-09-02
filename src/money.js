@@ -1,36 +1,36 @@
-// =============================================================
-// money.js —— 全站金额以「枚」为单位，内部用 6 位定点 BigInt 记账
-// 1 枚 = 1_000_000 最小单位；全程整数运算，禁止浮点，杜绝尾差
+﻿// =============================================================
+// money.js - all amounts in 'units', internal 6-decimal fixed-point BigInt
+// 1 unit = 1_000_000 min units; integer arithmetic only, no floats, no rounding drift
 // =============================================================
 
-export const SCALE = 1_000_000n; // 1 枚支持到小数点后 6 位
+export const SCALE = 1_000_000n; // 1 unit supports 6 decimal places
 
-/** 整数枚 -> 内部最小单位（下注/提现等整数场景） */
+/** Integer units -> internal min units (bet/withdraw etc.) */
 export function coin(n) {
   return BigInt(n) * SCALE;
 }
 
 /**
- * 「枚」的数值/字符串 -> 内部 BigInt。
- * 最多接受 6 位小数，超出部分截断（与链上 18 位充值截准口径一致）。
- * 例：toInner('0.019801') === 19801n
+ * Numeric/string 'units' -> internal BigInt.
+ * Accepts up to 6 decimals, excess truncated (consistent with on-chain 18-decimal deposit truncation).
+ * Example: toInner('0.019801') === 19801n
  */
 export function toInner(input) {
-  if (typeof input === 'bigint') return input * SCALE; // 已是整数枚
+  if (typeof input === 'bigint') return input * SCALE; // already integer units
   const s = String(input).trim();
   const m = s.match(/^(-?)(\d+)(?:\.(\d{1,9}))?$/);
-  if (!m) throw new Error(`金额格式非法：${input}（单位：枚，最多 6 位小数）`);
+  if (!m) throw new Error(`Invalid amount format：${input}(unit: units, max 6 decimals)`);
   const sign = m[1] === '-' ? -1n : 1n;
   const whole = BigInt(m[2]) * SCALE;
   let frac = 0n;
   if (m[3]) {
-    const f = (m[3] + '000000').slice(0, 6); // 截到 6 位
+    const f = (m[3] + '000000').slice(0, 6); // truncate to 6 decimals
     frac = BigInt(f);
   }
   return sign * (whole + frac);
 }
 
-/** 内部 BigInt -> 「枚」展示字符串（去掉多余尾零） */
+/** Internal BigInt -> display string in 'units' (strip trailing zeros) */
 export function toCoin(inner) {
   const neg = inner < 0n;
   const v = neg ? -inner : inner;
@@ -41,18 +41,18 @@ export function toCoin(inner) {
     const f = frac.toString().padStart(6, '0').replace(/0+$/, '');
     s += '.' + f;
   }
-  return (neg ? '-' : '') + s + ' 枚';
+  return (neg ? '-' : '') + s + ' units';
 }
 
-/** 混合支付：站内可用(内部单位)不足以覆盖下注总额(内部单位)时，链上需补的差额(内部单位, ≥0) */
+/** Mixed payment: when in-site available (internal) insufficient for bet total (internal), the on-chain top-up delta (internal, >=0) */
 export function needTopUp(availableInner, totalInner) {
   const a = BigInt(availableInner), t = BigInt(totalInner);
   return t > a ? t - a : 0n;
 }
 
-/** floor(a*b/c)，非负 BigInt 比例运算（按比例分奖用，无浮点、无溢出） */
+/** floor(a*b/c), non-negative BigInt ratio math (for proportional payout, no floats, no overflow) */
 export function mulDivFloor(a, b, c) {
-  if (c === 0n) throw new Error('比例运算除零');
+  if (c === 0n) throw new Error('Ratio math division by zero');
   return (a * b) / c;
 }
 

@@ -1,9 +1,9 @@
-// =============================================================
-// voice.js —— 语音房（聊天室 + 会议室实时通话）
-// 依赖 app.js 全局：$, api, t, state, fmt, escapeHtml, I18N, alignWallet
+﻿// =============================================================
+// voice.js - voice rooms (chat rooms + meeting room real-time calls)
+// Depends on app.js globals: $, api, t, state, fmt, escapeHtml, I18N, alignWallet
 // =============================================================
 (function () {
-  // —— 补充 i18n（en/zh-TW/ja，其余回退英文）——
+  // Supplement i18n (en/zh-TW/ja, others fall back to English)
   const V = {
     en: {
       voiceTitle: 'Voice Rooms', createRoom: 'Create Room', chatRoom: 'Chat Room', meetingRoom: 'Meeting',
@@ -44,15 +44,15 @@
   }
   const vt = (k) => (I18N[state.lang] && I18N[state.lang][k]) || I18N.en[k] || k;
 
-  // —— 状态 ——
+  // State
   let ws = null, curRoom = null, curMembers = [], curMsgs = [];
   let mediaRecorder = null, recordChunks = [], recordStart = 0, recordTimer = null;
-  let localStream = null; // 会议室本地麦克风流
-  const peerCons = new Map(); // uid -> RTCPeerConnection（上麦者对听众 / 听众对上麦者）
+  let localStream = null; // meeting room local mic stream
+  const peerCons = new Map(); // uid -> RTCPeerConnection (speaker to listener / listener to speaker)
   const remoteAudios = new Map(); // uid -> audio element
   let roomTimer = null;
 
-  // —— 子 tab 切换 ——
+  // Sub-tab switching
   function bindSubTabs() {
     $('subTabBbs').onclick = () => {
       $('subTabBbs').classList.add('active'); $('subTabVoice').classList.remove('active');
@@ -65,7 +65,7 @@
     };
   }
 
-  // —— 房间列表 ——
+  // Room list
   async function loadRooms() {
     try {
       const rooms = await api('/voice/rooms');
@@ -78,6 +78,7 @@
           <div class="room-card-meta">
             <span>${r.memberCount} ${vt('people')}</span>
             <span>${vt('remain')} ${fmtRemain(r.remainSec)}</span>
+            ${r.rateMultiplier > 1 ? `<span class="rate-tag">${r.rateMultiplier}x</span>` : ''}
           </div>
         </div>`).join('') : `<p class="muted">${vt('noRooms')}</p>`;
       $('roomList').querySelectorAll('.room-card').forEach((c) => c.onclick = () => enterRoom(c.dataset.rid));
@@ -89,7 +90,7 @@
     return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}` : `${m}:${String(s).padStart(2, '0')}`;
   }
 
-  // —— 创建房间 ——
+  // Create room
   let createType = 'chat';
   function openCreateRoom() {
     createType = 'chat';
@@ -106,7 +107,7 @@
       document.querySelectorAll('.room-type').forEach((x) => x.classList.toggle('active', x === b));
     });
     $('confirmCreateRoom').onclick = async () => {
-      const amount = createType === 'chat' ? 1 : 5; // 聊天室默认1枚，会议室默认5枚
+      const amount = createType === 'chat' ? 1 : 5; // chat room default 1 unit, meeting room default 5 units
       const btn = $('confirmCreateRoom'); btn.disabled = true;
       try {
         await alignWallet();
@@ -118,7 +119,7 @@
     };
   }
 
-  // —— 进入房间 ——
+  // Enter room
   async function enterRoom(roomId) {
     try {
       const detail = await api('/voice/room/' + roomId);
@@ -128,9 +129,9 @@
     $('roomName').textContent = curRoom.name;
     renderRoomInfo(); renderMembers(); renderMsgs();
     connectWs(roomId);
-    // 会议室控制
+    // Meeting room controls
     updateMeetingControls();
-    // 房间信息定时刷新（剩余时长）
+    // Room info periodic refresh (remaining time)
     if (roomTimer) clearInterval(roomTimer);
     roomTimer = setInterval(() => { if (curRoom) { curRoom.remainSec = Math.max(0, (curRoom.remainSec || 0) - 1); renderRoomInfo(); } }, 1000);
   }
@@ -143,7 +144,7 @@
       let m; try { m = JSON.parse(ev.data); } catch { return; }
       onWsMsg(m);
     };
-    ws.onclose = () => { /* 自动重连由离开/关闭处理 */ };
+    ws.onclose = () => { /* auto-reconnect handled by leave/close */ };
     ws.onerror = () => {};
   }
   function onWsMsg(m) {
@@ -151,7 +152,7 @@
       case 'joined':
         curRoom = m.room; curMembers = m.members; curMsgs = m.messages || [];
         renderRoomInfo(); renderMembers(); renderMsgs(); updateMeetingControls();
-        // 会议室：如果有上麦者，自动订阅
+        // Meeting room: auto-subscribe if there are speakers
         if (curRoom.type === 'meeting') setupListenToSpeakers();
         break;
       case 'msg':
@@ -186,7 +187,7 @@
     }
   }
 
-  // 房主点击房间说明可编辑
+  // Host can click room description to edit
   async function editRoomDesc() {
     if (!curRoom || curRoom.hostUid !== state.uid) return;
     const v = prompt(vt('editDescTip'), curRoom.description || '');
@@ -203,13 +204,13 @@
       const micDot = m.micOn ? '<span class="mic-dot on"></span>' : '';
       return `<span class="member-chip" data-uid="${m.uid}">${roleTag}${escapeHtml(m.name)}${micDot}</span>`;
     }).join('');
-    // 主持点击成员可邀请/取消嘉宾
+    // Host can click member to invite/remove guest
     if (curRoom && curRoom.type === 'meeting' && isHost()) {
       $('roomMembers').querySelectorAll('.member-chip').forEach((c) => c.onclick = () => {
         const uid = c.dataset.uid;
         if (uid === state.uid) return;
         const isGuest = curRoom.guestUid === uid;
-        if (confirm(isGuest ? '取消嘉宾？' : '邀请为嘉宾（可上麦）？')) {
+        if (confirm(isGuest ? 'Remove guest?' : 'Invite as guest (can mic)?')) {
           wsSend({ type: 'setGuest', guestUid: uid, on: !isGuest });
         }
       });
@@ -231,7 +232,7 @@
     div.innerHTML = `<small>${escapeHtml(m.name)} · ${time}</small>${body}`;
     box.appendChild(div);
     box.scrollTop = box.scrollHeight;
-    // 语音播放
+    // Voice playback
     div.querySelectorAll('.voice-msg').forEach((b) => b.onclick = () => {
       const src = '/voice/media/' + b.dataset.file;
       let a = b._audio;
@@ -241,7 +242,7 @@
     });
   }
 
-  // —— 发文字 ——
+  // Send text
   function sendText() {
     const input = $('roomTextInput'); const content = input.value.trim();
     if (!content) return;
@@ -249,11 +250,11 @@
     input.value = '';
   }
 
-  // —— 录音（≤30秒）——
+  // Recording (<=30s)
   async function toggleRecord() {
     if (mediaRecorder && mediaRecorder.state === 'recording') { stopRecord(); return; }
-    // 会议室：非主持非嘉宾不能发语音
-    if (curRoom.type === 'meeting' && !isSpeaker()) { alert('会议室仅主持和嘉宾可发语音'); return; }
+    // Meeting room: non-host non-guest cannot send voice
+    if (curRoom.type === 'meeting' && !isSpeaker()) { alert('Only host and guest can send voice in meeting room'); return; }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       recordChunks = [];
@@ -281,7 +282,7 @@
         if (sec >= 30) stopRecord();
       }, 1000);
       $('voiceRecordBtn').textContent = '⏹';
-    } catch (e) { alert('无法访问麦克风：' + e.message); }
+    } catch (e) { alert('Cannot access microphone: ' + e.message); }
   }
   function stopRecord() {
     if (recordTimer) { clearInterval(recordTimer); recordTimer = null; }
@@ -289,7 +290,7 @@
     $('voiceRecordBtn').textContent = '🎤';
   }
 
-  // —— 图片（≤200K，自动压缩）——
+  // Image (<=200K, auto-compress)
   function pickImage() { $('imageFileInput').click(); }
   async function onImagePicked(ev) {
     const file = ev.target.files[0]; if (!file) return;
@@ -325,12 +326,12 @@
         };
         tryQ();
       };
-      img.onerror = () => reject(new Error('图片读取失败'));
+      img.onerror = () => reject(new Error('Image read failed'));
       img.src = url;
     });
   }
 
-  // —— 上传媒体 ——
+  // Upload media
   async function uploadMedia(type, blob, duration) {
     const buf = await blob.arrayBuffer();
     const base64 = arrayBufferToBase64(buf);
@@ -343,9 +344,9 @@
     return btoa(s);
   }
 
-  // —— 充值 ——
+  // Recharge
   async function rechargeRoom() {
-    const v = prompt(vt('addTimeTip') + '（枚）：');
+    const v = prompt(vt('addTimeTip') + ' (units):');
     const amount = Number(v);
     if (!Number.isInteger(amount) || amount <= 0) return;
     try {
@@ -354,13 +355,13 @@
     } catch (e) { alert(e.message); }
   }
 
-  // —— 分享房间（链接带 ref 绑定上下级 + room 自动进入）——
+  // Share room (link with ref for upline binding + room auto-enter)
   function shareRoom() {
     if (!curRoom) return;
     const link = `${location.origin}${location.pathname}?ref=${state.uid}&room=${curRoom.roomId}`;
     navigator.clipboard?.writeText(link).then(() => alert(vt('shareCopied') + '\n' + link)).catch(() => prompt(vt('share'), link));
   }
-  // —— 房主解散房间（二次确认）——
+  // Host dissolves room (double confirm)
   async function dissolveRoom() {
     if (!curRoom || curRoom.hostUid !== state.uid) return;
     if (!confirm(vt('dissolveConfirm'))) return;
@@ -370,7 +371,7 @@
     } catch (e) { alert(e.message); }
   }
 
-  // —— 离开房间 ——
+  // Leave room
   function leaveRoom() {
     wsSend({ type: 'leave' });
     if (ws) { try { ws.close(); } catch {} ws = null; }
@@ -381,7 +382,7 @@
     loadRooms();
   }
 
-  // —— 会议室 WebRTC ——
+  // Meeting room WebRTC
   function isHost() { return curRoom && curRoom.hostUid === state.uid; }
   function isSpeaker() {
     if (!curRoom || curRoom.type !== 'meeting') return false;
@@ -410,10 +411,10 @@
   async function startBroadcast() {
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (e) { alert('无法访问麦克风：' + e.message); wsSend({ type: 'mic', on: false }); return; }
-    // 对每个听众创建 PC 发 offer
+    } catch (e) { alert('Cannot access microphone: ' + e.message); wsSend({ type: 'mic', on: false }); return; }
+    // Create PC and send offer for each listener
     for (const m of curMembers) {
-      if (m.uid === state.uid || m.micOn) continue; // 只给非上麦者发
+      if (m.uid === state.uid || m.micOn) continue; // only send to non-speakers
       await offerTo(m.uid, localStream);
     }
   }
@@ -434,7 +435,7 @@
     await pc.setLocalDescription(offer);
     wsSend({ type: 'rtc', to: uid, data: { sdp: pc.localDescription } });
   }
-  // 听众：收到上麦者的 offer
+  // Listener: receive offer from speaker
   async function handleRtc(from, data) {
     if (data.sdp && data.sdp.type === 'offer') {
       let pc = peerCons.get(from);
@@ -460,10 +461,10 @@
       if (pc) try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch {}
     }
   }
-  // 上麦者：新成员加入时主动 offer
+  // Speaker: proactively offer when new member joins
   function setupListenToSpeakers() {
     if (!curRoom || curRoom.type !== 'meeting') return;
-    // 如果我是上麦者，对新的非上麦成员发 offer
+    // If I am speaker, send offer to new non-speaker member
     if (localStream) {
       for (const m of curMembers) {
         if (m.uid !== state.uid && !m.micOn && !peerCons.has(m.uid)) {
@@ -473,7 +474,7 @@
     }
   }
 
-  // —— 绑定 ——
+  // Bindings
   function bind() {
     bindSubTabs();
     bindCreateRoom();
@@ -487,28 +488,28 @@
     $('imageBtn').onclick = pickImage;
     $('imageFileInput').onchange = onImagePicked;
     $('micBtn').onclick = toggleMic;
-    $('guestListBtn').onclick = () => alert('点击房间内成员头像可邀请/取消嘉宾');
-    // voice.js 动态补充的 i18n key 需要重新翻译一次
+    $('guestListBtn').onclick = () => alert('Click member avatar in room to invite/remove guest');
+    // voice.js dynamically added i18n keys need re-translation
     applyI18n();
     $('roomNameInput').placeholder = vt('roomNamePh');
     $('roomDescInput').placeholder = vt('roomDescPh');
     $('roomTextInput').placeholder = vt('saySomething');
     $('roomDescBox').onclick = editRoomDesc;
-    // 分享链接自动进房间：?room=ROOM_ID（ref 参数已由登录逻辑绑定上下级）
+    // Share link auto-enter room: ?room=ROOM_ID (ref param already bound by login logic)
     const roomInvite = new URLSearchParams(location.search).get('room');
     if (roomInvite) {
       const t = setInterval(() => {
         if (state.uid) {
           clearInterval(t);
           history.replaceState(null, '', location.pathname);
-          // 等主界面初始化完成
+          // Wait for main UI init
           setTimeout(() => enterRoom(roomInvite), 800);
         }
       }, 300);
     }
   }
 
-  // 页面加载后初始化（app.js 已执行完）
+  // Init after page load (app.js finished)
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
   else bind();
 })();

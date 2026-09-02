@@ -1,7 +1,7 @@
-// =============================================================
-// Scheduler.js —— 定时推进（async）：自动结算到期局 + 补齐 6h 赔付
-// 不自动开新局：一局结算后，直到出现第一笔许愿才由 GameService.bet 开新局
-// 生产用 cron/队列 + 单实例 leader 锁；单容器内 setInterval 调用本 tick 即可
+﻿// =============================================================
+// Scheduler.js - async tick: auto-settle expired rounds + run 6h payouts
+// No auto new round: after settlement, a new round starts only on first bet via GameService.bet
+// Production: cron/queue + single-instance leader lock; single container: setInterval calling this tick
 // =============================================================
 import { batchSeqAt } from './engine-payout.js';
 
@@ -12,7 +12,7 @@ export class Scheduler {
     const { game, insurance, cfg } = this.app;
     const out = { settled: [], payouts: [] };
 
-    // 到期局自动结算（只结算当前存在且到期的局，结算后不续开）
+    // Auto-settle expired rounds (only existing & expired rounds, no auto-restart after)
     let guard = 0;
     while (guard++ < 1000) {
       const r = await this.app.store.findOpenRound();

@@ -1,24 +1,24 @@
-// =============================================================
-// engine-payout.js —— 保险节点 100 期释放的纯计算 + 批次序号（时间轴）
-// 期额 = 0.019801 * n；第 100 期补差，使每节点正好释放 100 枚
+﻿// =============================================================
+// engine-payout.js - insurance node 100-period payout pure math + batch index (timeline)
+// Period amount = 0.019801 * n; period 100 tops up to exactly 100 units per node
 // =============================================================
 
-/** 节点下一期待赔额；periodN=已发期数(0..99)，返回 null 表示已发完 */
+/** Next pending payout for a node; periodN=periods paid (0..99), returns null when fully paid */
 export function nextDue(node, cfg) {
   const n = node.periodN + 1;
   if (n > 100) return null;
   if (n < 100) return cfg.periodStep * BigInt(n);
-  return cfg.nodeTotal - node.paidAmount; // 第 100 期补差到整 100 枚
+  return cfg.nodeTotal - node.paidAmount; // Period 100 tops up to exactly 100 units
 }
 
-/** 时间戳(秒)对应的全局赔付批次序号：每 6h 一批 */
+/** Global payout batch index for a timestamp (seconds): one batch per 6h */
 export function batchSeqAt(tsSec, cfg) {
   return Math.floor(tsSec / cfg.payoutEverySec);
 }
 
 /**
- * 续命判定：当前批次序号 - 用户「最新节点」所在批次序号 <= 28（=168h）
- * 顺延不推进成功批次，因此顺延天然不消耗 168h 窗口（冻结）。
+ * Revive check: current batch index - user's newest node batch index <= 28 (=168h)
+ * Postponement does not advance successful batch, so it naturally does not consume the 168h window (frozen).
  */
 export function isAlive(userNewestNodeSeq, currentSeq, cfg) {
   if (userNewestNodeSeq == null) return false;

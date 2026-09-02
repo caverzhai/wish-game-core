@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "private": true,
   "type": "module",
-  "description": "3分钟愿望实现 - 中心化网站（红绿池对局 + 可选保险 + 邀请返佣 + 提现 + BBS + 多语言 + 链上唯一代币适配；全站金额单位：枚；6位定点整数）。内存模式零依赖，接入 MySQL 需 mysql2，链上模式需 ethers。",
+  "description": "Three-Minute Wish Pool - centralized web app (red/green pool rounds + optional insurance + invite commissions + withdrawals + BBS + multilingual + on-chain single-token adapter; all amounts in 'units'; 6-decimal fixed-point integers). Zero dependencies in memory mode; mysql2 for MySQL persistence, ethers for on-chain mode.",
   "scripts": {
     "start": "node src/server.js",
     "test": "node --test",

@@ -1,5 +1,5 @@
-// =============================================================
-// core.test.js —— node --test（零依赖内置测试框架，全 async）
+﻿// =============================================================
+// core.test.js - node --test (zero-dependency built-in test framework, all async)
 // =============================================================
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,12 +22,12 @@ async function twoSidedGame() {
   return { app, A, B };
 }
 
-test('定点金额：0.019801 枚 = 19801 最小单位', () => {
+test('Fixed amount: 0.019801 units = 19801 min units', () => {
   assert.equal(toInner('0.019801'), 19801n);
   assert.equal(coin(1), 1_000_000n);
 });
 
-test('奇=>红胜：抽 2.5%（0.5%保池/2.0%平台），胜方分 97.5%，总账守恒', async () => {
+test('Odd=>red wins: 2.5% fee (0.5% insPool/2.0% platform), winners split 97.5%, ledger conserved', async () => {
   const { app, A, B } = await twoSidedGame();
   const { game, store } = app;
   await game.bet(A, 'red', 60, 1, 10);
@@ -46,7 +46,7 @@ test('奇=>红胜：抽 2.5%（0.5%保池/2.0%平台），胜方分 97.5%，总�
   assert.equal(await store.totalInside(), await store.totalSource());
 });
 
-test('流局：仅一方下注，原路全额退回，不抽水不扣费', async () => {
+test('Cancelled round: only one side bets, full refund, no fees', async () => {
   const app = await mk();
   const U = (await app.game.register('0xC')).uid;
   await app.wallet.issue(U, 100);
@@ -59,7 +59,7 @@ test('流局：仅一方下注，原路全额退回，不抽水不扣费', async
   assert.equal((await app.store.getLedger()).platform, 0n);
 });
 
-test('保险生效的赢家：中奖实分再扣 10% 入保险池', async () => {
+test('Active insurance winner: 10% of actual winnings goes to insurance pool', async () => {
   const app = await mk();
   const A = (await app.game.register('0xA')).uid, B = (await app.game.register('0xB')).uid;
   await app.wallet.issue(A, 200); await app.wallet.issue(B, 100);
@@ -75,7 +75,7 @@ test('保险生效的赢家：中奖实分再扣 10% 入保险池', async () => 
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('允许双边下注：胜方部分分奖、负方部分计损，依然守恒', async () => {
+test('Both sides allowed: winning side splits, losing side counts loss, still conserved', async () => {
   const app = await mk();
   const A = (await app.game.register('0xA')).uid, B = (await app.game.register('0xB')).uid;
   await app.wallet.issue(A, 200); await app.wallet.issue(B, 100);
@@ -90,7 +90,7 @@ test('允许双边下注：胜方部分分奖、负方部分计损，依然守�
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('Q5：保费50/累计亏230 -> 2节点、余保费10、零头清零', async () => {
+test('Q5: premium 50/loss 230 -> 2 nodes, remaining premium 10, remainder zeroed', async () => {
   const app = await mk();
   const U = (await app.game.register('0xU')).uid;
   await app.wallet.issue(U, 300);
@@ -103,7 +103,7 @@ test('Q5：保费50/累计亏230 -> 2节点、余保费10、零头清零', async
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('Q5：保费100/累计亏230 -> 2节点、余保费60、零头30保留', async () => {
+test('Q5: premium 100/loss 230 -> 2 nodes, remaining premium 60, remainder 30 kept', async () => {
   const app = await mk();
   const U = (await app.game.register('0xU')).uid;
   await app.wallet.issue(U, 300);
@@ -116,7 +116,7 @@ test('Q5：保费100/累计亏230 -> 2节点、余保费60、零头30保留', as
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('100 期释放总额恰好 100 枚（末期补差，无尾差）', async () => {
+test('100-period release totals exactly 100 units (last period tops up, no remainder)', async () => {
   const cfg = (await mk()).cfg;
   const node = { periodN: 0, paidAmount: 0n };
   let total = 0n, first = null, last = null;
@@ -133,7 +133,7 @@ test('100 期释放总额恰好 100 枚（末期补差，无尾差）', async ()
   assert.ok(last > 19801n * 99n);
 });
 
-test('断保只充公当期、期号照走；再开新节点续命后恢复发放', async () => {
+test('Lapsed insurance only forfeits current period, period advances; new node revives and resumes payout', async () => {
   const app = await mk();
   const B = (await app.game.register('0xB')).uid;
   await app.wallet.issue(B, 500);
@@ -161,7 +161,7 @@ test('断保只充公当期、期号照走；再开新节点续命后恢复发�
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('保险池不足本次应赔 -> 整批顺延，不推进期号', async () => {
+test('Insurance pool insufficient for batch -> whole batch postponed, period not advanced', async () => {
   const app = await mk();
   const U = (await app.game.register('0xU')).uid;
   await app.store.insertNode({ nodeId: 'NX', uid: U, total: coin(100), periodN: 0, paidAmount: 0n, paidToUserAmount: 0n, forfeitedAmount: 0n, state: 'active', createdAtSec: 1, batchSeq: 0 });
@@ -170,13 +170,13 @@ test('保险池不足本次应赔 -> 整批顺延，不推进期号', async () =
   assert.equal((await app.store.listNodes({}))[0].periodN, 0);
 });
 
-test('邀请档位：节点直邀人数 -> 千分率', async () => {
+test('Invite tier: node direct invitee count -> per-mille rate', async () => {
   const cfg = (await mk()).cfg;
   const cases = [[0, 0], [1, 1], [4, 1], [5, 2], [9, 2], [10, 3], [19, 3], [20, 4], [49, 4], [50, 5], [99, 5]];
   for (const [n, bp] of cases) assert.equal(referralPerMille(cfg, n), BigInt(bp));
 });
 
-test('邀请返佣：被邀人产生节点后，其下注按 0.1% 返给邀请人（平台列支）', async () => {
+test('Invite commission: after invitee creates node, their bets return 0.1% to inviter (platform pays)', async () => {
   const app = await mk();
   const A = (await app.game.register('0xA')).uid;
   const B = (await app.game.register('0xB', A)).uid;
@@ -192,7 +192,7 @@ test('邀请返佣：被邀人产生节点后，其下注按 0.1% 返给邀请�
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('提现：2-500 枚、费 1 归平台；越界报错；成功/失败回写守恒', async () => {
+test('Withdrawal: 2-500 units, fee 1 to platform; out-of-range errors; success/fail writeback conserved', async () => {
   const app = await mk();
   const U = (await app.game.register('0xU')).uid, V = (await app.game.register('0xV')).uid;
   await app.wallet.issue(U, 10); await app.wallet.issue(V, 10);
@@ -213,9 +213,9 @@ test('提现：2-500 枚、费 1 归平台；越界报错；成功/失败回写�
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
-test('封盘后不可下注；未到 180 秒不可开奖', async () => {
+test('No bets after lock; no settle before 180s', async () => {
   const { app, A } = await twoSidedGame();
   await app.game.bet(A, 'red', 10, 1, 10);
-  await assert.rejects(app.game.bet(A, 'red', 10, 1, 160), /停止许愿/);
-  await assert.rejects(app.game.settle(170), /开奖时间/);
+  await assert.rejects(app.game.bet(A, 'red', 10, 1, 160), /locked/);
+  await assert.rejects(app.game.settle(170), /settlement/);
 });

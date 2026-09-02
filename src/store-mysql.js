@@ -1,7 +1,7 @@
-// =============================================================
-// store-mysql.js —— MySQL 持久化仓储，接口与 MemoryStore 完全一致
-// Railway 添加 MySQL 后会注入 MYSQLHOST/PORT/USER/PASSWORD/DATABASE，自动启用
-// 金额列用 BIGINT 存 1e-6 最小单位；写入用字符串、读取统一转 BigInt
+﻿// =============================================================
+// store-mysql.js - MySQL persistent store, interface identical to MemoryStore
+// Railway injects MYSQLHOST/PORT/USER/PASSWORD/DATABASE when MySQL added, auto-enabled
+// Amount columns use BIGINT for 1e-6 min unit; write as string, read converts to BigInt
 // =============================================================
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { GameError, Codes } from './errors.js';
@@ -86,7 +86,7 @@ export class MysqlStore {
   async init() {
     let mysql;
     try { mysql = await import('mysql2/promise'); }
-    catch { throw new Error('启用 MySQL 需要依赖 mysql2（npm i mysql2），Railway 构建会自动安装'); }
+    catch { throw new Error('MySQL requires mysql2 dependency (npm i mysql2), Railway build installs it automatically'); }
     const e = this.env;
     const opts = { supportBigNumbers: true, bigNumberStrings: false, connectionLimit: 10, enableKeepAlive: true };
     const url = e.DATABASE_URL || e.MYSQL_URL || e.MYSQL_PRIVATE_URL || e.MYSQL_PUBLIC_URL;
@@ -105,9 +105,9 @@ export class MysqlStore {
     for (const stmt of SCHEMA.split(';').map((s) => s.trim()).filter(Boolean)) {
       await this.pool.query(stmt);
     }
-    // 老库幂等迁移：补齐后加的列（列已存在时数据库报错，忽略即可）
+    // Legacy DB idempotent migration: add later columns (DB error if column exists, ignore)
     for (const alter of ['ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0', 'ALTER TABLE withdraws ADD COLUMN created_at BIGINT DEFAULT 0']) {
-      try { await this.pool.query(alter); } catch { /* 列已存在 */ }
+      try { await this.pool.query(alter); } catch { /* column already exists */ }
     }
   }
 
@@ -149,7 +149,7 @@ export class MysqlStore {
 
   async createUser(d) {
     const exist = await this.getUserByWallet(d.wallet);
-    if (exist) throw new GameError(Codes.ALREADY_EXISTS, '该钱包已注册');
+    if (exist) throw new GameError(Codes.ALREADY_EXISTS, 'This wallet already registered');
     const id = await this.nextId('user', 'U');
     await this.exec('INSERT INTO users(uid,wallet,inviter_uid,ins_switch,created_at) VALUES(?,?,?,?,?)',
       [id, d.wallet, d.inviterUid, 0, d.createdAt || 0]);
@@ -157,7 +157,7 @@ export class MysqlStore {
     return this.getUser(id);
   }
   async getUserByWallet(w) { const r = await this.exec('SELECT * FROM users WHERE wallet=? LIMIT 1', [w]); return this._userRow(r[0]); }
-  async getUser(uid) { const r = await this.exec('SELECT * FROM users WHERE uid=? LIMIT 1', [uid]); if (!r[0]) throw new GameError(Codes.NOT_FOUND, '用户不存在'); return this._userRow(r[0]); }
+  async getUser(uid) { const r = await this.exec('SELECT * FROM users WHERE uid=? LIMIT 1', [uid]); if (!r[0]) throw new GameError(Codes.NOT_FOUND, 'User not found'); return this._userRow(r[0]); }
   async listUsers() { return (await this.exec('SELECT * FROM users ORDER BY id')).map((r) => this._userRow(r)); }
   async setUserSwitch(uid, on) { await this.exec('UPDATE users SET ins_switch=? WHERE uid=?', [on ? 1 : 0, uid]); return on; }
   async setBanned(uid, banned) {
@@ -169,7 +169,7 @@ export class MysqlStore {
   async getAccount(uid) {
     const forUpdate = this.tx.getStore() ? ' FOR UPDATE' : '';
     const r = await this.exec(`SELECT * FROM accounts WHERE uid=?${forUpdate}`, [uid]);
-    if (!r[0]) throw new GameError(Codes.NOT_FOUND, '账户不存在');
+    if (!r[0]) throw new GameError(Codes.NOT_FOUND, 'Account not found');
     return this._acctRow(r[0]);
   }
   async applyAccount(uid, d = {}) {
@@ -271,13 +271,13 @@ export class MysqlStore {
     return (await this.exec("SELECT * FROM withdraws WHERE uid=? AND state='pending' AND txhash IS NULL AND (created_at = 0 OR created_at < ?)", [uid, Date.now() - (staleMs ?? 120000)]))
       .map((r) => ({ withdrawId: r.withdraw_id, uid: r.uid, amount: B(r.amount), fee: B(r.fee), arrive: B(r.arrive), toWallet: r.to_wallet, state: r.state, txhash: r.txhash }));
   }
-  // 已广播（有哈希）但仍 pending：钱已打出，用于对账补确认
+  // broadcasted (has hash) but still pending: money was sent, for reconciliation confirmation
   async listBroadcastedPending(uid) {
     return (await this.exec("SELECT * FROM withdraws WHERE uid=? AND state='pending' AND txhash IS NOT NULL", [uid]))
       .map((r) => ({ withdrawId: r.withdraw_id, uid: r.uid, amount: B(r.amount), fee: B(r.fee), arrive: B(r.arrive), toWallet: r.to_wallet, state: r.state, txhash: r.txhash }));
   }
 
-  // -------- BBS 帖子 / 回复（联表带出发送者钱包）--------
+  // -------- BBS posts / replies (join with sender wallet) --------
   async addPost(p) { await this.exec('INSERT INTO posts(post_id,uid,content,at) VALUES(?,?,?,?)', [p.postId, p.uid, p.content, p.at]); }
   async listPosts(limit = 100000) {
     return (await this.exec('SELECT p.post_id post_id,p.uid uid,p.content content,p.at at,u.wallet wallet FROM posts p LEFT JOIN users u ON u.uid=p.uid ORDER BY p.id DESC LIMIT ?', [limit]))
@@ -294,9 +294,9 @@ export class MysqlStore {
     await this.exec('DELETE FROM replies WHERE post_id=?', [postId]);
     return r.affectedRows > 0;
   }
-  // —— 屏蔽词 ——
+  // Blocked words
   async seedBlockedWords(words = []) {
-    for (const w of words) { const x = String(w || '').trim().toLowerCase(); if (x) { try { await this.exec('INSERT IGNORE INTO blocked_words(word) VALUES(?)', [x]); } catch { /* 重复忽略 */ } } }
+    for (const w of words) { const x = String(w || '').trim().toLowerCase(); if (x) { try { await this.exec('INSERT IGNORE INTO blocked_words(word) VALUES(?)', [x]); } catch { /* duplicate ignored */ } } }
     return this.listBlockedWords();
   }
   async addBlockedWord(w) {
@@ -307,7 +307,7 @@ export class MysqlStore {
   async removeBlockedWord(w) { await this.exec('DELETE FROM blocked_words WHERE word=?', [String(w ?? '').trim().toLowerCase()]); return this.listBlockedWords(); }
   async listBlockedWords() { return (await this.exec('SELECT word FROM blocked_words ORDER BY id')).map((r) => r.word); }
 
-  // —— 链上入账交易幂等去重（tx_hash 主键，INSERT IGNORE 防重复入账）——
+  // On-chain credit tx idempotent dedup (tx_hash primary key, INSERT IGNORE prevents double credit)
   async isChainTxUsed(tx) {
     const r = await this.exec('SELECT 1 x FROM chain_txs WHERE tx_hash=? LIMIT 1', [String(tx ?? '').toLowerCase()]);
     return r.length > 0;
@@ -327,6 +327,6 @@ export class MysqlStore {
   async totalSource() { const l = await this.getLedger(); return l.issued - l.withdrawn; }
   async assertBalanced(t = '') {
     const inside = await this.totalInside(), source = await this.totalSource();
-    if (inside !== source) throw new GameError(Codes.LEDGER_UNBALANCED, `总账不平[${t}]：差额=${inside - source}`);
+    if (inside !== source) throw new GameError(Codes.LEDGER_UNBALANCED, `Ledger unbalanced[${t}]: delta=${inside - source}`);
   }
 }

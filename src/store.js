@@ -21,6 +21,7 @@ export class MemoryStore {
     this.replies = [];
     this.blockedWords = new Set();
     this.whitelist = new Map(); // wallet(lowercase) -> perMille (number), invite commission whitelist
+    this.announcement = null; // system announcement {content, at, uid, wallet}
     this.chainTxs = new Map(); // credited on-chain tx hash -> {uid,inner,at}, idempotent dedup (in-memory loses on restart, production uses MySQL)
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
     this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0 };
@@ -178,6 +179,10 @@ export class MemoryStore {
     const w = String(wallet ?? '').trim().toLowerCase();
     return this.whitelist.has(w) ? this.whitelist.get(w) : null;
   }
+
+  // System announcement (persisted)
+  async getAnnouncement() { return this.announcement ? { ...this.announcement } : null; }
+  async setAnnouncement(ann) { this.announcement = ann ? { ...ann } : null; return this.announcement; }
 
   // On-chain credit tx idempotent dedup
   async isChainTxUsed(tx) { return this.chainTxs.has(String(tx ?? '').toLowerCase()); }

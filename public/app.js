@@ -1054,6 +1054,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.9';
+const FE_BUILD = '2.3.10';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

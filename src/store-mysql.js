@@ -73,6 +73,9 @@ CREATE TABLE IF NOT EXISTS blocked_words (
 CREATE TABLE IF NOT EXISTS whitelist (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, wallet VARCHAR(128) UNIQUE, per_mille INT DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS announcement (
+  id TINYINT PRIMARY KEY, content TEXT, at BIGINT DEFAULT 0, uid VARCHAR(16) NULL, wallet VARCHAR(128) NULL
+);
 CREATE TABLE IF NOT EXISTS chain_txs (
   tx_hash VARCHAR(80) PRIMARY KEY, uid VARCHAR(16), amount BIGINT, at BIGINT
 );
@@ -325,6 +328,18 @@ export class MysqlStore {
   async getWhitelistRate(wallet) {
     const r = await this.exec('SELECT per_mille FROM whitelist WHERE wallet=? LIMIT 1', [String(wallet ?? '').trim().toLowerCase()]);
     return r.length > 0 ? r[0].per_mille : null;
+  }
+
+  // System announcement (single row, id=1)
+  async getAnnouncement() {
+    const r = await this.exec('SELECT content, at, uid, wallet FROM announcement WHERE id=1 LIMIT 1');
+    return r.length > 0 && r[0].content ? { content: r[0].content, at: Number(r[0].at), uid: r[0].uid, wallet: r[0].wallet } : null;
+  }
+  async setAnnouncement(ann) {
+    if (!ann) { await this.exec('DELETE FROM announcement WHERE id=1'); return null; }
+    await this.exec('INSERT INTO announcement(id,content,at,uid,wallet) VALUES(1,?,?,?,?) ON DUPLICATE KEY UPDATE content=VALUES(content),at=VALUES(at),uid=VALUES(uid),wallet=VALUES(wallet)',
+      [ann.content, ann.at || Date.now(), ann.uid || null, ann.wallet || null]);
+    return this.getAnnouncement();
   }
 
   // On-chain credit tx idempotent dedup (tx_hash primary key, INSERT IGNORE prevents double credit)

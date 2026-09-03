@@ -4,14 +4,9 @@
 // Moderation: banned accounts cannot post; content matching blocked words (normalized) rejected
 // =============================================================
 import { GameError, Codes } from './errors.js';
-import { promises as fsp } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 
 export const POST_MAX_BYTES = 1024; // per-post limit: 1024 bytes (UTF-8, Chinese chars 3 bytes each)
 export const ANNOUNCE_MAX_BYTES = 8192; // system announcement limit: 8192 bytes
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const ANNOUNCE_FILE = join(__dirname, '..', 'data', 'announcement.json');
 /** Normalize: lowercase + strip whitespace/punctuation/symbols, prevents bypassing blocked words with spaces/symbols */
 const norm = (s) => String(s ?? '').toLowerCase().normalize('NFKD').replace(/[\s\p{P}\p{S}]/gu, '');
 
@@ -62,12 +57,9 @@ export class SocialService {
     return { postId, deleted: true };
   }
 
-  // ---------------- System announcement (admin-published, long text not limited by BBS 1024 bytes) ----------------
+  // ---------------- System announcement (admin-published, long text not limited by BBS 1024 bytes, persisted in store) ----------------
   async getAnnouncement() {
-    try {
-      const raw = await fsp.readFile(ANNOUNCE_FILE, 'utf8');
-      return JSON.parse(raw);
-    } catch { return null; }
+    return this.store.getAnnouncement();
   }
   async setAnnouncement(uid, content) {
     const text = String(content ?? '').trim();
@@ -76,8 +68,7 @@ export class SocialService {
     if (bytes > ANNOUNCE_MAX_BYTES) throw new GameError(Codes.BAD_INPUT, `Announcement max ${ANNOUNCE_MAX_BYTES} bytes, current ${bytes} bytes`);
     const u = await this.store.getUser(uid);
     const ann = { content: text, at: Date.now(), uid, wallet: u.wallet || uid };
-    await fsp.mkdir(dirname(ANNOUNCE_FILE), { recursive: true });
-    await fsp.writeFile(ANNOUNCE_FILE, JSON.stringify(ann, null, 2), 'utf8');
+    await this.store.setAnnouncement(ann);
     return ann;
   }
 

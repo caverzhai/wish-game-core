@@ -272,3 +272,9 @@ textarea { resize: vertical; }
 .room-input-bar input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; }
 .room-ico { width: 40px; height: 40px; padding: 0; font-size: 18px; display: flex; align-items: center; justify-content: center; }
 .record-tip { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); background: #ef4444; color: #fff; padding: 6px 14px; border-radius: 16px; font-size: 12px; }
+
+
+/* Whitelist tags */
+.wl-tag { background: var(--card2); border: 1px solid var(--gold); border-radius: 6px; padding: 4px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.wl-tag b { color: var(--gold); }
+.wl-del { color: var(--bad); text-decoration: none; font-weight: 700; margin-left: 4px; }

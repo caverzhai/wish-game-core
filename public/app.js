@@ -27,6 +27,7 @@ const I18N = {
   insOnBar: 'Insurance active', insOffBar: 'Insurance off',
     howtoTitle: 'How to Play', howtoStep1: 'Pick Red or Green pool, enter 1-99 units, choose a number 0-9', howtoStep2: 'Sum of all picks: odd = Red wins, even = Green wins. Winners split pool after 2.5% fee', howtoStep3: 'No insurance: keep all winnings after fee. With insurance (premium >=20 + switch on): pay 10% of winnings, but losses accumulate - every 100 units lost creates a payout node returned over 100 periods',
     insGuideTitle: 'Insurance Guide', insGuide1: 'Activate: turn on the switch AND keep premium balance >= 20 units', insGuide2: 'When you win: 10% of your winnings goes to the insurance pool', insGuide3: 'When you lose: net loss accumulates. Every 100 units lost creates one payout node (20 units premium deducted), returned over 100 periods', insGuide4: 'Payout every 6 hours (UTC 3/9/15/21). Any new node within 168 hours revives all your nodes; otherwise current period is forfeited', insGuide5: 'Withdraw premium back to balance only when insurance switch is off',
+    whitelistTitle: 'Invite Whitelist', addWhitelist: 'Add', wlTip: 'You are on the official whitelist. You earn commission on ALL generations of downlines, at your set rate. If a downline is also whitelisted, you earn only the rate difference.', wlScope: 'Scope', wlAllDepth: 'All generations', normalInvTip: 'Standard users earn 0.1% on direct referrals only. Contact admin to apply for whitelist (multi-level commission).', normalDirect: 'Direct referrals only',
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
@@ -66,6 +67,7 @@ const I18N = {
   insOnBar: '保險生效中', insOffBar: '保險關閉中',
     howtoTitle: '玩法介紹', howtoStep1: '選擇紅願池或綠願池，輸入1-99枚，選擇0-9的數字', howtoStep2: '所有人選號相加：單數→紅勝，雙數→綠勝。勝方扣除2.5%手續費後按投入比例分配', howtoStep3: '不保險：贏了扣除手續費後全拿。買保險（保費≥20枚且開關開）：贏了再扣10%入保池，但輸了累計淨虧，每滿100枚生成一個賠付節點分100期返還',
     insGuideTitle: '保險玩法說明', insGuide1: '生效條件：開關打開且保費餘額≥20枚', insGuide2: '贏了：收益的10%進入保險池', insGuide3: '輸了：淨虧累計，每滿100枚生成一個賠付節點（扣20枚保費），分100期返還', insGuide4: '每6小時賠付一次（UTC 3/9/15/21點）。168小時內有新節點則全部續命，否則當期充公', insGuide5: '保險開關關閉時，可將保費提回餘額',
+    whitelistTitle: '邀請白名單', addWhitelist: '添加', wlTip: '您在官方白名單中。可享所有下代的傭金，按設定比例。若下線也是白名單，只賺級差。', wlScope: '範圍', wlAllDepth: '所有代數', normalInvTip: '普通用戶僅享直推0.1%。聯繫管理員申請白名單（多級傭金）。', normalDirect: '僅直推',
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
@@ -105,6 +107,7 @@ const I18N = {
   insOnBar: '保険有効中', insOffBar: '保険OFF',
     howtoTitle: '遊び方', howtoStep1: '赤か緑のプールを選び、1-99枚を入力、0-9の数字を選ぶ', howtoStep2: '全員の数字の合計：奇数→赤の勝ち、偶数→緑の勝ち。勝者は2.5%手数料後に分配', howtoStep3: '保険なし：手数料後の勝利金を全額受け取る。保険あり（保険料≥20枚＋スイッチオン）：勝利金の10%を保険プールへ、負けたら損失が累積し100枚ごとに返済ノードが生成され100期で返還',
     insGuideTitle: '保険ガイド', insGuide1: '有効化：スイッチオン＋保険料残高≥20枚', insGuide2: '勝った場合：勝利金の10%が保険プールへ', insGuide3: '負けた場合：純損失が累積。100枚ごとに返済ノード（保険料20枚控除）、100期で返還', insGuide4: '6時間ごとに返済（UTC 3/9/15/21）。168時間以内に新ノードがあれば全て継続、なければ当期は没収', insGuide5: '保険スイッチオフ時のみ保険料を残高へ戻せる',
+    whitelistTitle: '招待ホワイトリスト', addWhitelist: '追加', wlTip: 'あなたは公式ホワイトリストに登録されています。設定レートで全世代の紹介手数料を獲得。下流もホワイトリストの場合は差額のみ。', wlScope: '範囲', wlAllDepth: '全世代', normalInvTip: '通常ユーザーは直接紹介のみ0.1%。ホワイトリスト申請は管理者へ。', normalDirect: '直接紹介のみ',
     myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
@@ -144,6 +147,7 @@ const I18N = {
     insOnBar: 'التأمين ساري', insOffBar: 'التأمين متوقف',
     howtoTitle: 'كيفية اللعب', howtoStep1: 'اختر تجمع الأحمر أو الأخضر، أدخل 1-99 وحدة، اختر رقماً 0-9', howtoStep2: 'مجموع جميع الأرقام: فردي = يفوز الأحمر، زوجي = يفوز الأخضر. يشارك الفائزون بعد خصم 2.5%', howtoStep3: 'بدون تأمين: تحصل على كل أرباحك بعد الرسوم. مع التأمين (قسط ≥20 + التشغيل): تدفع 10% من الأرباح، لكن الخسائر تتراكم - كل 100 وحدة خسارة تنشئ عقد سداد يُعاد على 100 فترة',
     insGuideTitle: 'دليل التأمين', insGuide1: 'التفعيل: شغل المفتاح واحتفظ برصيد قسط ≥20 وحدة', insGuide2: 'عند الفوز: 10% من أرباحك تذهب إلى تجمع التأمين', insGuide3: 'عند الخسارة: تتراكم الخسارة الصافية. كل 100 وحدة خسارة تنشئ عقد سداد (يُخصم 20 وحدة قسط)، يُعاد على 100 فترة', insGuide4: 'السداد كل 6 ساعات (UTC 3/9/15/21). أي عقد جديد خلال 168 ساعة ينشط جميع عقودك؛ وإلا تُصادر الفترة الحالية', insGuide5: 'يمكن إرجاع القسط إلى الرصيد فقط عند إيقاف تشغيل التأمين',
+    whitelistTitle: 'القائمة البيضاء للدعوة', addWhitelist: 'إضافة', wlTip: 'أنت في القائمة البيضاء الرسمية. تكسب عمولة على جميع الأجيال بالمعدل المحدد. إذا كان المُدعى أيضاً في القائمة البيضاء، تكسب الفرق فقط.', wlScope: 'النطاق', wlAllDepth: 'جميع الأجيال', normalInvTip: 'المستخدمون العاديون يكسبون 0.1% على الإحالات المباشرة فقط. تواصل مع الإدارة للتقدم للقائمة البيضاء.', normalDirect: 'إحالات مباشرة فقط',
     myNodes: 'عقود التعويض الخاصة بي', poolTotal: 'إجمالي بركة التأمين', poolNext: 'إجمالي الإصدار القادم', poolNextAt: 'وقت الإصدار القادم', nextReleaseIn: 'القادم بعد', poolActiveNodes: 'العقود النشطة',
     poolSufficient: 'كافٍ', poolShort: 'عجز', poolCover: 'نسبة التغطية',
     meWallet: 'المحفظة', meInvite: 'الدعوة', copy: 'نسخ', qualifiedInvitees: 'المؤهلون', curRate: 'النسبة', invTotal: 'الإجمالي',
@@ -182,6 +186,7 @@ const I18N = {
     insOnBar: 'Asuransi aktif', insOffBar: 'Asuransi nonaktif',
     howtoTitle: 'Cara Bermain', howtoStep1: 'Pilih kolam Merah atau Hijau, masukkan 1-99 unit, pilih angka 0-9', howtoStep2: 'Jumlah semua angka: ganjil = Merah menang, genap = Hijau menang. Pemenang bagi hasil setelah potongan 2.5%', howtoStep3: 'Tanpa asuransi: terima semua kemenangan setelah potongan. Dengan asuransi (premi >=20 + sakelar on): bayar 10% kemenangan, tapi kerugian terakumulasi - setiap 100 unit rugi membuat node pengembalian selama 100 periode',
     insGuideTitle: 'Panduan Asuransi', insGuide1: 'Aktifkan: nyalakan sakelar DAN jaga saldo premi >=20 unit', insGuide2: 'Saat menang: 10% kemenangan masuk ke kolam asuransi', insGuide3: 'Saat kalah: kerugian bersih terakumulasi. Setiap 100 unit rugi membuat satu node pengembalian (potong premi 20 unit), dikembalikan selama 100 periode', insGuide4: 'Pengembalian setiap 6 jam (UTC 3/9/15/21). Node baru dalam 168 jam menghidupkan semua node Anda; jika tidak, periode ini hangus', insGuide5: 'Tarik premi kembali ke saldo hanya saat sakelar asuransi mati',
+    whitelistTitle: 'Daftar Putih Undangan', addWhitelist: 'Tambah', wlTip: 'Anda ada di daftar putih resmi. Dapat komisi semua generasi dengan tarif yang ditetapkan. Jika downline juga daftar putih, hanya selisih tarif.', wlScope: 'Cakupan', wlAllDepth: 'Semua generasi', normalInvTip: 'Pengguna biasa hanya 0.1% referensi langsung. Hubungi admin untuk mendaftar daftar putih.', normalDirect: 'Referensi langsung saja',
     myNodes: 'Node kompensasi saya', poolTotal: 'Total kolam asuransi', poolNext: 'Total rilis berikutnya', poolNextAt: 'Waktu rilis berikutnya', nextReleaseIn: 'Berikutnya dalam', poolActiveNodes: 'Node aktif',
     poolSufficient: 'Cukup', poolShort: 'Kekurangan', poolCover: 'Cakupan',
     meWallet: 'Dompet', meInvite: 'Undangan', copy: 'Salin', qualifiedInvitees: 'Memenuhi syarat', curRate: 'Rate', invTotal: 'Total',
@@ -220,6 +225,7 @@ const I18N = {
     insOnBar: '보험 적용 중', insOffBar: '보험 꺼짐',
     howtoTitle: '게임 방법', howtoStep1: '레드 또는 그린 풀을 선택하고 1-99단위를 입력한 뒤 0-9 숫자를 고르세요', howtoStep2: '모든 선택 숫자의 합: 홀수 = 레드 승, 짝수 = 그린 승. 승자는 2.5% 수수료 후 비율대로 분배', howtoStep3: '보험 없음: 수수료 후 당첨금 전액 수령. 보험 있음 (보험료 >=20 + 스위치 on): 당첨금의 10%를 보험풀에 납부, 대신 손실이 누적되어 100단위마다 지급 노드가 생성되어 100기간에 걸쳐 반환',
     insGuideTitle: '보험 가이드', insGuide1: '활성화: 스위치를 켜고 보험료 잔액 >=20단위 유지', insGuide2: '당첨 시: 당첨금의 10%가 보험풀로 들어감', insGuide3: '낙첨 시: 순손실이 누적됨. 100단위마다 지급 노드 생성(보험료 20단위 차감), 100기간에 걸쳐 반환', insGuide4: '6시간마다 지급 (UTC 3/9/15/21). 168시간 이내 새 노드가 있으면 모든 노드가 유지됨; 없으면 해당 기간은 몰수', insGuide5: '보험 스위치가 꺼져 있을 때만 보험료를 잔액으로 돌릴 수 있음',
+    whitelistTitle: '초대 화이트리스트', addWhitelist: '추가', wlTip: '공식 화이트리스트에 있습니다. 설정된 비율로 모든 세대의 커미션을 받습니다. 하위 라인도 화이트리스트면 차액만 받습니다.', wlScope: '범위', wlAllDepth: '모든 세대', normalInvTip: '일반 사용자는 직접 초대만 0.1%. 화이트리스트 신청은 관리자에게 문의.', normalDirect: '직접 초대만',
     myNodes: '나의 보상 노드', poolTotal: '보험 풀 총액', poolNext: '다음 지급 총액', poolNextAt: '다음 지급 시각', nextReleaseIn: '다음까지', poolActiveNodes: '활성 노드',
     poolSufficient: '충분', poolShort: '부족', poolCover: '커버율',
     meWallet: '지갑', meInvite: '초대', copy: '복사', qualifiedInvitees: '조건 달성', curRate: '비율', invTotal: '누적',
@@ -258,6 +264,7 @@ const I18N = {
     insOnBar: 'Страховка активна', insOffBar: 'Страховка выключена',
     howtoTitle: 'Как играть', howtoStep1: 'Выберите красный или зелёный пул, введите 1-99 единиц, выберите число 0-9', howtoStep2: 'Сумма всех чисел: нечётная = победа красных, чётная = победа зелёных. Победители делят пул после комиссии 2.5%', howtoStep3: 'Без страховки: получаете весь выигрыш после комиссии. Со страховкой (премия >=20 + включатель): платите 10% выигрыша, но потери накапливаются - каждые 100 единиц потерь создают узел выплат, возвращаемый за 100 периодов',
     insGuideTitle: 'Руководство по страховке', insGuide1: 'Активация: включите переключатель И поддерживайте баланс премии >=20 единиц', insGuide2: 'При выигрыше: 10% вашего выигрыша идёт в страховой пул', insGuide3: 'При проигрыше: чистый убыток накапливается. Каждые 100 единиц убытка создают узел выплат (вычитается 20 единиц премии), возвращаемый за 100 периодов', insGuide4: 'Выплаты каждые 6 часов (UTC 3/9/15/21). Любой новый узел в течение 168 часов продлевает все ваши узлы; иначе текущий период конфискуется', insGuide5: 'Вернуть премию на баланс можно только при выключенной страховке',
+    whitelistTitle: 'Белый список приглашений', addWhitelist: 'Добавить', wlTip: 'Вы в официальном белом списке. Получаете комиссию со всех поколений по установленной ставке. Если нижестоящий тоже в белом списке — только разницу ставок.', wlScope: 'Охват', wlAllDepth: 'Все поколения', normalInvTip: 'Обычные пользователи получают 0.1% только с прямых приглашений. Свяжитесь с админом для заявки в белый список.', normalDirect: 'Только прямые',
     myNodes: 'Мои узлы выплат', poolTotal: 'Общая сумма страхового пула', poolNext: 'Общая сумма следующего выпуска', poolNextAt: 'Время следующего выпуска', nextReleaseIn: 'Следующий через', poolActiveNodes: 'Активные узлы',
     poolSufficient: 'Достаточно', poolShort: 'Недостаток', poolCover: 'Покрытие',
     meWallet: 'Кошелёк', meInvite: 'Приглашения', copy: 'Копировать', qualifiedInvitees: 'Квалифицированные', curRate: 'Ставка', invTotal: 'Всего',
@@ -296,6 +303,7 @@ const I18N = {
     insOnBar: 'बीमा सक्रिय', insOffBar: 'बीमा बंद',
     howtoTitle: 'कैसे खेलें', howtoStep1: 'लाल या हरा पूल चुनें, 1-99 यूनिट दर्ज करें, 0-9 कोई संख्या चुनें', howtoStep2: 'सभी संख्याओं का योग: विषम = लाल जीतता है, सम = हरा जीतता है। विजेता 2.5% शुल्क के बाद बांटते हैं', howtoStep3: 'बिना बीमा: शुल्क के बाद पूरा जीतमूल्य प्राप्त करें। बीमा के साथ (प्रीमियम >=20 + स्विच on): जीतमूल्य का 10% बीमा पूल में, लेकिन हानि जमा होती है - हर 100 यूनिट हानि एक भुगतान नोड बनाती है जो 100 अवधियों में वापस होती है',
     insGuideTitle: 'बीमा गाइड', insGuide1: 'सक्रिय करें: स्विच चालू करें और प्रीमियम शेष >=20 यूनिट रखें', insGuide2: 'जीतने पर: आपके जीतमूल्य का 10% बीमा पूल में जाता है', insGuide3: 'हारने पर: शुद्ध हानि जमा होती है। हर 100 यूनिट हानि एक भुगतान नोड बनाती है (20 यूनिट प्रीमियम कटौती), 100 अवधियों में वापस', insGuide4: 'हर 6 घंटे में भुगतान (UTC 3/9/15/21)। 168 घंटे के भीतर कोई नया नोड आपके सभी नोड्स को जारी रखता है; अन्यथा वर्तमान अवधि जब्त हो जाती है', insGuide5: 'बीमा स्विच बंद होने पर ही प्रीमियम को शेष में वापस कर सकते हैं',
+    whitelistTitle: 'निमंत्रण सफेद सूची', addWhitelist: 'जोड़ें', wlTip: 'आप आधिकारिक सफेद सूची में हैं। निर्धारित दर पर सभी पीढ़ियों से कमीशन। यदि डाउनलाइन भी सफेद सूची में है तो केवल अंतर।', wlScope: 'दायरा', wlAllDepth: 'सभी पीढ़ियाँ', normalInvTip: 'सामान्य उपयोगकर्ता केवल सीधे निमंत्रण पर 0.1%। सफेद सूची के लिए एडमिन से संपर्क करें।', normalDirect: 'केवल सीधे',
     myNodes: 'मेरे भुगतान नोड', poolTotal: 'बीमा पूल कुल', poolNext: 'अगली रिलीज़ कुल', poolNextAt: 'अगली रिलीज़ का समय', nextReleaseIn: 'अगली में', poolActiveNodes: 'सक्रिय नोड',
     poolSufficient: 'पर्याप्त', poolShort: 'कमी', poolCover: 'कवरेज',
     meWallet: 'वॉलेट', meInvite: 'निमंत्रण', copy: 'कॉपी', qualifiedInvitees: 'योग्य', curRate: 'दर', invTotal: 'कुल',
@@ -334,6 +342,7 @@ const I18N = {
     insOnBar: 'انشورنس فعال ہے', insOffBar: 'انشورنس بند ہے',
     howtoTitle: 'کیسے کھیلیں', howtoStep1: 'سرا یا سبز پول منتخب کریں، 1-99 یونٹ درج کریں، 0-9 کوئی نمبر منتخب کریں', howtoStep2: 'تمام نمبروں کا مجموعہ: طاق = سرا جیتتا ہے، جوڑ = سبز جیتتا ہے۔ فاتح 2.5% فیس کے بعد بانٹتے ہیں', howtoStep3: 'بغیر بیمہ: فیس کے بعد پوری جیت وصول کریں۔ بیمہ کے ساتھ (پریمیم >=20 + سوئچ آن): جیت کا 10% بیمہ پول میں، لیکن نقصان جمع ہوتا ہے - ہر 100 یونٹ نقصان ایک ادائیگی نوڈ بناتا ہے جو 100 ادوار میں واپس ہوتا ہے',
     insGuideTitle: 'بیمہ گائیڈ', insGuide1: 'فعال کریں: سوئچ آن کریں اور پریمیم بیلنس >=20 یونٹ رکھیں', insGuide2: 'جیتنے پر: آپ کی جیت کا 10% بیمہ پول میں جاتا ہے', insGuide3: 'ہارنے پر: خالص نقصان جمع ہوتا ہے۔ ہر 100 یونٹ نقصان ایک ادائیگی نوڈ بناتا ہے (20 یونٹ پریمیم کٹوتی)، 100 ادوار میں واپس', insGuide4: 'ہر 6 گھنٹے میں ادائیگی (UTC 3/9/15/21)۔ 168 گھنٹے کے اندر کوئی نیا نوڈ آپ کے تمام نوڈز کو جاری رکھتا ہے؛ بصورت دیگر موجودہ ادوار ضبط ہو جاتی ہے', insGuide5: 'بیمہ سوئچ بند ہونے پر ہی پریمیم کو بیلنس میں واپس کر سکتے ہیں',
+    whitelistTitle: 'دعوتہ وائٹ لسٹ', addWhitelist: 'شامل کریں', wlTip: 'آپ سرکاری وائٹ لسٹ میں ہیں۔ مقررہ شرح پر تمام نسلوں سے کمیشن۔ اگر ڈاؤن لائن بھی وائٹ لسٹ میں ہے تو صرف فرق۔', wlScope: 'دائرہ', wlAllDepth: 'تمام نسلیں', normalInvTip: 'عام صارفین کو صرف براہ راست دعوت پر 0.1%۔ وائٹ لسٹ کے لیے ایڈمن سے رابطہ کریں۔', normalDirect: 'صرف براہ راست',
     myNodes: 'میرے ادائیگی نوڈ', poolTotal: 'انشورنس پول کل', poolNext: 'اگلی ریلیز کل', poolNextAt: 'اگلی ریلیز کا وقت', nextReleaseIn: 'اگلی میں', poolActiveNodes: 'فعال نوڈ',
     poolSufficient: 'کافی', poolShort: 'کمی', poolCover: 'کوریج',
     meWallet: 'والیٹ', meInvite: 'دعوت', copy: 'کاپی', qualifiedInvitees: 'اہل', curRate: 'شرح', invTotal: 'کل',
@@ -746,11 +755,11 @@ function renderMe() {
   const insBar = $('insStatusBar');
   if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
   const invRate = (me.invite.perMille / 10).toFixed(1) + '%';
-  $('invCount').textContent = me.invite.nodeInviteeCount;
+  $('invCount').textContent = me.invite.rewardedInvitees || 0;
   $('invRate').textContent = invRate;
   $('invTotal').textContent = fmt(me.invite.rewardTotal) + ' 枚';
   const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = `${t('meInvite')}（${invRate}）`;
-  renderInvTiers(me.invite.perMille);
+  renderInvTiers(me.invite);
   $('nodeList').innerHTML = me.nodes.length ? me.nodes.map((n) => {
     const pct = Math.round((n.periodN / 100) * 100);
     return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
@@ -1017,6 +1026,7 @@ function init() {
     } catch (e) { alert(e.message); } finally { btn.disabled = false; }
   };
   $('wordAddBtn').onclick = adminAddWord;
+  bindWhitelist();
   $('copyInvBtn').onclick = () => { navigator.clipboard?.writeText($('inviteLink').value); alert(t('copyOk')); };
   $('bbsSend').onclick = postBbs;
   $('bbsInput').oninput = () => { $('bbsChar').textContent = byteLen($('bbsInput').value) + '/' + BBS_MAX_BYTES; };
@@ -1031,6 +1041,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.6';
+const FE_BUILD = '2.3.7';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

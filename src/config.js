@@ -1,4 +1,4 @@
-﻿// =============================================================
+// =============================================================
 // config.js - global rule parameters (single source of truth, all configurable in admin panel, do not hardcode in logic)
 // Amount unit: units
 // =============================================================
@@ -32,15 +32,11 @@ export const DEFAULT_CONFIG = {
   payoutEverySec: 6 * 3600,
   surviveWindowBatches: 28,  // 168 hours = 28 payout batches
 
-  // Invite commission: distinct direct invitees with nodes -> commission rate (per mille)
-  // 1 person 0.1% / 5 0.2% / 10 0.3% / 20 0.4% / 50+ 0.5%
-  referralTiers: [
-    { min: 50, perMille: 5 },
-    { min: 20, perMille: 4 },
-    { min: 10, perMille: 3 },
-    { min: 5, perMille: 2 },
-    { min: 1, perMille: 1 },
-  ],
+  // Invite commission (v2.3.7 rewrite):
+  // Normal users: fixed 0.1%, direct referrals only (depth 1)
+  // Whitelisted users: admin-set rate, all depths (unlimited generations);
+  //   if a downstream user is also whitelisted, upstream gets only the rate difference (upstream - downstream), min 0
+  referralNormalPerMille: 1n, // 0.1%
   referralDen: 1000n,
 
   // Withdrawal: user-initiated
@@ -48,11 +44,3 @@ export const DEFAULT_CONFIG = {
   withdrawMax: coin(500),    // max 500 units per withdrawal
   withdrawFee: coin(1),      // fixed 1 unit fee per withdrawal, to platform (not insurance pool)
 };
-
-/** Returns commission per-mille rate by distinct direct invitees with nodes */
-export function referralPerMille(cfg, nodeInviteeCount) {
-  for (const t of cfg.referralTiers) {
-    if (nodeInviteeCount >= t.min) return BigInt(t.perMille);
-  }
-  return 0n;
-}

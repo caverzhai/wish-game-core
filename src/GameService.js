@@ -71,15 +71,24 @@ export class GameService {
     const bets = await s.listBetsByRound(round.roundId);
 
     const insActiveByUid = new Map();
-    const inviters = new Set();
+    const inviterByUid = new Map();
+    const whitelistByUid = new Map();
+    const visited = new Set();
+    // Load full invite chain for every bettor: inviterByUid + whitelistByUid (multi-level commission)
+    const loadChain = async (uid) => {
+      if (visited.has(uid)) return;
+      visited.add(uid);
+      const u = await s.getUser(uid);
+      inviterByUid.set(uid, u.inviterUid);
+      const rate = await s.getWhitelistRate(u.wallet);
+      if (rate !== null) whitelistByUid.set(uid, BigInt(rate));
+      if (u.inviterUid) await loadChain(u.inviterUid);
+    };
     for (const b of bets) {
-      const u = await s.getUser(b.uid);
-      insActiveByUid.set(b.uid, { insActive: await this.insurance.isActive(b.uid), inviterUid: u.inviterUid });
-      if (u.inviterUid) inviters.add(u.inviterUid);
+      insActiveByUid.set(b.uid, { insActive: await this.insurance.isActive(b.uid) });
+      await loadChain(b.uid);
     }
-    const nodeCntByInviter = new Map();
-    for (const iv of inviters) nodeCntByInviter.set(iv, await this.insurance.countDistinctNodeInvitees(iv));
-    const plan = planSettlement(bets, { insActiveByUid, nodeInviteeCountByUid: nodeCntByInviter }, cfg);
+    const plan = planSettlement(bets, { insActiveByUid, inviterByUid, whitelistByUid }, cfg);
 
     return await s.transaction(async () => {
       if (plan.status === 'cancelled') {

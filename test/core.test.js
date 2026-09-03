@@ -5,7 +5,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createApp } from '../src/app.js';
 import { coin, toInner } from '../src/money.js';
-import { referralPerMille } from '../src/config.js';
 import { nextDue } from '../src/engine-payout.js';
 
 const HOUR = 3600;
@@ -170,13 +169,7 @@ test('Insurance pool insufficient for batch -> whole batch postponed, period not
   assert.equal((await app.store.listNodes({}))[0].periodN, 0);
 });
 
-test('Invite tier: node direct invitee count -> per-mille rate', async () => {
-  const cfg = (await mk()).cfg;
-  const cases = [[0, 0], [1, 1], [4, 1], [5, 2], [9, 2], [10, 3], [19, 3], [20, 4], [49, 4], [50, 5], [99, 5]];
-  for (const [n, bp] of cases) assert.equal(referralPerMille(cfg, n), BigInt(bp));
-});
-
-test('Invite commission: after invitee creates node, their bets return 0.1% to inviter (platform pays)', async () => {
+test('Invite commission: normal user gets 0.1% of direct invitee bet volume (platform pays)', async () => {
   const app = await mk();
   const A = (await app.game.register('0xA')).uid;
   const B = (await app.game.register('0xB', A)).uid;
@@ -192,6 +185,29 @@ test('Invite commission: after invitee creates node, their bets return 0.1% to i
   assert.equal(await app.store.totalInside(), await app.store.totalSource());
 });
 
+
+test('Whitelist commission: multi-level all depths, whitelist-to-whitelist pays rate difference', async () => {
+  const app = await mk();
+  // Chain: W1(whitelist 5 per-mille=0.5%) -> W2(whitelist 3 per-mille=0.3%) -> N(normal) -> Bettor
+  const W1 = (await app.game.register('0xW1')).uid;
+  const W2 = (await app.game.register('0xW2', W1)).uid;
+  const N = (await app.game.register('0xN', W2)).uid;
+  const B = (await app.game.register('0xB', N)).uid;
+  const D = (await app.game.register('0xD')).uid;
+  await app.store.addWhitelist('0xw1', 5);
+  await app.store.addWhitelist('0xw2', 3);
+  await app.wallet.issue(B, 200); await app.wallet.issue(D, 200);
+  await app.game.bet(B, 'red', 99, 1, 100);
+  await app.game.bet(D, 'green', 99, 0, 110);
+  await app.game.settle(300);
+  // N (normal, direct inviter of B): 0.1% of 99 = 0.099
+  assert.equal((await app.store.getAccount(N)).available, toInner('0.099'));
+  // W2 (whitelist 0.3%, downstream N is normal): 0.3% of 99 = 0.297
+  assert.equal((await app.store.getAccount(W2)).available, toInner('0.297'));
+  // W1 (whitelist 0.5%, downstream W2 is whitelist 0.3%): rate diff 0.2% of 99 = 0.198
+  assert.equal((await app.store.getAccount(W1)).available, toInner('0.198'));
+  assert.equal(await app.store.totalInside(), await app.store.totalSource());
+});
 test('Withdrawal: 2-500 units, fee 1 to platform; out-of-range errors; success/fail writeback conserved', async () => {
   const app = await mk();
   const U = (await app.game.register('0xU')).uid, V = (await app.game.register('0xV')).uid;

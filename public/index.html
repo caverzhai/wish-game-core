@@ -121,6 +121,13 @@
             <button id="wordAddBtn" class="btn-primary" data-i18n="addBlockedWord">Block word</button>
           </div>
           <div id="wordTags" class="word-tags"></div>
+          <div class="admin-title" data-i18n="whitelistTitle">Invite Whitelist</div>
+          <div class="row">
+            <input id="wlWalletInput" maxlength="64" placeholder="0x..." />
+            <input id="wlRateInput" type="number" min="0" max="100" step="1" placeholder="per-mille (e.g. 3=0.3%)" style="width:80px" />
+            <button id="wlAddBtn" class="btn-primary" data-i18n="addWhitelist">Add</button>
+          </div>
+          <div id="wlList" class="word-tags"></div>
         </div>
         <div class="bbs-post">
           <textarea id="bbsInput" maxlength="1024" rows="3" placeholder=""></textarea>

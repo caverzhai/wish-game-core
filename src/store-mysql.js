@@ -70,6 +70,9 @@ INSERT IGNORE INTO ledger(id,insurance_pool,platform,pending_withdraw,issued,wit
 CREATE TABLE IF NOT EXISTS blocked_words (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, word VARCHAR(64) UNIQUE
 );
+CREATE TABLE IF NOT EXISTS whitelist (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, wallet VARCHAR(128) UNIQUE, per_mille INT DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS chain_txs (
   tx_hash VARCHAR(80) PRIMARY KEY, uid VARCHAR(16), amount BIGINT, at BIGINT
 );
@@ -306,6 +309,21 @@ export class MysqlStore {
   }
   async removeBlockedWord(w) { await this.exec('DELETE FROM blocked_words WHERE word=?', [String(w ?? '').trim().toLowerCase()]); return this.listBlockedWords(); }
   async listBlockedWords() { return (await this.exec('SELECT word FROM blocked_words ORDER BY id')).map((r) => r.word); }
+
+  // Whitelist (invite commission): wallet -> perMille
+  async listWhitelist() { return (await this.exec('SELECT wallet, per_mille FROM whitelist ORDER BY id')).map((r) => ({ wallet: r.wallet, perMille: r.per_mille })); }
+  async addWhitelist(wallet, perMille) {
+    const w = String(wallet ?? '').trim().toLowerCase();
+    const p = Number(perMille);
+    if (!w || !Number.isFinite(p) || p < 0) throw new GameError(Codes.BAD_INPUT, 'Invalid wallet or rate');
+    await this.exec('INSERT INTO whitelist(wallet, per_mille) VALUES(?,?) ON DUPLICATE KEY UPDATE per_mille=VALUES(per_mille)', [w, p]);
+    return this.listWhitelist();
+  }
+  async removeWhitelist(wallet) { await this.exec('DELETE FROM whitelist WHERE wallet=?', [String(wallet ?? '').trim().toLowerCase()]); return this.listWhitelist(); }
+  async getWhitelistRate(wallet) {
+    const r = await this.exec('SELECT per_mille FROM whitelist WHERE wallet=? LIMIT 1', [String(wallet ?? '').trim().toLowerCase()]);
+    return r.length > 0 ? r[0].per_mille : null;
+  }
 
   // On-chain credit tx idempotent dedup (tx_hash primary key, INSERT IGNORE prevents double credit)
   async isChainTxUsed(tx) {

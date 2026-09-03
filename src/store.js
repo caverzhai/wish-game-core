@@ -20,6 +20,7 @@ export class MemoryStore {
     this.posts = [];
     this.replies = [];
     this.blockedWords = new Set();
+    this.whitelist = new Map(); // wallet(lowercase) -> perMille (number), invite commission whitelist
     this.chainTxs = new Map(); // credited on-chain tx hash -> {uid,inner,at}, idempotent dedup (in-memory loses on restart, production uses MySQL)
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
     this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0 };
@@ -153,6 +154,24 @@ export class MemoryStore {
   async addBlockedWord(w) { const x = String(w ?? '').trim().toLowerCase(); if (x) this.blockedWords.add(x); return [...this.blockedWords]; }
   async removeBlockedWord(w) { this.blockedWords.delete(String(w ?? '').trim().toLowerCase()); return [...this.blockedWords]; }
   async listBlockedWords() { return [...this.blockedWords]; }
+
+  // Whitelist (invite commission): wallet -> perMille
+  async listWhitelist() { return [...this.whitelist.entries()].map(([wallet, perMille]) => ({ wallet, perMille })); }
+  async addWhitelist(wallet, perMille) {
+    const w = String(wallet ?? '').trim().toLowerCase();
+    const p = Number(perMille);
+    if (!w || !Number.isFinite(p) || p < 0) throw new GameError(Codes.BAD_INPUT, 'Invalid wallet or rate');
+    this.whitelist.set(w, p);
+    return this.listWhitelist();
+  }
+  async removeWhitelist(wallet) {
+    this.whitelist.delete(String(wallet ?? '').trim().toLowerCase());
+    return this.listWhitelist();
+  }
+  async getWhitelistRate(wallet) {
+    const w = String(wallet ?? '').trim().toLowerCase();
+    return this.whitelist.has(w) ? this.whitelist.get(w) : null;
+  }
 
   // On-chain credit tx idempotent dedup
   async isChainTxUsed(tx) { return this.chainTxs.has(String(tx ?? '').toLowerCase()); }

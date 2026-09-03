@@ -9,13 +9,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createApp } from './app.js';
 import { coin, SCALE, needTopUp } from './money.js';
-import { referralPerMille } from './config.js';
 import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.3.6'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.3.7'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -69,12 +68,18 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
   const user = await store.getUser(uid);
   const account = await store.getAccount(uid);
   const nodes = await store.listNodes({ uid });
-  const nodeInviteeCount = await insurance.countDistinctNodeInvitees(uid);
   const referral = await store.referralSummary(uid);
   const flows = await store.listFlows(uid, 50);
+  const whitelistRate = await store.getWhitelistRate(user.wallet);
   return {
     user, account, nodes, isAdmin: isAdminWallet(user.wallet),
-    invite: { code: uid, perMille: Number(referralPerMille(cfg, nodeInviteeCount)), nodeInviteeCount, rewardTotal: referral.total, rewardedInvitees: referral.activeInvitees },
+    invite: {
+      code: uid,
+      isWhitelisted: whitelistRate !== null,
+      perMille: whitelistRate !== null ? whitelistRate : 1, // normal users fixed 0.1% = 1 per mille
+      rewardTotal: referral.total,
+      rewardedInvitees: referral.activeInvitees,
+    },
     flows,
   };
 });
@@ -207,6 +212,10 @@ route('POST', '/admin/word/remove', async (b) => { await requireAdmin(b.uid); re
 route('POST', '/admin/post/delete', async (b) => { await requireAdmin(b.uid); return social.deletePost(b.uid, b.postId); });
 route('POST', '/admin/user/ban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, b.banned !== false) }; });
 route('POST', '/admin/user/unban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, false) }; });
+// Whitelist (invite commission) management
+route('GET', '/admin/whitelist', async (b) => { await requireAdmin(b.uid); return { list: await store.listWhitelist() }; });
+route('POST', '/admin/whitelist/add', async (b) => { await requireAdmin(b.uid); return { list: await store.addWhitelist(b.wallet, b.perMille) }; });
+route('POST', '/admin/whitelist/remove', async (b) => { await requireAdmin(b.uid); return { list: await store.removeWhitelist(b.wallet) }; });
 // Chain config (public, no private key)
 route('GET', '/chain/config', () => chain.publicConfig());
 // Withdrawal: auto on-chain payout if payout key configured, otherwise create pending order

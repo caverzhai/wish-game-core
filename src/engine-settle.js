@@ -1,13 +1,14 @@
-﻿// =============================================================
+// =============================================================
 // engine-settle.js - round settlement pure function (no side effects, easy to unit test)
 // Rule: sum of picks odd => red wins, even => green wins; 2.5% fee then winners split by stake ratio
+// Invite commission (v2.3.7): normal users 0.1% direct only; whitelisted users admin-set rate all depths,
+//   whitelist-to-whitelist pays rate difference (upstream - downstream, min 0)
 // =============================================================
 import { mulDivFloor } from './money.js';
-import { referralPerMille } from './config.js';
 
 /**
  * @param bets  [{uid, side:'red'|'green', amount:bigint, pick:number}]
- * @param ctx   { insActiveByUid:Map, nodeInviteeCountByUid:Map(inviter -> node count under them) }
+ * @param ctx   { insActiveByUid:Map, inviterByUid:Map(uid->inviterUid|null), whitelistByUid:Map(uid->perMille bigint) }
  * @param cfg   global config
  * @returns Settlement plan (posted by GameService)
  */
@@ -25,7 +26,7 @@ export function planSettlement(bets, ctx, cfg) {
   const total = redTotal + greenTotal;
   const totals = { redTotal, greenTotal, total, sumPick };
 
-  // Either side empty: cancelled round, full refund, no fees
+  // Either side empty: cancelled round, full refund, no fees, no commission
   if (redTotal === 0n || greenTotal === 0n) {
     const refunds = new Map();
     for (const [uid, u] of byUser) refunds.set(uid, u.red + u.green);
@@ -53,7 +54,7 @@ export function planSettlement(bets, ctx, cfg) {
   }
   const dust = pot - allocated; // payout remainder (>=0), goes to insurance pool, guarantees never overpay
 
-  // Insurance 10% (only active insurance users); prepare invite commission
+  // Insurance 10% (only active insurance users); multi-level invite commission
   const referral = [];
   for (const row of users) {
     const meta = ctx.insActiveByUid.get(row.uid);
@@ -63,12 +64,36 @@ export function planSettlement(bets, ctx, cfg) {
     }
     row.winCredit = row.winRaw - row.insCut;
 
-    const inviterUid = meta?.inviterUid ?? null;
-    if (inviterUid && row.totalStake > 0n) {
-      const cnt = ctx.nodeInviteeCountByUid.get(inviterUid) ?? 0;
-      const perMille = referralPerMille(cfg, cnt);
-      const reward = perMille > 0n ? mulDivFloor(row.totalStake, perMille, cfg.referralDen) : 0n;
-      referral.push({ inviterUid, fromUid: row.uid, stake: row.totalStake, perMille, reward });
+    // Walk up the invite chain for multi-level commission
+    if (row.totalStake > 0n) {
+      let current = row.uid;
+      let depth = 0;
+      const visited = new Set(); // cycle guard
+      while (current && ctx.inviterByUid.has(current)) {
+        const inviter = ctx.inviterByUid.get(current);
+        if (!inviter || visited.has(inviter)) break;
+        visited.add(inviter);
+        depth += 1;
+        const inviterRate = ctx.whitelistByUid.get(inviter); // undefined => normal user
+        if (inviterRate === undefined) {
+          // Normal user: only direct (depth 1), fixed 0.1%
+          if (depth === 1) {
+            const reward = mulDivFloor(row.totalStake, cfg.referralNormalPerMille, cfg.referralDen);
+            if (reward > 0n) referral.push({ inviterUid: inviter, fromUid: row.uid, stake: row.totalStake, perMille: cfg.referralNormalPerMille, reward, depth });
+          }
+        } else {
+          // Whitelisted user: all depths; if immediate downstream (current) is also whitelisted, pay rate difference
+          const currentRate = ctx.whitelistByUid.get(current);
+          const effectiveRate = currentRate !== undefined
+            ? (inviterRate > currentRate ? inviterRate - currentRate : 0n)
+            : inviterRate;
+          if (effectiveRate > 0n) {
+            const reward = mulDivFloor(row.totalStake, effectiveRate, cfg.referralDen);
+            if (reward > 0n) referral.push({ inviterUid: inviter, fromUid: row.uid, stake: row.totalStake, perMille: effectiveRate, reward, depth });
+          }
+        }
+        current = inviter;
+      }
     }
   }
 

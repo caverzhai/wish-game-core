@@ -30,7 +30,7 @@ const I18N = {
     whitelistTitle: 'Invite Whitelist', addWhitelist: 'Add', wlTip: 'You are on the official whitelist. You earn commission on ALL generations of downlines, at your set rate. If a downline is also whitelisted, you earn only the rate difference.', wlScope: 'Scope', wlAllDepth: 'All generations', normalInvTip: 'Standard users earn 0.1% on direct referrals only. Contact admin to apply for whitelist (multi-level commission).', normalDirect: 'Direct referrals only',
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
-    meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
+    meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', scanQr: 'Scan QR to join', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
     invTierTip: 'Tier is set by how many direct friends ever generated a payout node; commission on their wish volume:', invColPeople: 'Qualified friends', invColRate: 'Rate', invPeopleUnit: '',
     bbsTitle: 'Board (plain text, up to 1024 bytes)', bbsPlaceholder: 'Say something (max 1024 bytes)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
     adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words',
@@ -70,7 +70,7 @@ const I18N = {
     whitelistTitle: '邀請白名單', addWhitelist: '添加', wlTip: '您在官方白名單中。可享所有下代的傭金，按設定比例。若下線也是白名單，只賺級差。', wlScope: '範圍', wlAllDepth: '所有代數', normalInvTip: '普通用戶僅享直推0.1%。聯繫管理員申請白名單（多級傭金）。', normalDirect: '僅直推',
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
-    meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
+    meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', scanQr: '掃碼加入', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
     invTierTip: '名下有「生成過賠付節點」的直邀好友數決定檔位，按好友許願流水返傭：', invColPeople: '達標好友', invColRate: '返傭率', invPeopleUnit: '人',
     bbsTitle: '廣場（1024位元組以內純文字）', bbsPlaceholder: '說點什麼吧（最多1024位元組）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
     adminModeration: '管理員治理', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
@@ -110,7 +110,7 @@ const I18N = {
     whitelistTitle: '招待ホワイトリスト', addWhitelist: '追加', wlTip: 'あなたは公式ホワイトリストに登録されています。設定レートで全世代の紹介手数料を獲得。下流もホワイトリストの場合は差額のみ。', wlScope: '範囲', wlAllDepth: '全世代', normalInvTip: '通常ユーザーは直接紹介のみ0.1%。ホワイトリスト申請は管理者へ。', normalDirect: '直接紹介のみ',
     myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
-    meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
+    meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', scanQr: 'QRコードをスキャン', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
     invTierTip: '返還ノードを生成した直招待人数で档位が決定、招待した人の投入額に応じて報酬：', invColPeople: '達成フレンド', invColRate: '報酬率', invPeopleUnit: '人',
     bbsTitle: '広場（1024バイト以内のテキスト）', bbsPlaceholder: 'ひとこと（最大1024バイト）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
     adminModeration: 'モデレーション', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
@@ -150,7 +150,7 @@ const I18N = {
     whitelistTitle: 'القائمة البيضاء للدعوة', addWhitelist: 'إضافة', wlTip: 'أنت في القائمة البيضاء الرسمية. تكسب عمولة على جميع الأجيال بالمعدل المحدد. إذا كان المُدعى أيضاً في القائمة البيضاء، تكسب الفرق فقط.', wlScope: 'النطاق', wlAllDepth: 'جميع الأجيال', normalInvTip: 'المستخدمون العاديون يكسبون 0.1% على الإحالات المباشرة فقط. تواصل مع الإدارة للتقدم للقائمة البيضاء.', normalDirect: 'إحالات مباشرة فقط',
     myNodes: 'عقود التعويض الخاصة بي', poolTotal: 'إجمالي بركة التأمين', poolNext: 'إجمالي الإصدار القادم', poolNextAt: 'وقت الإصدار القادم', nextReleaseIn: 'القادم بعد', poolActiveNodes: 'العقود النشطة',
     poolSufficient: 'كافٍ', poolShort: 'عجز', poolCover: 'نسبة التغطية',
-    meWallet: 'المحفظة', meInvite: 'الدعوة', copy: 'نسخ', qualifiedInvitees: 'المؤهلون', curRate: 'النسبة', invTotal: 'الإجمالي',
+    meWallet: 'المحفظة', meInvite: 'الدعوة', copy: 'نسخ', scanQr: 'امسح QR للانضمام', qualifiedInvitees: 'المؤهلون', curRate: 'النسبة', invTotal: 'الإجمالي',
     invTierTip: 'تُحدد الشريدة بعدد الأصدقاء المباشرين الذين ولد لهم عقد تعويض؛ العمولة على حجم أمنياتهم:', invColPeople: 'أصدقاء مؤهلون', invColRate: 'النسبة', invPeopleUnit: '',
     bbsTitle: 'المنتدى (نص عادي، حتى 1024 بايت)', bbsPlaceholder: 'قل شيئاً (حد أقصى 1024 بايت)', bbsSend: 'نشر', bbsEmpty: 'لا توجد مشاركات بعد. كن الأول.',
     adminModeration: 'الإشراف', addBlockedWord: 'حظر كلمة', wordPh: 'أدخل كلمة للحظر', deletePost: 'حذف', banUser: 'حظر', unbanUser: 'رفع الحظر', bannedTag: 'محظور', noBlocked: 'لا توجد كلمات محظورة',
@@ -189,7 +189,7 @@ const I18N = {
     whitelistTitle: 'Daftar Putih Undangan', addWhitelist: 'Tambah', wlTip: 'Anda ada di daftar putih resmi. Dapat komisi semua generasi dengan tarif yang ditetapkan. Jika downline juga daftar putih, hanya selisih tarif.', wlScope: 'Cakupan', wlAllDepth: 'Semua generasi', normalInvTip: 'Pengguna biasa hanya 0.1% referensi langsung. Hubungi admin untuk mendaftar daftar putih.', normalDirect: 'Referensi langsung saja',
     myNodes: 'Node kompensasi saya', poolTotal: 'Total kolam asuransi', poolNext: 'Total rilis berikutnya', poolNextAt: 'Waktu rilis berikutnya', nextReleaseIn: 'Berikutnya dalam', poolActiveNodes: 'Node aktif',
     poolSufficient: 'Cukup', poolShort: 'Kekurangan', poolCover: 'Cakupan',
-    meWallet: 'Dompet', meInvite: 'Undangan', copy: 'Salin', qualifiedInvitees: 'Memenuhi syarat', curRate: 'Rate', invTotal: 'Total',
+    meWallet: 'Dompet', meInvite: 'Undangan', copy: 'Salin', scanQr: 'Pindai QR untuk bergabung', qualifiedInvitees: 'Memenuhi syarat', curRate: 'Rate', invTotal: 'Total',
     invTierTip: 'Tier ditentukan oleh jumlah teman langsung yang pernah menghasilkan node kompensasi; komisi atas volume keinginan mereka:', invColPeople: 'Teman memenuhi syarat', invColRate: 'Rate', invPeopleUnit: 'orang',
     bbsTitle: 'Forum (teks biasa, hingga 1024 byte)', bbsPlaceholder: 'Katakan sesuatu (maks 1024 byte)', bbsSend: 'Kirim', bbsEmpty: 'Belum ada kiriman. Jadilah yang pertama.',
     adminModeration: 'Moderasi', addBlockedWord: 'Blokir kata', wordPh: 'Masukkan kata yang diblokir', deletePost: 'Hapus', banUser: 'Blokir', unbanUser: 'Buka blokir', bannedTag: 'DIBLOKIR', noBlocked: 'Tidak ada kata diblokir',
@@ -228,7 +228,7 @@ const I18N = {
     whitelistTitle: '초대 화이트리스트', addWhitelist: '추가', wlTip: '공식 화이트리스트에 있습니다. 설정된 비율로 모든 세대의 커미션을 받습니다. 하위 라인도 화이트리스트면 차액만 받습니다.', wlScope: '범위', wlAllDepth: '모든 세대', normalInvTip: '일반 사용자는 직접 초대만 0.1%. 화이트리스트 신청은 관리자에게 문의.', normalDirect: '직접 초대만',
     myNodes: '나의 보상 노드', poolTotal: '보험 풀 총액', poolNext: '다음 지급 총액', poolNextAt: '다음 지급 시각', nextReleaseIn: '다음까지', poolActiveNodes: '활성 노드',
     poolSufficient: '충분', poolShort: '부족', poolCover: '커버율',
-    meWallet: '지갑', meInvite: '초대', copy: '복사', qualifiedInvitees: '조건 달성', curRate: '비율', invTotal: '누적',
+    meWallet: '지갑', meInvite: '초대', copy: '복사', scanQr: 'QR 코드 스캔', qualifiedInvitees: '조건 달성', curRate: '비율', invTotal: '누적',
     invTierTip: '보상 노드를 생성한 직접 초대 친구 수로 등급이 결정되며, 친구의 소원 금액에 따라 수수료 지급:', invColPeople: '달성 친구', invColRate: '수수료율', invPeopleUnit: '명',
     bbsTitle: '게시판 (순수 텍스트, 최대 1024바이트)', bbsPlaceholder: '하고 싶은 말 (최대 1024바이트)', bbsSend: '게시', bbsEmpty: '아직 게시글이 없습니다. 첫 글을 남겨보세요.',
     adminModeration: '관리', addBlockedWord: '단어 차단', wordPh: '차단할 단어 입력', deletePost: '삭제', banUser: '차단', unbanUser: '차단 해제', bannedTag: '차단됨', noBlocked: '차단된 단어 없음',
@@ -267,7 +267,7 @@ const I18N = {
     whitelistTitle: 'Белый список приглашений', addWhitelist: 'Добавить', wlTip: 'Вы в официальном белом списке. Получаете комиссию со всех поколений по установленной ставке. Если нижестоящий тоже в белом списке — только разницу ставок.', wlScope: 'Охват', wlAllDepth: 'Все поколения', normalInvTip: 'Обычные пользователи получают 0.1% только с прямых приглашений. Свяжитесь с админом для заявки в белый список.', normalDirect: 'Только прямые',
     myNodes: 'Мои узлы выплат', poolTotal: 'Общая сумма страхового пула', poolNext: 'Общая сумма следующего выпуска', poolNextAt: 'Время следующего выпуска', nextReleaseIn: 'Следующий через', poolActiveNodes: 'Активные узлы',
     poolSufficient: 'Достаточно', poolShort: 'Недостаток', poolCover: 'Покрытие',
-    meWallet: 'Кошелёк', meInvite: 'Приглашения', copy: 'Копировать', qualifiedInvitees: 'Квалифицированные', curRate: 'Ставка', invTotal: 'Всего',
+    meWallet: 'Кошелёк', meInvite: 'Приглашения', copy: 'Копировать', scanQr: 'Сканировать QR', qualifiedInvitees: 'Квалифицированные', curRate: 'Ставка', invTotal: 'Всего',
     invTierTip: 'Уровень определяется числом прямых друзей, создавших узел выплат; комиссия с объёма их желаний:', invColPeople: 'Квалифицированные друзья', invColRate: 'Ставка', invPeopleUnit: '',
     bbsTitle: 'Форум (простой текст, до 1024 байт)', bbsPlaceholder: 'Напишите что-нибудь (макс. 1024 байт)', bbsSend: 'Опубликовать', bbsEmpty: 'Пока нет сообщений. Будьте первым.',
     adminModeration: 'Модерация', addBlockedWord: 'Заблокировать слово', wordPh: 'Введите слово для блокировки', deletePost: 'Удалить', banUser: 'Забанить', unbanUser: 'Разбанить', bannedTag: 'ЗАБАНЕН', noBlocked: 'Нет заблокированных слов',
@@ -306,7 +306,7 @@ const I18N = {
     whitelistTitle: 'निमंत्रण सफेद सूची', addWhitelist: 'जोड़ें', wlTip: 'आप आधिकारिक सफेद सूची में हैं। निर्धारित दर पर सभी पीढ़ियों से कमीशन। यदि डाउनलाइन भी सफेद सूची में है तो केवल अंतर।', wlScope: 'दायरा', wlAllDepth: 'सभी पीढ़ियाँ', normalInvTip: 'सामान्य उपयोगकर्ता केवल सीधे निमंत्रण पर 0.1%। सफेद सूची के लिए एडमिन से संपर्क करें।', normalDirect: 'केवल सीधे',
     myNodes: 'मेरे भुगतान नोड', poolTotal: 'बीमा पूल कुल', poolNext: 'अगली रिलीज़ कुल', poolNextAt: 'अगली रिलीज़ का समय', nextReleaseIn: 'अगली में', poolActiveNodes: 'सक्रिय नोड',
     poolSufficient: 'पर्याप्त', poolShort: 'कमी', poolCover: 'कवरेज',
-    meWallet: 'वॉलेट', meInvite: 'निमंत्रण', copy: 'कॉपी', qualifiedInvitees: 'योग्य', curRate: 'दर', invTotal: 'कुल',
+    meWallet: 'वॉलेट', meInvite: 'निमंत्रण', copy: 'कॉपी', scanQr: 'जुड़ने के लिए QR स्कैन करें', qualifiedInvitees: 'योग्य', curRate: 'दर', invTotal: 'कुल',
     invTierTip: 'स्तर भुगतान नोड बनाने वाले सीधे दोस्तों की संख्या से तय होता है; उनके विश मात्रा पर कमीशन:', invColPeople: 'योग्य दोस्त', invColRate: 'दर', invPeopleUnit: '',
     bbsTitle: 'बोर्ड (सादा पाठ, 1024 बाइट तक)', bbsPlaceholder: 'कुछ लिखें (अधिकतम 1024 बाइट)', bbsSend: 'पोस्ट', bbsEmpty: 'अभी कोई पोस्ट नहीं. पहले बनें.',
     adminModeration: 'मॉडरेशन', addBlockedWord: 'शब्द ब्लॉक करें', wordPh: 'ब्लॉक करने के लिए शब्द दर्ज करें', deletePost: 'हटाएँ', banUser: 'बैन', unbanUser: 'अनबैन', bannedTag: 'बैन्ड', noBlocked: 'कोई ब्लॉक शब्द नहीं',
@@ -345,7 +345,7 @@ const I18N = {
     whitelistTitle: 'دعوتہ وائٹ لسٹ', addWhitelist: 'شامل کریں', wlTip: 'آپ سرکاری وائٹ لسٹ میں ہیں۔ مقررہ شرح پر تمام نسلوں سے کمیشن۔ اگر ڈاؤن لائن بھی وائٹ لسٹ میں ہے تو صرف فرق۔', wlScope: 'دائرہ', wlAllDepth: 'تمام نسلیں', normalInvTip: 'عام صارفین کو صرف براہ راست دعوت پر 0.1%۔ وائٹ لسٹ کے لیے ایڈمن سے رابطہ کریں۔', normalDirect: 'صرف براہ راست',
     myNodes: 'میرے ادائیگی نوڈ', poolTotal: 'انشورنس پول کل', poolNext: 'اگلی ریلیز کل', poolNextAt: 'اگلی ریلیز کا وقت', nextReleaseIn: 'اگلی میں', poolActiveNodes: 'فعال نوڈ',
     poolSufficient: 'کافی', poolShort: 'کمی', poolCover: 'کوریج',
-    meWallet: 'والیٹ', meInvite: 'دعوت', copy: 'کاپی', qualifiedInvitees: 'اہل', curRate: 'شرح', invTotal: 'کل',
+    meWallet: 'والیٹ', meInvite: 'دعوت', copy: 'کاپی', scanQr: 'شامل ہونے کے لیے QR اسکین کریں', qualifiedInvitees: 'اہل', curRate: 'شرح', invTotal: 'کل',
     invTierTip: 'درجہ براہ راست دوستوں کی تعداد سے طے ہوتا ہے جنہوں نے ادائیگی نوڈ بنایا; ان کی خواہش کی رقم پر کمیشن:', invColPeople: 'اہل دوست', invColRate: 'شرح', invPeopleUnit: '',
     bbsTitle: 'بورڈ (سادہ متن، 1024 بائٹ تک)', bbsPlaceholder: 'کچھ لکھیں (زیادہ سے زیادہ 1024 بائٹ)', bbsSend: 'پوسٹ', bbsEmpty: 'ابھی کوئی پوسٹ نہیں. پہلے بنیں.',
     adminModeration: 'ماڈریشن', addBlockedWord: 'لفظ بلاک کریں', wordPh: 'بلاک کرنے کے لیے لفظ درج کریں', deletePost: 'حذف کریں', banUser: 'بین', unbanUser: 'ان بین', bannedTag: 'بین شدہ', noBlocked: 'کوئی بلاک شدہ لفظ نہیں',
@@ -776,7 +776,15 @@ function renderMe() {
   }
   syncAdmin(me.isAdmin);
 }
-function renderInviteLink() { $('inviteLink').value = `${location.origin}${location.pathname}?ref=${state.uid}`; }
+function renderInviteLink() {
+  const link = `${location.origin}${location.pathname}?ref=${state.uid}`;
+  $('inviteLink').value = link;
+  const box = $('qrcode');
+  if (box && typeof qrcode === 'function') {
+    try { const qr = qrcode(0, 'M'); qr.addData(link); qr.make(); box.innerHTML = qr.createImgTag(4); }
+    catch (e) { box.innerHTML = ''; }
+  }
+}
 function syncAdmin(isAdmin) {
   if (isAdmin === undefined) isAdmin = state.isAdmin;
   state.isAdmin = !!isAdmin;
@@ -1041,6 +1049,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.7';
+const FE_BUILD = '2.3.8';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

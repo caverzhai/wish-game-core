@@ -278,3 +278,9 @@ textarea { resize: vertical; }
 .wl-tag { background: var(--card2); border: 1px solid var(--gold); border-radius: 6px; padding: 4px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
 .wl-tag b { color: var(--gold); }
 .wl-del { color: var(--bad); text-decoration: none; font-weight: 700; margin-left: 4px; }
+
+/* QR code */
+.qr-wrap { text-align: center; margin: 14px 0 6px; }
+.qrcode-box { display: inline-block; padding: 10px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.qrcode-box img { display: block; }
+.qr-hint { font-size: 12px; margin-top: 8px; color: var(--muted); }

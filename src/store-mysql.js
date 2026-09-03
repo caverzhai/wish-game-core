@@ -257,9 +257,11 @@ export class MysqlStore {
   async addFlow(uid, bizType, amount, ref = {}) {
     const id = await this.nextId('flow', 'F');
     await this.exec('INSERT INTO flows(flow_id,uid,biz_type,amount,ref_json,at) VALUES(?,?,?,?,?,?)', [id, uid, bizType, amount, ref && Object.keys(ref).length ? jstr(ref) : null, ref.at ?? Date.now()]);
+    // Keep only latest 64 flows per user
+    await this.exec('DELETE FROM flows WHERE uid=? AND id NOT IN (SELECT id FROM (SELECT id FROM flows WHERE uid=? ORDER BY id DESC LIMIT 64) tmp)', [uid, uid]);
     return id;
   }
-  async listFlows(uid, limit = 100) {
+  async listFlows(uid, limit = 64) {
     return (await this.exec('SELECT * FROM flows WHERE uid=? ORDER BY id DESC LIMIT ?', [uid, limit])).map((r) => ({ id: r.flow_id, uid: r.uid, bizType: r.biz_type, amount: B(r.amount), ref: r.ref_json ? JSON.parse(r.ref_json) : {}, at: Number(r.at) }));
   }
   async insertWithdraw(w) { await this.exec('INSERT INTO withdraws(withdraw_id,uid,amount,fee,arrive,to_wallet,state,txhash,created_at) VALUES(?,?,?,?,?,?,?,?,?)', [w.withdrawId, w.uid, w.amount, w.fee, w.arrive, w.toWallet, w.state, w.txhash, w.at || Date.now()]); }

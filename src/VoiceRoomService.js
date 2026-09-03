@@ -15,6 +15,7 @@ import { coin, toInner, SCALE } from './money.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MEDIA_DIR = path.resolve(__dirname, '../tmp-voice');
 const MSG_CACHE = 300;
+const MSG_TTL_MS = 30 * 60 * 1000; // messages auto-purge after 30 minutes
 const EMPTY_GRACE_MS = 5 * 60 * 1000; // empty room kept 5 min
 const TEXT_MAX_BYTES = 1024;
 
@@ -220,6 +221,15 @@ export class VoiceRoomService {
     const destroyed = [];
     for (const r of [...this.rooms.values()]) {
       if (r.destroyed) continue;
+      // Auto-purge messages older than 30 minutes (and their media files)
+      if (r.messages.length > 0) {
+        const cutoff = now - MSG_TTL_MS;
+        const expired = r.messages.filter((m) => m.at < cutoff);
+        if (expired.length > 0) {
+          for (const m of expired) if (m.file) this._deleteMedia(m.file);
+          r.messages = r.messages.filter((m) => m.at >= cutoff);
+        }
+      }
       // Chat rooms: stay open as long as balance > 0, even when empty (no auto-destroy on empty)
       if (r.type === 'chat') {
         const rate = this._chatRate(r);

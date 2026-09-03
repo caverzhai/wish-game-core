@@ -124,9 +124,15 @@ export class MemoryStore {
   async addFlow(uid, bizType, amount, ref = {}) {
     const id = await this.nextId('flow', 'F');
     this.flows.push({ id, uid, bizType, amount, ref, at: ref.at ?? Date.now() });
+    // Keep only latest 64 flows per user
+    const userFlows = this.flows.filter((f) => f.uid === uid);
+    if (userFlows.length > 64) {
+      const toRemove = new Set(userFlows.slice(0, userFlows.length - 64).map((f) => f.id));
+      this.flows = this.flows.filter((f) => !toRemove.has(f.id));
+    }
     return id;
   }
-  async listFlows(uid, limit = 100) {
+  async listFlows(uid, limit = 64) {
     return this.flows.filter((f) => f.uid === uid).slice(-limit).reverse().map((f) => ({ ...f }));
   }
   async insertWithdraw(w) { this.withdraws.push({ ...w }); }

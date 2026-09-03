@@ -215,6 +215,10 @@
         <input id="inviteLink" readonly />
         <button id="copyInvBtn" class="btn-primary" data-i18n="copy">Copy</button>
       </div>
+      <div class="qr-wrap">
+        <div id="qrcode" class="qrcode-box"></div>
+        <p class="muted qr-hint" data-i18n="scanQr">Scan to register</p>
+      </div>
       <div class="grid3">
         <div class="mini-card"><span data-i18n="qualifiedInvitees">Qualified</span><b id="invCount">0</b></div>
         <div class="mini-card"><span data-i18n="curRate">Rate</span><b id="invRate">0%</b></div>
@@ -295,6 +299,7 @@
     <button id="disclaimerConfirm" class="btn-primary big" data-i18n="disclaimerAgree">I have read and agree</button>
   </div>
 </div>
+<script src="/qrcode.min.js"></script>
 <script src="/app.js"></script>
 <script src="/voice.js"></script>
 </body>

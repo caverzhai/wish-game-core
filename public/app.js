@@ -378,6 +378,7 @@ function applyI18n() {
   document.documentElement.dir = (state.lang === 'ar' || state.lang === 'ur') ? 'rtl' : 'ltr';
   document.title = t('appTitle');
   document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => { el.placeholder = t(el.dataset.i18nPlaceholder); });
   $('bbsInput').placeholder = t('bbsPlaceholder');
   $('wordInput').placeholder = t('wordPh');
   $('manualTxInput').placeholder = t('manualTxPh');
@@ -1054,6 +1055,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.10';
+const FE_BUILD = '2.3.11';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

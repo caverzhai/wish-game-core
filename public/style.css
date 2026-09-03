@@ -284,3 +284,4 @@ textarea { resize: vertical; }
 .qrcode-box { display: inline-block; padding: 10px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
 .qrcode-box img { display: block; }
 .qr-hint { font-size: 12px; margin-top: 8px; color: var(--muted); }
+.apply-tip { margin-top: 10px; font-size: 13px; line-height: 1.6; padding: 10px 12px; background: rgba(255,255,255,.06); border-radius: 8px; }

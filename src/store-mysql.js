@@ -5,9 +5,10 @@
 // =============================================================
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { GameError, Codes } from './errors.js';
+import { SCALE } from './money.js';
 
 const B = (v) => (v === null || v === undefined || v === '' ? 0n : BigInt(v));
-const jstr = (o) => JSON.stringify(o, (k, v) => (typeof v === 'bigint' ? v.toString() : v));
+const jstr = (o) => JSON.stringify(o, (k, v) => (typeof v === 'bigint' ? Number(v) / Number(SCALE) : v));
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
@@ -155,9 +156,19 @@ export class MysqlStore {
   _userRow(r) { return r && { uid: r.uid, wallet: r.wallet, inviterUid: r.inviter_uid, insSwitch: !!r.ins_switch, banned: !!r.banned, createdAt: Number(r.created_at) }; }
   _acctRow(r) { return r && { available: B(r.available), frozen: B(r.frozen), premium: B(r.premium), lossAccum: B(r.loss_accum) }; }
   _roundRow(r) {
-    return r && { roundId: r.round_id, startAt: Number(r.start_at), lockAt: Number(r.lock_at), settleAt: Number(r.settle_at),
-      state: r.state, redTotal: B(r.red_total), greenTotal: B(r.green_total), sumPick: r.sum_pick,
-      result: r.result_json ? JSON.parse(r.result_json) : null };
+    if (!r) return null;
+    let result = null;
+    if (r.result_json) {
+      try {
+        result = JSON.parse(r.result_json);
+        // Backward compat: old rows stored BigInt as inner6 string (e.g. "4000000"), convert to coin units
+        for (const k of ['total', 'fee', 'feeIns', 'feePlat', 'pot', 'dust', 'referralTotal']) {
+          if (typeof result[k] === 'string' && !isNaN(Number(result[k]))) result[k] = Number(result[k]) / 1e6;
+        }
+      } catch { result = null; }
+    }
+    return { roundId: r.round_id, startAt: Number(r.start_at), lockAt: Number(r.lock_at), settleAt: Number(r.settle_at),
+      state: r.state, redTotal: B(r.red_total), greenTotal: B(r.green_total), sumPick: r.sum_pick, result };
   }
 
   async createUser(d) {

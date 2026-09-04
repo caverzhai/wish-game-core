@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.3.18'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.3.19'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -273,7 +273,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   try {
     if (routes.some((r) => (typeof r.p === 'string' ? r.p === url.pathname : r.p.test(url.pathname)))) {
-      const body = req.method === 'POST' ? await readBody(req) : {};
+      const body = req.method === 'POST' ? await readBody(req) : Object.fromEntries(url.searchParams.entries());
       for (const r of routes) {
         const match = typeof r.p === 'string' ? (r.p === url.pathname ? [] : null) : url.pathname.match(r.p);
         if (r.method === req.method && match) {

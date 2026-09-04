@@ -877,7 +877,7 @@ async function loadBbs(auto = false) {
 }
 async function loadAdminWords() {
   try {
-    state.words = await api('/admin/words');
+    state.words = await api('/admin/words?uid=' + encodeURIComponent(state.uid));
     $('wordTags').innerHTML = state.words.length
       ? state.words.map((w) => `<span class="word-tag">${escapeHtml(w)}<button data-wordrm="${escapeHtml(w)}">×</button></span>`).join('')
       : `<span class="muted">${t('noBlocked')}</span>`;
@@ -895,7 +895,7 @@ async function adminAddWord() {
 // ---------------- Whitelist admin management ----------------
 async function loadWhitelist() {
   try {
-    const r = await api('/admin/whitelist');
+    const r = await api('/admin/whitelist?uid=' + encodeURIComponent(state.uid));
     const list = r.list || [];
     const box = $('wlList');
     if (!box) return;
@@ -1134,6 +1134,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.18';
+const FE_BUILD = '2.3.19';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

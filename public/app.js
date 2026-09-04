@@ -1041,7 +1041,22 @@ function init() {
   };
   $('wordAddBtn').onclick = adminAddWord;
   bindWhitelist();
-  $('copyInvBtn').onclick = () => { navigator.clipboard?.writeText($('inviteLink').value); alert(t('copyOk')); };
+  function fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); cb && cb(); } catch (e) { alert(text); }
+    finally { document.body.removeChild(ta); }
+  }
+  $('copyInvBtn').onclick = () => {
+    const text = $('inviteLink').value;
+    const done = () => alert(t('copyOk'));
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
+  };
   $('bbsSend').onclick = postBbs;
   $('bbsInput').oninput = () => { $('bbsChar').textContent = byteLen($('bbsInput').value) + '/' + BBS_MAX_BYTES; };
   selectSide('red');
@@ -1055,6 +1070,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.12';
+const FE_BUILD = '2.3.13';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

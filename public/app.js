@@ -9,6 +9,14 @@ const fmt = (n) => (Number(n) || 0).toLocaleString(undefined, { maximumFractionD
 const codeLen = (s) => [...String(s)].length;
 const byteLen = (s) => new TextEncoder().encode(String(s ?? '')).length; // UTF-8 byte count
 const BBS_MAX_BYTES = 1024; // BBS per-post limit 1024 bytes
+
+function showToast(msg, ms = 1800) {
+  let el = document.getElementById('globalToast');
+  if (!el) { el = document.createElement('div'); el.id = 'globalToast'; el.className = 'toast'; document.body.appendChild(el); }
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), ms);
+}
+
 const utcHM = (sec) => new Date(sec * 1000).toISOString().slice(11, 16) + ' UTC';
 const pad2 = (n) => String(n).padStart(2, '0');
 
@@ -31,6 +39,7 @@ const I18N = {
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', scanQr: 'Scan QR to join', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
+    directInvitees: 'Direct invites', downlineTotal: 'Total downline',
     invTierTip: 'Tier is set by how many direct friends ever generated a payout node; commission on their wish volume:', invColPeople: 'Qualified friends', invColRate: 'Rate', invPeopleUnit: '',
     bbsTitle: 'Board (plain text, up to 1024 bytes)', bbsPlaceholder: 'Say something (max 1024 bytes)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
     adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words',
@@ -71,6 +80,7 @@ const I18N = {
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
     poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', scanQr: '掃碼加入', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
+    directInvitees: '直推人數', downlineTotal: '下線總人數',
     invTierTip: '名下有「生成過賠付節點」的直邀好友數決定檔位，按好友許願流水返傭：', invColPeople: '達標好友', invColRate: '返傭率', invPeopleUnit: '人',
     bbsTitle: '廣場（1024位元組以內純文字）', bbsPlaceholder: '說點什麼吧（最多1024位元組）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
     adminModeration: '管理員治理', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
@@ -111,6 +121,7 @@ const I18N = {
     myNodes: '私の返還ノード', poolTotal: '保険池の総額', poolNext: '次回解放予定額', poolNextAt: '次回解放時刻', nextReleaseIn: '次回まで', poolActiveNodes: '解放待ちノード',
     poolSufficient: '資金十分', poolShort: '不足額', poolCover: '充足率',
     meWallet: 'ウォレット', meInvite: '招待報酬', copy: 'コピー', scanQr: 'QRコードをスキャン', qualifiedInvitees: '条件達成', curRate: 'レート', invTotal: '累計報酬',
+    directInvitees: '直接招待数', downlineTotal: '下流れ合計人数',
     invTierTip: '返還ノードを生成した直招待人数で档位が決定、招待した人の投入額に応じて報酬：', invColPeople: '達成フレンド', invColRate: '報酬率', invPeopleUnit: '人',
     bbsTitle: '広場（1024バイト以内のテキスト）', bbsPlaceholder: 'ひとこと（最大1024バイト）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
     adminModeration: 'モデレーション', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
@@ -738,8 +749,11 @@ function renderInvTiers(invite) {
   const isWL = !!invite.isWhitelisted;
   const rate = (Number(invite.perMille) / 10).toFixed(1) + '%';
   if (isWL) {
+    const dc = invite.directCount != null ? invite.directCount : '-';
+    const dt = invite.downlineTotal != null ? invite.downlineTotal : '-';
     box.innerHTML = `<div class="inv-tip"><span class="wl-tag">${t('whitelistTitle')}</span> ${t('wlScope')} <b>${rate}</b> ${t('wlAllDepth')}</div>
-      <div class="it-grid"><div class="it-row active"><span>${t('normalDirect')}</span><b>${rate}</b></div></div>`;
+      <div class="it-grid"><div class="it-row active"><span>${t('normalDirect')}</span><b>${rate}</b></div></div>
+      <div class="inv-stats"><span>${t('directInvitees')}: <b>${dc}</b></span><span>${t('downlineTotal')}: <b>${dt}</b></span></div>`;
   } else {
     box.innerHTML = `<div class="inv-tip">${t('normalInvTip')} <b>0.1%</b> ${t('normalDirect')}</div>
       <div class="it-grid"><div class="it-row active"><span>${t('normalDirect')}</span><b>0.1%</b></div></div>
@@ -1050,7 +1064,9 @@ function init() {
   }
   $('copyInvBtn').onclick = () => {
     const text = $('inviteLink').value;
-    const done = () => alert(t('copyOk'));
+    const btn = $('copyInvBtn');
+    const orig = btn.textContent;
+    const done = () => { showToast(t('copyOk')); btn.textContent = t('copyOk'); setTimeout(() => { btn.textContent = orig; }, 1500); };
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
     } else {
@@ -1070,6 +1086,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.13';
+const FE_BUILD = '2.3.14';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

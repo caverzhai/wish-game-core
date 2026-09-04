@@ -79,6 +79,13 @@ CREATE TABLE IF NOT EXISTS announcement (
 CREATE TABLE IF NOT EXISTS chain_txs (
   tx_hash VARCHAR(80) PRIMARY KEY, uid VARCHAR(16), amount BIGINT, at BIGINT
 );
+CREATE TABLE IF NOT EXISTS voice_rooms (
+  room_id VARCHAR(32) PRIMARY KEY, type VARCHAR(16), name VARCHAR(64),
+  host_uid VARCHAR(16), balance BIGINT DEFAULT 0, per_minute BIGINT DEFAULT 0,
+  created_at BIGINT, last_active_at BIGINT, empty_since BIGINT NULL,
+  guest_uid VARCHAR(16) NULL, description VARCHAR(200) DEFAULT '',
+  destroyed TINYINT DEFAULT 0
+);
 `;
 
 export class MysqlStore {
@@ -256,6 +263,43 @@ export class MysqlStore {
   async referralSummary(inviterUid) {
     const r = await this.exec('SELECT COALESCE(SUM(reward),0) total, COUNT(DISTINCT from_uid) cnt FROM referral_logs WHERE inviter_uid=?', [inviterUid]);
     return { total: B(r[0].total), activeInvitees: Number(r[0].cnt) };
+  }
+  async countDirectInvitees(uid) {
+    const r = await this.exec('SELECT COUNT(*) c FROM users WHERE inviter_uid=?', [uid]);
+    return Number(r[0].c);
+  }
+  async countTotalDownline(uid) {
+    // Recursive CTE to count all generations of downline
+    const r = await this.exec(`
+      WITH RECURSIVE downline AS (
+        SELECT uid FROM users WHERE inviter_uid=?
+        UNION ALL
+        SELECT u.uid FROM users u INNER JOIN downline d ON u.inviter_uid=d.uid
+      )
+      SELECT COUNT(*) c FROM downline
+    `, [uid]);
+    return Number(r[0].c);
+  }
+  async saveRoom(room) {
+    await this.exec(`INSERT INTO voice_rooms(room_id,type,name,host_uid,balance,per_minute,created_at,last_active_at,empty_since,guest_uid,description,destroyed)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE
+      name=VALUES(name), balance=VALUES(balance), last_active_at=VALUES(last_active_at),
+      empty_since=VALUES(empty_since), guest_uid=VALUES(guest_uid), description=VALUES(description), destroyed=VALUES(destroyed)`,
+      [room.roomId, room.type, room.name, room.hostUid, String(room.balance), String(room.perMinute),
+       room.createdAt, room.lastActiveAt, room.emptySince, room.guestUid, room.description || '', room.destroyed ? 1 : 0]);
+  }
+  async loadRooms() {
+    const rows = await this.exec('SELECT * FROM voice_rooms WHERE destroyed=0');
+    return rows.map((r) => ({
+      roomId: r.room_id, type: r.type, name: r.name, hostUid: r.host_uid,
+      balance: BigInt(r.balance), perMinute: BigInt(r.per_minute),
+      createdAt: Number(r.created_at), lastActiveAt: Number(r.last_active_at),
+      emptySince: r.empty_since ? Number(r.empty_since) : null,
+      guestUid: r.guest_uid, description: r.description || '',
+    }));
+  }
+  async deleteRoom(roomId) {
+    await this.exec('UPDATE voice_rooms SET destroyed=1 WHERE room_id=?', [roomId]);
   }
   async addFlow(uid, bizType, amount, ref = {}) {
     const id = await this.nextId('flow', 'F');

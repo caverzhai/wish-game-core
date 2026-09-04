@@ -32,7 +32,31 @@ export class VoiceRoomService {
     this.store = store;
     this.rooms = new Map();
     this._seq = 0;
+    this._dirty = new Set(); // roomIds with balance changes needing persistence
     if (!fs.existsSync(MEDIA_DIR)) fs.mkdirSync(MEDIA_DIR, { recursive: true });
+    // Load persisted rooms on startup (survives redeploys)
+    this.store.loadRooms().then((rooms) => {
+      for (const r of rooms) {
+        this.rooms.set(r.roomId, {
+          ...r,
+          members: new Map(),
+          messages: [],
+          destroyed: false,
+        });
+      }
+      console.log(`[VoiceRoom] loaded ${rooms.length} persisted room(s)`);
+    }).catch((e) => console.error('[VoiceRoom] loadRooms failed:', e.message));
+  }
+  _persist(roomId) { this._dirty.add(roomId); }
+  async flushPersistence() {
+    if (this._dirty.size === 0) return;
+    const ids = [...this._dirty]; this._dirty.clear();
+    for (const id of ids) {
+      const r = this.rooms.get(id);
+      if (r && !r.destroyed) {
+        try { await this.store.saveRoom(r); } catch (e) { console.error('[VoiceRoom] saveRoom failed:', e.message); }
+      }
+    }
   }
 
   _newId() { this._seq++; return 'R' + Date.now().toString(36) + this._seq.toString(36); }
@@ -62,6 +86,7 @@ export class VoiceRoomService {
     };
     room.members.set(uid, { uid, name: shortName(u.wallet), role: 'host', micOn: true });
     this.rooms.set(roomId, room);
+    await this.store.saveRoom(room).catch(() => {});
     await this.store.addFlow(uid, 'ROOM_OPEN', recharge, { roomId, type }).catch(() => {});
     return this._public(room);
   }
@@ -135,6 +160,7 @@ export class VoiceRoomService {
     await this.store.applyLedger({ plat: amount }); // adding time is also prepaid, goes to platform
     r.balance += amount;
     r.lastActiveAt = Date.now();
+    this._persist(roomId);
     await this.store.addFlow(uid, 'ROOM_PAY', -amount, { roomId, type: r.type, op: 'recharge' }).catch(() => {});
     return { balance: r.balance, remainSec: this._remainSec(r) };
   }
@@ -208,10 +234,11 @@ export class VoiceRoomService {
   }
 
   // ---------- Host edits room description (200 chars) ----------
-  editDescription(roomId, uid, description) {
+  async editDescription(roomId, uid, description) {
     const r = this._get(roomId);
     if (r.hostUid !== uid) throw new GameError(Codes.FORBIDDEN, 'Only host can edit description');
     r.description = String(description ?? '').trim().slice(0, 200);
+    this._persist(roomId);
     return { description: r.description };
   }
 
@@ -235,6 +262,7 @@ export class VoiceRoomService {
         const rate = this._chatRate(r);
         if (r.balance > rate) {
           r.balance -= rate;
+          this._persist(r.roomId);
         } else {
           r.balance = 0n;
           await this._destroy(r, 'balance');
@@ -251,6 +279,7 @@ export class VoiceRoomService {
       if (r.members.size > 0 && !r.emptySince) {
         if (r.balance > r.perMinute) {
           r.balance -= r.perMinute; // prepaid already recorded as platform revenue at room creation, only deduct virtual balance here
+          this._persist(r.roomId);
         } else {
           r.balance = 0n;
           await this._destroy(r, 'balance');
@@ -266,6 +295,7 @@ export class VoiceRoomService {
     // no refund regardless of dissolve method: room balance goes to platform
     for (const m of r.messages) if (m.file) this._deleteMedia(m.file);
     this.rooms.delete(r.roomId);
+    try { await this.store.deleteRoom(r.roomId); } catch (e) { console.error('[VoiceRoom] deleteRoom failed:', e.message); }
   }
 
   // ---------- Media files ----------

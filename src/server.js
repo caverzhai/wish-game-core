@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.3.13'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.3.14'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -71,6 +71,8 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
   const referral = await store.referralSummary(uid);
   const flows = await store.listFlows(uid, 50);
   const whitelistRate = await store.getWhitelistRate(user.wallet);
+  const directCount = await store.countDirectInvitees(uid);
+  const downlineTotal = await store.countTotalDownline(uid);
   return {
     user, account, nodes, isAdmin: isAdminWallet(user.wallet),
     invite: {
@@ -79,6 +81,8 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
       perMille: whitelistRate !== null ? whitelistRate : 1, // normal users fixed 0.1% = 1 per mille
       rewardTotal: referral.total,
       rewardedInvitees: referral.activeInvitees,
+      directCount,
+      downlineTotal,
     },
     flows,
   };
@@ -299,6 +303,7 @@ setInterval(async () => {
   try {
     const destroyed = await voice.tick();
     for (const rid of destroyed) if (voice._broadcastClosed) voice._broadcastClosed(rid);
+    await voice.flushPersistence();
   } catch (e) { console.error('[voice-tick]', e.message); }
 }, 60000);
 

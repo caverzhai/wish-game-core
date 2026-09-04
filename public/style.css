@@ -285,3 +285,9 @@ textarea { resize: vertical; }
 .qrcode-box img { display: block; }
 .qr-hint { font-size: 12px; margin-top: 8px; color: var(--muted); }
 .apply-tip { margin-top: 10px; font-size: 13px; line-height: 1.6; padding: 10px 12px; background: rgba(255,255,255,.06); border-radius: 8px; }
+
+.toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,.85); color: #fff; padding: 14px 24px; border-radius: 10px; font-size: 15px; z-index: 9999; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 80%; text-align: center; }
+.toast.show { opacity: 1; }
+
+.inv-stats { display: flex; gap: 16px; margin-top: 8px; font-size: 13px; color: var(--muted); }
+.inv-stats b { color: var(--gold); }

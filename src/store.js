@@ -122,6 +122,24 @@ export class MemoryStore {
     for (const x of this.referralLogs.filter((r) => r.inviterUid === inviterUid)) { total += x.reward; invitees.add(x.fromUid); }
     return { total, activeInvitees: invitees.size };
   }
+  async countDirectInvitees(uid) {
+    let n = 0;
+    for (const u of this.users.values()) if (u.inviterUid === uid) n++;
+    return n;
+  }
+  async countTotalDownline(uid) {
+    const visited = new Set(); const queue = [uid];
+    while (queue.length) {
+      const cur = queue.shift();
+      for (const u of this.users.values()) {
+        if (u.inviterUid === cur && !visited.has(u.uid)) { visited.add(u.uid); queue.push(u.uid); }
+      }
+    }
+    return visited.size;
+  }
+  async saveRoom(room) { this.rooms.set(room.roomId, { ...room }); }
+  async loadRooms() { return [...this.rooms.values()].filter((r) => !r.destroyed).map((r) => ({ ...r })); }
+  async deleteRoom(roomId) { const r = this.rooms.get(roomId); if (r) r.destroyed = true; }
   async addFlow(uid, bizType, amount, ref = {}) {
     const id = await this.nextId('flow', 'F');
     this.flows.push({ id, uid, bizType, amount, ref, at: ref.at ?? Date.now() });

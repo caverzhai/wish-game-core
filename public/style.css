@@ -291,3 +291,9 @@ textarea { resize: vertical; }
 
 .inv-stats { display: flex; gap: 16px; margin-top: 8px; font-size: 13px; color: var(--muted); }
 .inv-stats b { color: var(--gold); }
+
+.wl-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--card2); border-radius: 8px; margin-bottom: 6px; font-size: 13px; }
+.wl-addr { flex: 1; font-family: monospace; color: var(--txt); }
+.wl-rate { color: var(--gold); font-weight: 600; min-width: 50px; text-align: right; }
+.wl-edit { background: var(--primary); color: #fff; border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+.wl-del { background: var(--red); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 14px; cursor: pointer; line-height: 1; }

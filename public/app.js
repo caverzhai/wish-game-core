@@ -892,6 +892,54 @@ async function adminAddWord() {
   try { await api('/admin/word/add', { uid: state.uid, word: w }); $('wordInput').value = ''; loadAdminWords(); }
   catch (e) { alert(e.message); }
 }
+// ---------------- Whitelist admin management ----------------
+async function loadWhitelist() {
+  try {
+    const r = await api('/admin/whitelist');
+    const list = r.list || [];
+    const box = $('wlList');
+    if (!box) return;
+    if (!list.length) { box.innerHTML = '<span class="muted">—</span>'; return; }
+    box.innerHTML = list.map((w) => {
+      const rate = (Number(w.perMille) / 10).toFixed(1) + '%';
+      return '<div class="wl-row" data-wallet="' + escapeHtml(w.wallet) + '">' +
+        '<span class="wl-addr">' + shortAddr(w.wallet) + '</span>' +
+        '<span class="wl-rate">' + rate + '</span>' +
+        '<button class="btn-mini wl-edit" data-wallet="' + escapeHtml(w.wallet) + '" data-rate="' + w.perMille + '">Edit</button>' +
+        '<button class="btn-mini wl-del" data-wallet="' + escapeHtml(w.wallet) + '">×</button>' +
+        '</div>';
+    }).join('');
+    box.querySelectorAll('.wl-edit').forEach((b) => b.onclick = () => {
+      const cur = b.dataset.rate;
+      const input = prompt('Set per-mille rate (e.g. 3 = 0.3%, 5 = 0.5%):', cur);
+      if (input === null) return;
+      const v = parseInt(input, 10);
+      if (isNaN(v) || v < 0 || v > 100) { alert('Invalid rate (0-100)'); return; }
+      api('/admin/whitelist/add', { uid: state.uid, wallet: b.dataset.wallet, perMille: v }).then(loadWhitelist).catch((e) => alert(e.message));
+    });
+    box.querySelectorAll('.wl-del').forEach((b) => b.onclick = () => {
+      if (!confirm('Remove this wallet from whitelist?')) return;
+      api('/admin/whitelist/remove', { uid: state.uid, wallet: b.dataset.wallet }).then(loadWhitelist).catch((e) => alert(e.message));
+    });
+  } catch (e) { /* not admin, ignore */ }
+}
+function bindWhitelist() {
+  const btn = $('wlAddBtn');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const wallet = $('wlWalletInput').value.trim();
+    const rate = parseInt($('wlRateInput').value, 10);
+    if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) { alert('Invalid wallet address'); return; }
+    if (isNaN(rate) || rate < 0 || rate > 100) { alert('Invalid per-mille rate (0-100)'); return; }
+    try {
+      await api('/admin/whitelist/add', { uid: state.uid, wallet, perMille: rate });
+      $('wlWalletInput').value = ''; $('wlRateInput').value = '';
+      showToast('Whitelist updated');
+      loadWhitelist();
+    } catch (e) { alert(e.message); }
+  };
+  loadWhitelist();
+}
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 async function postBbs() {
   const content = $('bbsInput').value.trim();
@@ -1086,6 +1134,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.14';
+const FE_BUILD = '2.3.15';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

@@ -755,8 +755,10 @@ function renderInvTiers(invite) {
       <div class="it-grid"><div class="it-row active"><span>${t('normalDirect')}</span><b>${rate}</b></div></div>
       <div class="inv-stats"><span>${t('directInvitees')}: <b>${dc}</b></span><span>${t('downlineTotal')}: <b>${dt}</b></span></div>`;
   } else {
+    const dc = invite.directCount != null ? invite.directCount : '-';
     box.innerHTML = `<div class="inv-tip">${t('normalInvTip')} <b>0.1%</b> ${t('normalDirect')}</div>
       <div class="it-grid"><div class="it-row active"><span>${t('normalDirect')}</span><b>0.1%</b></div></div>
+      <div class="inv-stats"><span>${t('directInvitees')}: <b>${dc}</b></span></div>
       <p class="muted apply-tip">${t('applyWhitelistTip')}</p>`;
   }
 }
@@ -1134,6 +1136,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.19';
+const FE_BUILD = '2.3.20';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

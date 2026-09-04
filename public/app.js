@@ -22,7 +22,7 @@ const pad2 = (n) => String(n).padStart(2, '0');
 
 const I18N = {
   en: {
-    appTitle: 'Three-Minute Wish Pool', loginTip: 'Connect a wallet to start. Invite links bind referrers automatically.', connectWallet: 'Connect Wallet', demoEnter: 'No wallet? Enter as demo', logout: 'Sign out',
+    coinUnit: 'coins', platformTitle: 'Global Self-Service Charity Donation Platform', platformDesc: 'The Amsterdam team is committed to providing direct donations to people in need worldwide. Through blockchain, we offer transparent, fair, traceable free donation matching. Those in need receive lossless support, while donors gain recognition and rewards. Donation features are under rapid development.', appTitle: 'Three-Minute Wish Pool', loginTip: 'Connect a wallet to start. Invite links bind referrers automatically.', connectWallet: 'Connect Wallet', demoEnter: 'No wallet? Enter as demo', logout: 'Sign out',
     dockHome: 'Home', dockBbs: 'Board', dockIns: 'Insurance', dockMe: 'Me', disclaimerTitle: 'Serious Statement', disclaimerAgree: 'I have read and agree', announcement: 'Announcement', publishAnnouncement: 'Publish',
     remainSec: 'seconds left', lockAt: 'closed at 150s', betCount: 'Wishes', redPool: 'Red Pool', greenPool: 'Green Pool',
     oddWin: 'Odd sum → Red', evenWin: 'Even sum → Green', pickLabel: 'Pick a number (0-9)',
@@ -63,7 +63,7 @@ const I18N = {
     flow_FAUCET: 'Test claim', flow_CHAIN_DEPOSIT: 'On-chain deposit', flow_ISSUE: 'System credit',
   },
   'zh-TW': {
-    appTitle: '三分鐘願望池', loginTip: '連接錢包即可開始，邀請連結自動綁定推薦關係', connectWallet: '連接錢包', demoEnter: '未裝錢包？以演示身份進入', logout: '退出',
+    coinUnit: t('coinUnit'), platformTitle: '全球自助慈善捐助平台', platformDesc: '阿姆斯特丹團隊致力為全球有需要的人士提供直接捐助，以區塊鏈模式，公開、公正、可追溯的自由捐贈撮合服務，除了讓需要的人得到無損資助外，讓愛心人士也能得到肯定和收益。捐助服務功能正在加緊開發，近期將正式與大家見面。', appTitle: '三分鐘願望池', loginTip: '連接錢包即可開始，邀請連結自動綁定推薦關係', connectWallet: '連接錢包', demoEnter: '未裝錢包？以演示身份進入', logout: '退出',
     dockHome: '首頁', dockBbs: '廣場', dockIns: '保險', dockMe: '我的', disclaimerTitle: '嚴重聲明', disclaimerAgree: '我已閱讀並同意', announcement: '系統公告', publishAnnouncement: '發布公告',
     remainSec: '剩餘秒數', lockAt: '150秒停止許願', betCount: '許願筆數', redPool: '紅願池', greenPool: '綠願池',
     oddWin: '選號總和為單 → 紅勝', evenWin: '選號總和為雙 → 綠勝', pickLabel: '選擇一個數字（0-9）',
@@ -104,7 +104,7 @@ const I18N = {
     flow_FAUCET: '測試領幣', flow_CHAIN_DEPOSIT: '鏈上轉入', flow_ISSUE: '系統入帳',
   },
   ja: {
-    appTitle: '3分間願い池', loginTip: 'ウォレット接続で開始。招待リンクで紹介者を自動登録します', connectWallet: 'ウォレット接続', demoEnter: 'ウォレットなし？デモで入る', logout: 'ログアウト',
+    coinUnit: t('coinUnit'), appTitle: '3分間願い池', loginTip: 'ウォレット接続で開始。招待リンクで紹介者を自動登録します', connectWallet: 'ウォレット接続', demoEnter: 'ウォレットなし？デモで入る', logout: 'ログアウト',
     dockHome: 'ホーム', dockBbs: '広場', dockIns: '保険', dockMe: 'マイ', disclaimerTitle: '重大声明', disclaimerAgree: '読んで同意します', announcement: 'お知らせ', publishAnnouncement: '公開する',
     remainSec: '残り秒数', lockAt: '150秒で締切', betCount: '願い数', redPool: '赤の願い池', greenPool: '緑の願い池',
     oddWin: '合計が奇数 → 赤の勝ち', evenWin: '合計が偶数 → 緑の勝ち', pickLabel: '数字を選ぶ（0-9）',
@@ -145,7 +145,7 @@ const I18N = {
     flow_FAUCET: 'テスト受取', flow_CHAIN_DEPOSIT: 'オンチェーン入金', flow_ISSUE: 'システム入金',
   },
   ar: {
-    appTitle: 'بركة الأمنيات لمدة ثلاث دقائق', loginTip: 'اتصل بالمحفظة للبدء. روابط الدعوة تربط المُحيل تلقائياً.', connectWallet: 'اتصال بالمحفظة', demoEnter: 'لا توجد محفظة؟ ادخل كزائر', logout: 'خروج',
+    coinUnit: 'عملات', appTitle: 'بركة الأمنيات لمدة ثلاث دقائق', loginTip: 'اتصل بالمحفظة للبدء. روابط الدعوة تربط المُحيل تلقائياً.', connectWallet: 'اتصال بالمحفظة', demoEnter: 'لا توجد محفظة؟ ادخل كزائر', logout: 'خروج',
     dockHome: 'الرئيسية', dockBbs: 'المنتدى', dockIns: 'التأمين', dockMe: 'حسابي', disclaimerTitle: 'بيان جاد', disclaimerAgree: 'لقد قرأت وأوافق', announcement: 'إعلان', publishAnnouncement: 'نشر',
     remainSec: 'ثانية متبقية', lockAt: 'يُغلق عند 150 ثانية', betCount: 'الأمنيات', redPool: 'بركة الأحمر', greenPool: 'بركة الأخضر',
     oddWin: 'مجموع الأرقام فردي → يفوز الأحمر', evenWin: 'مجموع الأرقام زوجي → يفوز الأخضر', pickLabel: 'اختر رقماً (0-9)',
@@ -184,7 +184,7 @@ const I18N = {
     flow_FAUCET: 'مطالبة تجريبية', flow_CHAIN_DEPOSIT: 'إيداع على السلسلة', flow_ISSUE: 'رصيد نظامي',
   },
   id: {
-    appTitle: 'Kumpulan Keinginan 3 Menit', loginTip: 'Hubungkan dompet untuk memulai. Tautan undangan mengikat perujuk secara otomatis.', connectWallet: 'Hubungkan Dompet', demoEnter: 'Tidak ada dompet? Masuk sebagai demo', logout: 'Keluar',
+    coinUnit: 'koin', appTitle: 'Kumpulan Keinginan 3 Menit', loginTip: 'Hubungkan dompet untuk memulai. Tautan undangan mengikat perujuk secara otomatis.', connectWallet: 'Hubungkan Dompet', demoEnter: 'Tidak ada dompet? Masuk sebagai demo', logout: 'Keluar',
     dockHome: 'Beranda', dockBbs: 'Forum', dockIns: 'Asuransi', dockMe: 'Saya', disclaimerTitle: 'Pernyataan Serius', disclaimerAgree: 'Saya telah membaca dan setuju', announcement: 'Pengumuman', publishAnnouncement: 'Terbitkan',
     remainSec: 'detik tersisa', lockAt: 'tutup pada 150 detik', betCount: 'Keinginan', redPool: 'Kolam Merah', greenPool: 'Kolam Hijau',
     oddWin: 'Jumlah angka ganjil → Merah menang', evenWin: 'Jumlah angka genap → Hijau menang', pickLabel: 'Pilih angka (0-9)',
@@ -223,7 +223,7 @@ const I18N = {
     flow_FAUCET: 'Klaim tes', flow_CHAIN_DEPOSIT: 'Setoran on-chain', flow_ISSUE: 'Kredit sistem',
   },
   ko: {
-    appTitle: '3분 소원 풀', loginTip: '지갑을 연결하면 시작됩니다. 초대 링크로 추천인이 자동 연결됩니다.', connectWallet: '지갑 연결', demoEnter: '지갑 없음? 데모로 입장', logout: '로그아웃',
+    coinUnit: '코인', appTitle: '3분 소원 풀', loginTip: '지갑을 연결하면 시작됩니다. 초대 링크로 추천인이 자동 연결됩니다.', connectWallet: '지갑 연결', demoEnter: '지갑 없음? 데모로 입장', logout: '로그아웃',
     dockHome: '홈', dockBbs: '게시판', dockIns: '보험', dockMe: '나의', disclaimerTitle: '엄중 고지', disclaimerAgree: '읽었으며 동의합니다', announcement: '공지', publishAnnouncement: '발행',
     remainSec: '초 남음', lockAt: '150초에 마감', betCount: '소원', redPool: '레드 풀', greenPool: '그린 풀',
     oddWin: '숫자 합이 홀수 → 레드 승', evenWin: '숫자 합이 짝수 → 그린 승', pickLabel: '숫자 선택 (0-9)',
@@ -262,7 +262,7 @@ const I18N = {
     flow_FAUCET: '테스트 수령', flow_CHAIN_DEPOSIT: '온체인 입금', flow_ISSUE: '시스템 입금',
   },
   ru: {
-    appTitle: 'Колода желаний на 3 минуты', loginTip: 'Подключите кошелёк, чтобы начать. Пригласительные ссылки автоматически привязывают реферера.', connectWallet: 'Подключить кошелёк', demoEnter: 'Нет кошелька? Войти как демо', logout: 'Выход',
+    coinUnit: 'монет', appTitle: 'Колода желаний на 3 минуты', loginTip: 'Подключите кошелёк, чтобы начать. Пригласительные ссылки автоматически привязывают реферера.', connectWallet: 'Подключить кошелёк', demoEnter: 'Нет кошелька? Войти как демо', logout: 'Выход',
     dockHome: 'Главная', dockBbs: 'Форум', dockIns: 'Страховка', dockMe: 'Профиль', disclaimerTitle: 'Серьёзное заявление', disclaimerAgree: 'Я прочитал и согласен', announcement: 'Объявление', publishAnnouncement: 'Опубликовать',
     remainSec: 'секунд осталось', lockAt: 'закрывается на 150-й секунде', betCount: 'Желаний', redPool: 'Красный пул', greenPool: 'Зелёный пул',
     oddWin: 'Сумма чисел нечётная → победа красных', evenWin: 'Сумма чисел чётная → победа зелёных', pickLabel: 'Выберите число (0-9)',
@@ -301,7 +301,7 @@ const I18N = {
     flow_FAUCET: 'Тестовый бонус', flow_CHAIN_DEPOSIT: 'Сетевое пополнение', flow_ISSUE: 'Системное зачисление',
   },
   hi: {
-    appTitle: '3 मिनट विश पूल', loginTip: 'शुरू करने के लिए वॉलेट कनेक्ट करें. आमंत्रण लिंक स्वचालित रूप से रेफ़रर को बाँधते हैं.', connectWallet: 'वॉलेट कनेक्ट करें', demoEnter: 'वॉलेट नहीं है? डेमो के रूप में प्रवेश करें', logout: 'लॉग आउट',
+    coinUnit: 'सिक्के', appTitle: '3 मिनट विश पूल', loginTip: 'शुरू करने के लिए वॉलेट कनेक्ट करें. आमंत्रण लिंक स्वचालित रूप से रेफ़रर को बाँधते हैं.', connectWallet: 'वॉलेट कनेक्ट करें', demoEnter: 'वॉलेट नहीं है? डेमो के रूप में प्रवेश करें', logout: 'लॉग आउट',
     dockHome: 'होम', dockBbs: 'बोर्ड', dockIns: 'बीमा', dockMe: 'मेरा', disclaimerTitle: 'गंभीर विवरण', disclaimerAgree: 'मैंने पढ़ लिया और सहमत हूं', announcement: 'घोषणा', publishAnnouncement: 'प्रकाशित करें',
     remainSec: 'सेकंड शेष', lockAt: '150 सेकंड पर बंद', betCount: 'विशें', redPool: 'लाल पूल', greenPool: 'हरा पूल',
     oddWin: 'अंकों का योग विषम → लाल जीतता है', evenWin: 'अंकों का योग सम → हरा जीतता है', pickLabel: 'अंक चुनें (0-9)',
@@ -340,7 +340,7 @@ const I18N = {
     flow_FAUCET: 'टेस्ट क्लेम', flow_CHAIN_DEPOSIT: 'ऑन-चेन जमा', flow_ISSUE: 'सिस्टम जमा',
   },
   ur: {
-    appTitle: 'تین منٹ کی خواہش پول', loginTip: 'شروع کرنے کے لیے والیٹ منسلک کریں. دعوتی لنکس خود بخود ریفرر کو جوڑ دیتے ہیں.', connectWallet: 'والیٹ منسلک کریں', demoEnter: 'والیٹ نہیں؟ ڈیمو کے طور پر داخل ہوں', logout: 'لاگ آؤٹ',
+    coinUnit: 'سکے', appTitle: 'تین منٹ کی خواہش پول', loginTip: 'شروع کرنے کے لیے والیٹ منسلک کریں. دعوتی لنکس خود بخود ریفرر کو جوڑ دیتے ہیں.', connectWallet: 'والیٹ منسلک کریں', demoEnter: 'والیٹ نہیں؟ ڈیمو کے طور پر داخل ہوں', logout: 'لاگ آؤٹ',
     dockHome: 'ہوم', dockBbs: 'بورڈ', dockIns: 'انشورنس', dockMe: 'میرا', disclaimerTitle: 'سنگین بیان', disclaimerAgree: 'میں نے پڑھ لیا اور اتفاق کرتا ہوں', announcement: 'اعلان', publishAnnouncement: 'شائع کریں',
     remainSec: 'سیکنڈ باقی', lockAt: '150 سیکنڈ پر بند', betCount: 'خواہشیں', redPool: 'سرخ پول', greenPool: 'سبز پول',
     oddWin: 'اعداد کا مجموعہ طاق → سرخ جیتتا ہے', evenWin: 'اعداد کا مجموعہ زوج → سبز جیتتا ہے', pickLabel: 'عدد منتخب کریں (0-9)',
@@ -564,8 +564,36 @@ function renderRound() {
     $('betCount').textContent = r.betCount ?? 0;
     tickCountdown();
   }
-  const dots = state.recent.filter((x) => x.state === 'settled').slice(0, 100).map((x) => `<span class="dot ${x.result && x.result.winSide}" title="${x.roundId}"></span>`).join('');
-  $('histDots').innerHTML = dots || '<span class="muted">—</span>';
+  // History dots: 3 rows max, 10 per row, new row after UK midnight (UTC 0)
+  const settled = state.recent.filter((x) => x.state === 'settled');
+  const rows = [];
+  let currentRow = [];
+  let currentDay = null;
+  for (const x of settled) {
+    const ukDay = new Date((x.settleAt || 0) * 1000).toISOString().slice(0, 10);
+    if (currentDay !== null && ukDay !== currentDay && currentRow.length > 0) {
+      rows.push(currentRow);
+      currentRow = [];
+    }
+    currentDay = ukDay;
+    currentRow.push(x);
+    if (currentRow.length >= 10) {
+      rows.push(currentRow);
+      currentRow = [];
+    }
+    if (rows.length >= 3) break;
+  }
+  if (currentRow.length > 0 && rows.length < 3) rows.push(currentRow);
+  const dotsHtml = rows.slice(0, 3).map((row) => {
+    return '<div class="dot-row">' + row.map((x) => {
+      const shortId = String(x.roundId).replace(/\D/g, '').slice(-2);
+      return '<span class="hist-dot ' + (x.result && x.result.winSide) + '" title="' + x.roundId + '"><span class="dot-num">' + shortId + '</span></span>';
+    }).join('') + '</div>';
+  }).join('');
+  // Hero banner
+  const hero = $('heroBanner');
+  if (hero) hero.innerHTML = '<div class="hero-title">' + t('platformTitle') + '</div><div class="hero-desc">' + t('platformDesc') + '</div>';
+  $('histDots').innerHTML = dotsHtml || '<span class="muted">—</span>';
 }
 // On-chain verification transient error whitelist: node timeout/no response/not indexed/waiting confirm -> keep retrying
 const CHAIN_RETRY = /尚未|確認|确认|稍後|稍后|無響應|无响应|未找到|查到|等待|中$|waiting|confirm|pending|timeout|no response|receipt|not found|indexed/i;
@@ -656,7 +684,7 @@ async function submitWish() {
     const wbal = await walletTokenWei();
     if (wbal < needWei) {
       const shortInner = Number(needWei - wbal) / (10 ** diff);
-      $('playMsg').textContent = t('walletShort') + ' ' + fmt(shortInner / S6) + ' 枚'; return;
+      $('playMsg').textContent = t('walletShort') + ' ' + fmt(shortInner / S6) + t('coinUnit'); return;
     }
     const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
     let txHash;
@@ -701,7 +729,7 @@ async function renderHistory() {
     const open = expandedRounds.has(r.roundId);
     return `<div class="hist-row"><span class="dot ${win || 'void'}"></span><b>${r.roundId}</b>
       <span>${r.state === 'settled' ? (win === 'red' ? t('winRed') : t('winGreen')) : t('state' + (r.state === 'cancelled' ? 'Cancelled' : 'Active'))}</span>
-      <span class="muted">${r.state === 'settled' ? `${fmt(r.result.total)} 枚 · Σ=${r.sumPick}` : ''}</span>
+      <span class="muted">${r.state === 'settled' ? `${fmt(r.result.total)} ${t('coinUnit')} · Σ=${r.sumPick}` : ''}</span>
       <button class="btn-mini" data-detail="${r.roundId}">${open ? t('close') : t('detail')}</button>
       <div class="hist-detail ${open ? '' : 'hide'}" id="hd-${r.roundId}"></div></div>`;
   }).join('') || '<p class="muted">—</p>';
@@ -731,14 +759,14 @@ function renderPoolPublic() {
   const barW = next > 0 ? Math.min(100, Math.round((total / next) * 100)) : 100;
   $('poolPublicCard').innerHTML = `
     <div class="pp-grid">
-      <div class="pp-box big"><span>${t('poolTotal')}</span><b>${fmt(total)} 枚</b></div>
-      <div class="pp-box"><span>${t('poolNext')}</span><b>${fmt(next)} 枚</b></div>
+      <div class="pp-box big"><span>${t('poolTotal')}</span><b>${fmt(total)} ${t('coinUnit')}</b></div>
+      <div class="pp-box"><span>${t('poolNext')}</span><b>${fmt(next)} ${t('coinUnit')}</b></div>
       <div class="pp-box"><span>${t('poolNextAt')}</span><b>${utcHM(p.nextBatchAt)}</b><small class="pp-cd">${t('nextReleaseIn')} <i id="poolCountdown">--:--:--</i></small></div>
       <div class="pp-box"><span>${t('poolActiveNodes')}</span><b>${p.nextPayNodeCount}/${p.activeNodeCount}</b></div>
     </div>
     <div class="pp-bar"><i class="${ok ? 'ok' : 'bad'}" style="width:${barW}%"></i></div>
-    <div class="pp-foot ${ok ? 'ok' : 'bad'}">${t('poolCover')} ${next > 0 ? cover : '—'}% · ${ok ? t('poolSufficient') : t('poolShort') + ' ' + fmt(Math.abs(gap)) + ' 枚'}</div>`;
-  $('poolPublicMini').innerHTML = `<span>${t('poolTotal')} <b>${fmt(total)}</b> 枚</span><span>${t('poolNext')} <b>${fmt(next)}</b> 枚</span><span class="${ok ? 'ok' : 'bad'}">${ok ? '✓' : '!'} ${ok ? t('poolSufficient') : t('poolShort')}</span>`;
+    <div class="pp-foot ${ok ? 'ok' : 'bad'}">${t('poolCover')} ${next > 0 ? cover : '—'}% · ${ok ? t('poolSufficient') : t('poolShort') + ' ' + fmt(Math.abs(gap)) + t('coinUnit')}</div>`;
+  $('poolPublicMini').innerHTML = `<span>${t('poolTotal')} <b>${fmt(total)}</b> ${t('coinUnit')}</span><span>${t('poolNext')} <b>${fmt(next)}</b> ${t('coinUnit')}</span><span class="${ok ? 'ok' : 'bad'}">${ok ? '✓' : '!'} ${ok ? t('poolSufficient') : t('poolShort')}</span>`;
   updatePoolCountdown();
 }
 
@@ -767,9 +795,9 @@ function renderInvTiers(invite) {
 function renderMe() {
   const me = state.me; if (!me) return;
   const a = me.account;
-  $('availBal').textContent = fmt(a.available) + ' 枚'; $('frozenBal').textContent = fmt(a.frozen) + ' 枚';
-  $('premiumBal').textContent = fmt(a.premium) + ' 枚'; $('premiumBal2').textContent = fmt(a.premium) + ' 枚';
-  $('lossAccum').textContent = fmt(a.lossAccum) + ' 枚';
+  $('availBal').textContent = fmt(a.available) + t('coinUnit'); $('frozenBal').textContent = fmt(a.frozen) + t('coinUnit');
+  $('premiumBal').textContent = fmt(a.premium) + t('coinUnit'); $('premiumBal2').textContent = fmt(a.premium) + t('coinUnit');
+  $('lossAccum').textContent = fmt(a.lossAccum) + t('coinUnit');
   $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
   $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
   // Insurance status bar: switch on AND premium>=20 units -> green active, else gray off
@@ -779,14 +807,14 @@ function renderMe() {
   const invRate = (me.invite.perMille / 10).toFixed(1) + '%';
   $('invCount').textContent = me.invite.rewardedInvitees || 0;
   $('invRate').textContent = invRate;
-  $('invTotal').textContent = fmt(me.invite.rewardTotal) + ' 枚';
+  $('invTotal').textContent = fmt(me.invite.rewardTotal) + t('coinUnit');
   const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = `${t('meInvite')}（${invRate}）`;
   renderInvTiers(me.invite);
   $('nodeList').innerHTML = me.nodes.length ? me.nodes.map((n) => {
     const pct = Math.round((n.periodN / 100) * 100);
     return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
   }).join('') : '<p class="muted">—</p>';
-  $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} 枚</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
+  $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} ${t('coinUnit')}</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
   const tip = $('chainModeTip');
   tip.classList.remove('hide');
   if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
@@ -978,7 +1006,7 @@ async function depositPremium() {
     if (diff < 0) { msg.textContent = 'Token decimals < 6, unsupported'; return; }
     const needWei = BigInt(chainInner) * (10n ** BigInt(diff));
     const wbal = await walletTokenWei();
-    if (wbal < needWei) { const s = Number(needWei - wbal) / (10 ** diff); msg.textContent = t('walletShort') + ' ' + fmt(s / S6) + ' 枚'; return; }
+    if (wbal < needWei) { const s = Number(needWei - wbal) / (10 ** diff); msg.textContent = t('walletShort') + ' ' + fmt(s / S6) + t('coinUnit'); return; }
     const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
     let txHash;
     try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
@@ -1099,7 +1127,7 @@ function init() {
     const btn = $('manualTxBtn'); btn.disabled = true;
     try {
       const r = await api('/wallet/credit', { uid: state.uid, txHash });
-      alert((r.already ? t('manualAlready') : `${t('manualOk')} +${fmt(r.credited)}`) + ' 枚');
+      alert((r.already ? t('manualAlready') : `${t('manualOk')} +${fmt(r.credited)}`) + t('coinUnit'));
       $('manualTxInput').value = ''; await refresh();
     } catch (e) { alert(e.message); } finally { btn.disabled = false; }
   };
@@ -1136,6 +1164,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.20';
+const FE_BUILD = '2.3.21';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

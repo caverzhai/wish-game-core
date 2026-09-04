@@ -297,3 +297,16 @@ textarea { resize: vertical; }
 .wl-rate { color: var(--gold); font-weight: 600; min-width: 50px; text-align: right; }
 .wl-edit { background: var(--primary); color: #fff; border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; }
 .wl-del { background: var(--red); color: #fff; border: none; padding: 4px 8px; border-radius: 6px; font-size: 14px; cursor: pointer; line-height: 1; }
+
+/* Hero banner */
+.hero-banner { text-align: center; padding: 12px 8px 16px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+.hero-title { font-size: 18px; font-weight: 800; color: var(--gold); letter-spacing: 1px; margin-bottom: 8px; }
+.hero-desc { font-size: 12px; color: var(--muted); line-height: 1.6; text-align: justify; }
+
+/* History dots: 3 rows x 10, larger dots with round numbers */
+.dot-row { display: flex; justify-content: center; gap: 8px; margin-bottom: 8px; }
+.hist-dot { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+.hist-dot.red { background: var(--red); box-shadow: 0 0 8px rgba(229,72,77,.7); }
+.hist-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(47,184,111,.7); }
+.hist-dot.void { background: transparent; border: 1px solid var(--muted); }
+.dot-num { font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }

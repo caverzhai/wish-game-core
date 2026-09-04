@@ -104,7 +104,7 @@ const I18N = {
     flow_FAUCET: '測試領幣', flow_CHAIN_DEPOSIT: '鏈上轉入', flow_ISSUE: '系統入帳',
   },
   ja: {
-    coinUnit: '枚', appTitle: '3分間願い池', loginTip: 'ウォレット接続で開始。招待リンクで紹介者を自動登録します', connectWallet: 'ウォレット接続', demoEnter: 'ウォレットなし？デモで入る', logout: 'ログアウト',
+    coinUnit: '枚', platformTitle: 'グローバルセルフサービス慈善寄付プラットフォーム', platformDesc: 'アムステルダムチームは世界中の困っている人々に直接寄付を提供することを約束します。ブロックチェーンを通じて透明で公平、追跡可能な無料寄付マッチングを提供します。困っている人は損失のない支援を受け、寄付者は認識と報酬を得ます。寄付機能は現在急速に開発中です。', appTitle: '3分間願い池', loginTip: 'ウォレット接続で開始。招待リンクで紹介者を自動登録します', connectWallet: 'ウォレット接続', demoEnter: 'ウォレットなし？デモで入る', logout: 'ログアウト',
     dockHome: 'ホーム', dockBbs: '広場', dockIns: '保険', dockMe: 'マイ', disclaimerTitle: '重大声明', disclaimerAgree: '読んで同意します', announcement: 'お知らせ', publishAnnouncement: '公開する',
     remainSec: '残り秒数', lockAt: '150秒で締切', betCount: '願い数', redPool: '赤の願い池', greenPool: '緑の願い池',
     oddWin: '合計が奇数 → 赤の勝ち', evenWin: '合計が偶数 → 緑の勝ち', pickLabel: '数字を選ぶ（0-9）',
@@ -145,7 +145,7 @@ const I18N = {
     flow_FAUCET: 'テスト受取', flow_CHAIN_DEPOSIT: 'オンチェーン入金', flow_ISSUE: 'システム入金',
   },
   ar: {
-    coinUnit: 'عملات', appTitle: 'بركة الأمنيات لمدة ثلاث دقائق', loginTip: 'اتصل بالمحفظة للبدء. روابط الدعوة تربط المُحيل تلقائياً.', connectWallet: 'اتصال بالمحفظة', demoEnter: 'لا توجد محفظة؟ ادخل كزائر', logout: 'خروج',
+    coinUnit: 'عملات', platformTitle: 'منصة التبرع الخيري العالمية ذاتية الخدمة', platformDesc: 'يلتزم فريق أمستردام بتقديم تبرعات مباشرة للمعوزين حول العالم. من خلال البلوكشين، نقدم مطابقة تبرعات مجانية شفافة وعادلة وقابلة للتتبع. يحصل المعوزون على دعم بلا خسارة، بينما يحصل المتبرعون على التقدير والمكافآت. ميزات التبرع قيد التطوير السريع.', appTitle: 'بركة الأمنيات لمدة ثلاث دقائق', loginTip: 'اتصل بالمحفظة للبدء. روابط الدعوة تربط المُحيل تلقائياً.', connectWallet: 'اتصال بالمحفظة', demoEnter: 'لا توجد محفظة؟ ادخل كزائر', logout: 'خروج',
     dockHome: 'الرئيسية', dockBbs: 'المنتدى', dockIns: 'التأمين', dockMe: 'حسابي', disclaimerTitle: 'بيان جاد', disclaimerAgree: 'لقد قرأت وأوافق', announcement: 'إعلان', publishAnnouncement: 'نشر',
     remainSec: 'ثانية متبقية', lockAt: 'يُغلق عند 150 ثانية', betCount: 'الأمنيات', redPool: 'بركة الأحمر', greenPool: 'بركة الأخضر',
     oddWin: 'مجموع الأرقام فردي → يفوز الأحمر', evenWin: 'مجموع الأرقام زوجي → يفوز الأخضر', pickLabel: 'اختر رقماً (0-9)',
@@ -184,7 +184,7 @@ const I18N = {
     flow_FAUCET: 'مطالبة تجريبية', flow_CHAIN_DEPOSIT: 'إيداع على السلسلة', flow_ISSUE: 'رصيد نظامي',
   },
   id: {
-    coinUnit: 'koin', appTitle: 'Kumpulan Keinginan 3 Menit', loginTip: 'Hubungkan dompet untuk memulai. Tautan undangan mengikat perujuk secara otomatis.', connectWallet: 'Hubungkan Dompet', demoEnter: 'Tidak ada dompet? Masuk sebagai demo', logout: 'Keluar',
+    coinUnit: 'koin', platformTitle: 'Platform Donasi Amal Mandiri Global', platformDesc: 'Tim Amsterdam berkomitmen memberikan donasi langsung kepada orang yang membutuhkan di seluruh dunia. Melalui blockchain, kami menawarkan pencocokan donasi gratis yang transparan, adil, dan dapat dilacak. Mereka yang membutuhkan menerima dukungan tanpa kerugian, sementara donor mendapatkan pengakuan dan imbalan. Fitur donasi sedang dalam pengembangan cepat.', appTitle: 'Kumpulan Keinginan 3 Menit', loginTip: 'Hubungkan dompet untuk memulai. Tautan undangan mengikat perujuk secara otomatis.', connectWallet: 'Hubungkan Dompet', demoEnter: 'Tidak ada dompet? Masuk sebagai demo', logout: 'Keluar',
     dockHome: 'Beranda', dockBbs: 'Forum', dockIns: 'Asuransi', dockMe: 'Saya', disclaimerTitle: 'Pernyataan Serius', disclaimerAgree: 'Saya telah membaca dan setuju', announcement: 'Pengumuman', publishAnnouncement: 'Terbitkan',
     remainSec: 'detik tersisa', lockAt: 'tutup pada 150 detik', betCount: 'Keinginan', redPool: 'Kolam Merah', greenPool: 'Kolam Hijau',
     oddWin: 'Jumlah angka ganjil → Merah menang', evenWin: 'Jumlah angka genap → Hijau menang', pickLabel: 'Pilih angka (0-9)',
@@ -223,7 +223,7 @@ const I18N = {
     flow_FAUCET: 'Klaim tes', flow_CHAIN_DEPOSIT: 'Setoran on-chain', flow_ISSUE: 'Kredit sistem',
   },
   ko: {
-    coinUnit: '코인', appTitle: '3분 소원 풀', loginTip: '지갑을 연결하면 시작됩니다. 초대 링크로 추천인이 자동 연결됩니다.', connectWallet: '지갑 연결', demoEnter: '지갑 없음? 데모로 입장', logout: '로그아웃',
+    coinUnit: '코인', platformTitle: '글로벌 셀프서비스 자선 기부 플랫폼', platformDesc: '암스테르담 팀은 전 세계 도움이 필요한 사람들에게 직접 기부를 제공하기 위해 노력하고 있습니다. 블록체인을 통해 투명하고 공정하며 추적 가능한 무료 기부 매칭을 제공합니다. 도움이 필요한 사람들은 손실 없는 지원을 받고, 기부자는 인정과 보상을 받습니다. 기부 기능은 현재 빠르게 개발 중입니다.', appTitle: '3분 소원 풀', loginTip: '지갑을 연결하면 시작됩니다. 초대 링크로 추천인이 자동 연결됩니다.', connectWallet: '지갑 연결', demoEnter: '지갑 없음? 데모로 입장', logout: '로그아웃',
     dockHome: '홈', dockBbs: '게시판', dockIns: '보험', dockMe: '나의', disclaimerTitle: '엄중 고지', disclaimerAgree: '읽었으며 동의합니다', announcement: '공지', publishAnnouncement: '발행',
     remainSec: '초 남음', lockAt: '150초에 마감', betCount: '소원', redPool: '레드 풀', greenPool: '그린 풀',
     oddWin: '숫자 합이 홀수 → 레드 승', evenWin: '숫자 합이 짝수 → 그린 승', pickLabel: '숫자 선택 (0-9)',
@@ -262,7 +262,7 @@ const I18N = {
     flow_FAUCET: '테스트 수령', flow_CHAIN_DEPOSIT: '온체인 입금', flow_ISSUE: '시스템 입금',
   },
   ru: {
-    coinUnit: 'монет', appTitle: 'Колода желаний на 3 минуты', loginTip: 'Подключите кошелёк, чтобы начать. Пригласительные ссылки автоматически привязывают реферера.', connectWallet: 'Подключить кошелёк', demoEnter: 'Нет кошелька? Войти как демо', logout: 'Выход',
+    coinUnit: 'монет', platformTitle: 'Глобальная платформа самообслуживания для благотворительных пожертвований', platformDesc: 'Амстердамская команда стремится предоставлять прямые пожертвования нуждающимся по всему миру. С помощью блокчейна мы предлагаем прозрачное, справедливое и отслеживаемое бесплатное сопоставление пожертвований. Нуждающиеся получают безубыточную поддержку, а доноры — признание и награды. Функции пожертвований находятся в стадии активной разработки.', appTitle: 'Колода желаний на 3 минуты', loginTip: 'Подключите кошелёк, чтобы начать. Пригласительные ссылки автоматически привязывают реферера.', connectWallet: 'Подключить кошелёк', demoEnter: 'Нет кошелька? Войти как демо', logout: 'Выход',
     dockHome: 'Главная', dockBbs: 'Форум', dockIns: 'Страховка', dockMe: 'Профиль', disclaimerTitle: 'Серьёзное заявление', disclaimerAgree: 'Я прочитал и согласен', announcement: 'Объявление', publishAnnouncement: 'Опубликовать',
     remainSec: 'секунд осталось', lockAt: 'закрывается на 150-й секунде', betCount: 'Желаний', redPool: 'Красный пул', greenPool: 'Зелёный пул',
     oddWin: 'Сумма чисел нечётная → победа красных', evenWin: 'Сумма чисел чётная → победа зелёных', pickLabel: 'Выберите число (0-9)',
@@ -301,7 +301,7 @@ const I18N = {
     flow_FAUCET: 'Тестовый бонус', flow_CHAIN_DEPOSIT: 'Сетевое пополнение', flow_ISSUE: 'Системное зачисление',
   },
   hi: {
-    coinUnit: 'सिक्के', appTitle: '3 मिनट विश पूल', loginTip: 'शुरू करने के लिए वॉलेट कनेक्ट करें. आमंत्रण लिंक स्वचालित रूप से रेफ़रर को बाँधते हैं.', connectWallet: 'वॉलेट कनेक्ट करें', demoEnter: 'वॉलेट नहीं है? डेमो के रूप में प्रवेश करें', logout: 'लॉग आउट',
+    coinUnit: 'सिक्के', platformTitle: 'वैश्विक स्वयं सेवा चैरिटी दान मंच', platformDesc: 'एम्स्टर्डम टीम दुनिया भर में जरूरतमंद लोगों को सीधा दान प्रदान करने के लिए प्रतिबद्ध है। ब्लॉकचेन के माध्यम से, हम पारदर्शी, निष्पक्ष, ट्रेस करने योग्य मुफ्त दान मिलान प्रदान करते हैं। जरूरतमंद लोगों को बिना नुकसान के सहायता मिलती है, जबकि दाताओं को मान्यता और पुरस्कार मिलते हैं। दान सुविधाएं तेजी से विकास के अधीन हैं।', appTitle: '3 मिनट विश पूल', loginTip: 'शुरू करने के लिए वॉलेट कनेक्ट करें. आमंत्रण लिंक स्वचालित रूप से रेफ़रर को बाँधते हैं.', connectWallet: 'वॉलेट कनेक्ट करें', demoEnter: 'वॉलेट नहीं है? डेमो के रूप में प्रवेश करें', logout: 'लॉग आउट',
     dockHome: 'होम', dockBbs: 'बोर्ड', dockIns: 'बीमा', dockMe: 'मेरा', disclaimerTitle: 'गंभीर विवरण', disclaimerAgree: 'मैंने पढ़ लिया और सहमत हूं', announcement: 'घोषणा', publishAnnouncement: 'प्रकाशित करें',
     remainSec: 'सेकंड शेष', lockAt: '150 सेकंड पर बंद', betCount: 'विशें', redPool: 'लाल पूल', greenPool: 'हरा पूल',
     oddWin: 'अंकों का योग विषम → लाल जीतता है', evenWin: 'अंकों का योग सम → हरा जीतता है', pickLabel: 'अंक चुनें (0-9)',
@@ -340,7 +340,7 @@ const I18N = {
     flow_FAUCET: 'टेस्ट क्लेम', flow_CHAIN_DEPOSIT: 'ऑन-चेन जमा', flow_ISSUE: 'सिस्टम जमा',
   },
   ur: {
-    coinUnit: 'سکے', appTitle: 'تین منٹ کی خواہش پول', loginTip: 'شروع کرنے کے لیے والیٹ منسلک کریں. دعوتی لنکس خود بخود ریفرر کو جوڑ دیتے ہیں.', connectWallet: 'والیٹ منسلک کریں', demoEnter: 'والیٹ نہیں؟ ڈیمو کے طور پر داخل ہوں', logout: 'لاگ آؤٹ',
+    coinUnit: 'سکے', platformTitle: 'عالمی خود خدمت خیراتی عطیہ پلیٹ فارم', platformDesc: 'ایمسٹرڈیم ٹیم دنیا بھر میں ضرورت مندوں کو براہ راست عطیہ فراہم کرنے کے لیے پرعزم ہے۔ بلاکچین کے ذریعے، ہم شفاف، منصفانہ، قابلِ تتبع مفت عطیہ میچنگ فراہم کرتے ہیں۔ ضرورت مندوں کو بغیر نقصان کے مدد ملتی ہے، جبکہ عطیہ دہندگان کو تسلیم اور انعامات ملتے ہیں۔ عطیہ کی خصوصیات تیزی سے ترقی کے مراحل میں ہیں۔', appTitle: 'تین منٹ کی خواہش پول', loginTip: 'شروع کرنے کے لیے والیٹ منسلک کریں. دعوتی لنکس خود بخود ریفرر کو جوڑ دیتے ہیں.', connectWallet: 'والیٹ منسلک کریں', demoEnter: 'والیٹ نہیں؟ ڈیمو کے طور پر داخل ہوں', logout: 'لاگ آؤٹ',
     dockHome: 'ہوم', dockBbs: 'بورڈ', dockIns: 'انشورنس', dockMe: 'میرا', disclaimerTitle: 'سنگین بیان', disclaimerAgree: 'میں نے پڑھ لیا اور اتفاق کرتا ہوں', announcement: 'اعلان', publishAnnouncement: 'شائع کریں',
     remainSec: 'سیکنڈ باقی', lockAt: '150 سیکنڈ پر بند', betCount: 'خواہشیں', redPool: 'سرخ پول', greenPool: 'سبز پول',
     oddWin: 'اعداد کا مجموعہ طاق → سرخ جیتتا ہے', evenWin: 'اعداد کا مجموعہ زوج → سبز جیتتا ہے', pickLabel: 'عدد منتخب کریں (0-9)',
@@ -1164,6 +1164,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.22';
+const FE_BUILD = '2.3.23';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

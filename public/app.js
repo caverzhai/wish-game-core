@@ -681,7 +681,7 @@ const roundDetailCache = new Map();
 async function fillHistDetail(id, box) {
   let d = roundDetailCache.get(id);
   if (!d) { d = await api('/round/' + id); roundDetailCache.set(id, d); }
-  box.innerHTML = (d.bets || []).map((x) => `<div class="bet-line"><span class="tag ${x.side}">${x.side === 'red' ? t('winRed') : t('winGreen')}</span> ${x.uid} · ${t('stake')} ${fmt(Number(x.amount) / 1e6)} · ${t('pickNum')} ${x.pick}</div>`).join('') || '<p class="muted">—</p>';
+  box.innerHTML = (d.bets || []).map((x) => `<div class="bet-line"><span class="tag ${x.side}">${x.side === 'red' ? t('winRed') : t('winGreen')}</span> ${x.uid} · ${t('stake')} ${fmt(x.amount)} · ${t('pickNum')} ${x.pick}</div>`).join('') || '<p class="muted">—</p>';
 }
 async function renderHistory() {
   const list = $('historyList');
@@ -690,7 +690,7 @@ async function renderHistory() {
     const open = expandedRounds.has(r.roundId);
     return `<div class="hist-row"><span class="dot ${win || 'void'}"></span><b>${r.roundId}</b>
       <span>${r.state === 'settled' ? (win === 'red' ? t('winRed') : t('winGreen')) : t('state' + (r.state === 'cancelled' ? 'Cancelled' : 'Active'))}</span>
-      <span class="muted">${r.state === 'settled' ? `${fmt(Number(r.result.total) / 1e6)} 枚 · Σ=${r.sumPick}` : ''}</span>
+      <span class="muted">${r.state === 'settled' ? `${fmt(r.result.total)} 枚 · Σ=${r.sumPick}` : ''}</span>
       <button class="btn-mini" data-detail="${r.roundId}">${open ? t('close') : t('detail')}</button>
       <div class="hist-detail ${open ? '' : 'hide'}" id="hd-${r.roundId}"></div></div>`;
   }).join('') || '<p class="muted">—</p>';
@@ -1055,6 +1055,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.11';
+const FE_BUILD = '2.3.12';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

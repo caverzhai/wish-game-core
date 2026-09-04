@@ -15,6 +15,7 @@ import { coin, toInner, SCALE } from './money.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MEDIA_DIR = path.resolve(__dirname, '../tmp-voice');
 const MSG_CACHE = 300;
+const MSG_MAX_BYTES = 50 * 1024 * 1024; // 50MB per room, auto-purge oldest when exceeded
 const MSG_TTL_MS = 30 * 60 * 1000; // messages auto-purge after 30 minutes
 const EMPTY_GRACE_MS = 5 * 60 * 1000; // empty room kept 5 min
 const TEXT_MAX_BYTES = 1024;
@@ -42,6 +43,7 @@ export class VoiceRoomService {
           members: new Map(),
           messages: [],
           destroyed: false,
+          msgBytes: 0,
         });
       }
       console.log(`[VoiceRoom] loaded ${rooms.length} persisted room(s)`);
@@ -82,7 +84,7 @@ export class VoiceRoomService {
       balance: recharge, perMinute: cfg.perMinute,
       createdAt: Date.now(), lastActiveAt: Date.now(), emptySince: null,
       members: new Map(), messages: [], destroyed: false,
-      guestUid: null, description: desc,
+      guestUid: null, description: desc, msgBytes: 0,
     };
     room.members.set(uid, { uid, name: shortName(u.wallet), role: 'host', micOn: true });
     this.rooms.set(roomId, room);
@@ -184,15 +186,19 @@ export class VoiceRoomService {
       for (const w of words) { const nw = norm(w); if (nw && n.includes(nw)) throw new GameError(Codes.BAD_INPUT, 'Content contains blocked words'); }
     }
     const msgId = 'M' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    // Calculate message byte size: text content + media file
+    let msgBytes = Buffer.byteLength(content, 'utf8');
+    const mediaFile = msg.file || '';
+    if (mediaFile) {
+      try { msgBytes += fs.statSync(this.getMediaPath(mediaFile)).size; } catch { /* file may be gone */ }
+    }
     const item = {
       msgId, uid, name: m.name, role: m.role, type: msg.type,
-      content, file: msg.file || '', duration: Number(msg.duration || 0), at: Date.now(),
+      content, file: mediaFile, duration: Number(msg.duration || 0), at: Date.now(), bytes: msgBytes,
     };
     r.messages.push(item);
-    if (r.messages.length > MSG_CACHE) {
-      const old = r.messages.shift();
-      if (old.file) this._deleteMedia(old.file);
-    }
+    r.msgBytes += msgBytes;
+    this._enforceMsgSizeLimit(r);
     r.lastActiveAt = Date.now();
     return item;
   }
@@ -253,8 +259,12 @@ export class VoiceRoomService {
         const cutoff = now - MSG_TTL_MS;
         const expired = r.messages.filter((m) => m.at < cutoff);
         if (expired.length > 0) {
-          for (const m of expired) if (m.file) this._deleteMedia(m.file);
+          for (const m of expired) {
+            r.msgBytes -= Number(m.bytes || 0);
+            if (m.file) this._deleteMedia(m.file);
+          }
           r.messages = r.messages.filter((m) => m.at >= cutoff);
+          if (r.msgBytes < 0) r.msgBytes = 0;
         }
       }
       // Chat rooms: stay open as long as balance > 0, even when empty (no auto-destroy on empty)
@@ -290,10 +300,20 @@ export class VoiceRoomService {
     return destroyed;
   }
 
+  // Remove oldest messages until total size under 50MB (also respects MSG_CACHE count)
+  _enforceMsgSizeLimit(r) {
+    while ((r.msgBytes > MSG_MAX_BYTES || r.messages.length > MSG_CACHE) && r.messages.length > 0) {
+      const old = r.messages.shift();
+      r.msgBytes -= Number(old.bytes || 0);
+      if (old.file) this._deleteMedia(old.file);
+    }
+    if (r.msgBytes < 0) r.msgBytes = 0;
+  }
   async _destroy(r, reason) {
     r.destroyed = true;
     // no refund regardless of dissolve method: room balance goes to platform
     for (const m of r.messages) if (m.file) this._deleteMedia(m.file);
+    r.msgBytes = 0;
     this.rooms.delete(r.roomId);
     try { await this.store.deleteRoom(r.roomId); } catch (e) { console.error('[VoiceRoom] deleteRoom failed:', e.message); }
   }

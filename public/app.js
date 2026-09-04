@@ -63,7 +63,7 @@ const I18N = {
     flow_FAUCET: 'Test claim', flow_CHAIN_DEPOSIT: 'On-chain deposit', flow_ISSUE: 'System credit',
   },
   'zh-TW': {
-    coinUnit: t('coinUnit'), platformTitle: '全球自助慈善捐助平台', platformDesc: '阿姆斯特丹團隊致力為全球有需要的人士提供直接捐助，以區塊鏈模式，公開、公正、可追溯的自由捐贈撮合服務，除了讓需要的人得到無損資助外，讓愛心人士也能得到肯定和收益。捐助服務功能正在加緊開發，近期將正式與大家見面。', appTitle: '三分鐘願望池', loginTip: '連接錢包即可開始，邀請連結自動綁定推薦關係', connectWallet: '連接錢包', demoEnter: '未裝錢包？以演示身份進入', logout: '退出',
+    coinUnit: '枚', platformTitle: '全球自助慈善捐助平台', platformDesc: '阿姆斯特丹團隊致力為全球有需要的人士提供直接捐助，以區塊鏈模式，公開、公正、可追溯的自由捐贈撮合服務，除了讓需要的人得到無損資助外，讓愛心人士也能得到肯定和收益。捐助服務功能正在加緊開發，近期將正式與大家見面。', appTitle: '三分鐘願望池', loginTip: '連接錢包即可開始，邀請連結自動綁定推薦關係', connectWallet: '連接錢包', demoEnter: '未裝錢包？以演示身份進入', logout: '退出',
     dockHome: '首頁', dockBbs: '廣場', dockIns: '保險', dockMe: '我的', disclaimerTitle: '嚴重聲明', disclaimerAgree: '我已閱讀並同意', announcement: '系統公告', publishAnnouncement: '發布公告',
     remainSec: '剩餘秒數', lockAt: '150秒停止許願', betCount: '許願筆數', redPool: '紅願池', greenPool: '綠願池',
     oddWin: '選號總和為單 → 紅勝', evenWin: '選號總和為雙 → 綠勝', pickLabel: '選擇一個數字（0-9）',
@@ -104,7 +104,7 @@ const I18N = {
     flow_FAUCET: '測試領幣', flow_CHAIN_DEPOSIT: '鏈上轉入', flow_ISSUE: '系統入帳',
   },
   ja: {
-    coinUnit: t('coinUnit'), appTitle: '3分間願い池', loginTip: 'ウォレット接続で開始。招待リンクで紹介者を自動登録します', connectWallet: 'ウォレット接続', demoEnter: 'ウォレットなし？デモで入る', logout: 'ログアウト',
+    coinUnit: '枚', appTitle: '3分間願い池', loginTip: 'ウォレット接続で開始。招待リンクで紹介者を自動登録します', connectWallet: 'ウォレット接続', demoEnter: 'ウォレットなし？デモで入る', logout: 'ログアウト',
     dockHome: 'ホーム', dockBbs: '広場', dockIns: '保険', dockMe: 'マイ', disclaimerTitle: '重大声明', disclaimerAgree: '読んで同意します', announcement: 'お知らせ', publishAnnouncement: '公開する',
     remainSec: '残り秒数', lockAt: '150秒で締切', betCount: '願い数', redPool: '赤の願い池', greenPool: '緑の願い池',
     oddWin: '合計が奇数 → 赤の勝ち', evenWin: '合計が偶数 → 緑の勝ち', pickLabel: '数字を選ぶ（0-9）',
@@ -1164,6 +1164,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.21';
+const FE_BUILD = '2.3.22';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

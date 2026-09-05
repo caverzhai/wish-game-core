@@ -367,19 +367,30 @@ textarea { resize: vertical; }
   80% { opacity: 1; }
   100% { opacity: 0; }
 }
-.wish-success-text {
-  position: absolute; top: 35%; left: 50%; transform: translateX(-50%);
-  font-size: 42px; font-weight: 900; color: #ffd700;
-  text-shadow: 0 0 20px rgba(255,215,0,1), 0 0 40px rgba(255,150,0,.8), 0 0 60px rgba(255,100,0,.6);
-  letter-spacing: 6px; white-space: nowrap;
-  animation: textPop 2.5s ease-out forwards;
+.wish-success-banner {
+  position: absolute; top: 30%; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  border: 3px solid #fbbf24; border-radius: 16px;
+  padding: 20px 40px; text-align: center;
+  box-shadow: 0 0 40px rgba(220,38,38,.8), 0 0 80px rgba(251,191,36,.4);
+  animation: bannerPop 2.5s ease-out forwards;
+  min-width: 280px;
 }
-@keyframes textPop {
+@keyframes bannerPop {
   0% { opacity: 0; transform: translateX(-50%) scale(0.3); }
-  20% { opacity: 1; transform: translateX(-50%) scale(1.2); }
+  20% { opacity: 1; transform: translateX(-50%) scale(1.15); }
   30% { transform: translateX(-50%) scale(1); }
   80% { opacity: 1; transform: translateX(-50%) scale(1); }
   100% { opacity: 0; transform: translateX(-50%) scale(1.1); }
+}
+.wish-success-line1 {
+  font-size: 32px; font-weight: 900; color: #fef3c7;
+  text-shadow: 0 2px 4px rgba(0,0,0,.5); letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.wish-success-line2 {
+  font-size: 22px; font-weight: 700; color: #fbbf24;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5); letter-spacing: 1px;
 }
 .wish-coin {
   position: absolute; width: 24px; height: 24px; border-radius: 50%;
@@ -489,7 +500,7 @@ textarea { resize: vertical; }
 .lottery-winner-row:last-child { border-bottom: none; }
 .lottery-winner-num { font-family: monospace; color: var(--txt); font-weight: 600; }
 .lottery-winner-wallet { color: var(--muted); font-size: 11px; }
-.lottery-winners-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 8px; }
-.lottery-winners-grid .lottery-winner-row { border-bottom: none; padding: 2px 0; }
+.lottery-winners-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px 12px; }
+.lottery-winners-grid .lottery-winner-row { border-bottom: 1px solid var(--line); padding: 3px 0; }
 .lottery-prize-header { cursor: pointer; user-select: none; }
 .hide { display: none !important; }

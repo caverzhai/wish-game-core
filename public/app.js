@@ -1198,31 +1198,24 @@ async function creditPending() {
 }
 
 // Bet success toast: show once after wish confirmed (in-site instant / on-chain top-up confirmed)
-// Deep male voice with 5-layer synthesis + moderate delay echo
+// Deep male voice with 3-layer synthesis, no echo (stable across browsers)
 function speakRich(text, opts = {}) {
   try {
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const basePitch = opts.pitch || 0.4;
+    const basePitch = opts.pitch || 0.5;
     const baseRate = opts.rate || 0.85;
-    const baseVolume = (opts.volume || 1.0) * 0.5;
-    // Get all voices and find a deep male voice
+    const baseVolume = opts.volume || 0.7;
+    // Get all voices and find a male voice
     const voices = window.speechSynthesis.getVoices();
     const maleVoice = voices.find(v => /male|david|mark|daniel|alex|fred|george|thomas|guy|barry/i.test(v.name)) 
       || voices.find(v => v.lang === 'en-US' && /male/i.test(v.name))
       || voices.find(v => v.lang === 'en-US');
-    // 10 layers of different frequencies, all simultaneous, same rate
+    // 3 layers: main + low + mid, all simultaneous, no echo
     const layers = [
       { pitch: basePitch, volume: baseVolume, rate: baseRate },
-      { pitch: Math.max(0, basePitch - 0.3), volume: baseVolume * 0.4, rate: baseRate },
-      { pitch: basePitch + 0.2, volume: baseVolume * 0.3, rate: baseRate },
-      { pitch: Math.max(0, basePitch - 0.15), volume: baseVolume * 0.35, rate: baseRate },
-      { pitch: basePitch + 0.35, volume: baseVolume * 0.2, rate: baseRate },
-      { pitch: Math.max(0, basePitch - 0.45), volume: baseVolume * 0.2, rate: baseRate },
-      { pitch: basePitch + 0.1, volume: baseVolume * 0.25, rate: baseRate },
-      { pitch: Math.max(0, basePitch - 0.08), volume: baseVolume * 0.3, rate: baseRate },
-      { pitch: basePitch + 0.45, volume: baseVolume * 0.12, rate: baseRate },
-      { pitch: Math.max(0, basePitch - 0.55), volume: baseVolume * 0.1, rate: baseRate },
+      { pitch: Math.max(0, basePitch - 0.2), volume: baseVolume * 0.5, rate: baseRate },
+      { pitch: basePitch + 0.15, volume: baseVolume * 0.35, rate: baseRate },
     ];
     for (const layer of layers) {
       const u = new SpeechSynthesisUtterance(text);
@@ -1233,16 +1226,6 @@ function speakRich(text, opts = {}) {
       if (maleVoice) u.voice = maleVoice;
       window.speechSynthesis.speak(u);
     }
-    // 15ms delay echo for spatial effect
-    setTimeout(() => {
-      const echo = new SpeechSynthesisUtterance(text);
-      echo.lang = 'en-US';
-      echo.pitch = basePitch - 0.05;
-      echo.rate = baseRate;
-      echo.volume = baseVolume * 0.5;
-      if (maleVoice) echo.voice = maleVoice;
-      window.speechSynthesis.speak(echo);
-    }, 15);
   } catch (e) {}
 }
 // Single clear male voice for result announcement (no harmony, no repeat, one pass)
@@ -1444,6 +1427,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.10.2';
+const FE_BUILD = '2.10.3';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

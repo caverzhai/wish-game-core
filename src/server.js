@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.8.5'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.8.6'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -114,7 +114,7 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
   const directCount = await store.countDirectInvitees(uid);
   const downlineTotal = await store.countTotalDownline(uid);
   return {
-    user, account, nodes, isAdmin: isAdminWallet(user.wallet),
+    user, account, nodes, isAdmin: await isAdminWallet(user.wallet),
     invite: {
       code: uid,
       isWhitelisted: whitelistRate !== null,

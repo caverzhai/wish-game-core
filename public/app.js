@@ -564,11 +564,15 @@ function renderRound() {
     $('betCount').textContent = r.betCount ?? 0;
     tickCountdown();
   }
-  // History dots: 3 rows max, 10 per row, new row after UK midnight (UTC 0)
+  // History dots: 3 rows max, active round shown as 'ing', last row random 4-8
   const settled = state.recent.filter((x) => x.state === 'settled');
   const rows = [];
   let currentRow = [];
   let currentDay = null;
+  // Insert active round as 'ing' at the beginning of first row
+  if (state.round && state.round.state === 'active') {
+    currentRow.push({ roundId: state.round.roundId, active: true });
+  }
   for (const x of settled) {
     const ukDay = new Date((x.settleAt || 0) * 1000).toISOString().slice(0, 10);
     if (currentDay !== null && ukDay !== currentDay && currentRow.length > 0) {
@@ -584,8 +588,19 @@ function renderRound() {
     if (rows.length >= 3) break;
   }
   if (currentRow.length > 0 && rows.length < 3) rows.push(currentRow);
+  // Last row: random 4-8 dots (regenerated each render)
+  if (rows.length > 0) {
+    const lastRow = rows[rows.length - 1];
+    const lastRowMax = 4 + Math.floor(Math.random() * 5); // 4-8
+    if (lastRow.length > lastRowMax) {
+      rows[rows.length - 1] = lastRow.slice(0, lastRowMax);
+    }
+  }
   const dotsHtml = rows.slice(0, 3).map((row) => {
     return '<div class="dot-row">' + row.map((x) => {
+      if (x.active) {
+        return '<span class="hist-dot ing" title="Active"><span class="dot-num">ing</span></span>';
+      }
       const shortId = String(x.roundId).replace(/\D/g, '').slice(-2);
       return '<span class="hist-dot ' + (x.result && x.result.winSide) + '" title="' + x.roundId + '"><span class="dot-num">' + shortId + '</span></span>';
     }).join('') + '</div>';
@@ -729,7 +744,7 @@ async function renderHistory() {
     const open = expandedRounds.has(r.roundId);
     return `<div class="hist-row"><span class="dot ${win || 'void'}"></span><b>${r.roundId}</b>
       <span>${r.state === 'settled' ? (win === 'red' ? t('winRed') : t('winGreen')) : t('state' + (r.state === 'cancelled' ? 'Cancelled' : 'Active'))}</span>
-      <span class="muted">${r.state === 'settled' ? `${fmt(r.result.total)} ${t('coinUnit')} · Σ=${r.sumPick}` : ''}</span>
+      <span class="muted">${r.state === 'settled' ? `${fmt(r.result.total)} ${t('coinUnit')} · Σ=${r.sumPick} · ${new Date((r.settleAt || 0) * 1000).toLocaleString()}` : ''}</span>
       <button class="btn-mini" data-detail="${r.roundId}">${open ? t('close') : t('detail')}</button>
       <div class="hist-detail ${open ? '' : 'hide'}" id="hd-${r.roundId}"></div></div>`;
   }).join('') || '<p class="muted">—</p>';
@@ -1211,6 +1226,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.9.0';
+const FE_BUILD = '2.9.1';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

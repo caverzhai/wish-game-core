@@ -199,22 +199,8 @@
     } catch (e) { alert(e.message); }
   }
   function renderMembers() {
-    $('roomMembers').innerHTML = curMembers.map((m) => {
-      const roleTag = m.role === 'host' ? '👑' : m.role === 'guest' ? '🎤' : '';
-      const micDot = m.micOn ? '<span class="mic-dot on"></span>' : '';
-      return `<span class="member-chip" data-uid="${m.uid}">${roleTag}${escapeHtml(m.name)}${micDot}</span>`;
-    }).join('');
-    // Host can click member to invite/remove guest
-    if (curRoom && curRoom.type === 'meeting' && isHost()) {
-      $('roomMembers').querySelectorAll('.member-chip').forEach((c) => c.onclick = () => {
-        const uid = c.dataset.uid;
-        if (uid === state.uid) return;
-        const isGuest = curRoom.guestUid === uid;
-        if (confirm(isGuest ? 'Remove guest?' : 'Invite as guest (can mic)?')) {
-          wsSend({ type: 'setGuest', guestUid: uid, on: !isGuest });
-        }
-      });
-    }
+    // User list hidden per request - no longer displayed
+    $('roomMembers').innerHTML = '';
   }
   function renderMsgs() {
     $('roomMsgs').innerHTML = '';

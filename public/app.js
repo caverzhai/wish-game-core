@@ -603,13 +603,15 @@ function renderRound() {
     $('betCount').textContent = r.betCount ?? 0;
     tickCountdown();
   }
-  // History dots: 3 rows max, chronological order (oldest first), active round 'ing' at the end, last row random 4-8
-  const settled = state.recent.filter((x) => x.state === 'settled').slice().reverse(); // reverse to chronological order
+  // History dots: 3 rows max, show most recent rounds, chronological order (oldest first), active round 'ing' at the end
+  // Take most recent 30 rounds first, then reverse to chronological order
+  const recentSettled = state.recent.filter((x) => x.state === 'settled' || x.state === 'cancelled').slice(0, 30);
+  const settled = recentSettled.slice().reverse(); // reverse to chronological order (oldest first)
   const rows = [];
   let currentRow = [];
   let currentDay = null;
   for (const x of settled) {
-    const ukDay = new Date((x.settleAt || 0) * 1000).toISOString().slice(0, 10);
+    const ukDay = new Date((x.settleAt || x.createdAt || 0) * 1000).toISOString().slice(0, 10);
     if (currentDay !== null && ukDay !== currentDay && currentRow.length > 0) {
       rows.push(currentRow);
       currentRow = [];
@@ -655,7 +657,8 @@ function renderRound() {
         return '<span class="hist-dot ing" title="Active"><span class="dot-num">ing</span></span>';
       }
       const shortId = String(x.roundId).replace(/\D/g, '').slice(-2);
-      return '<span class="hist-dot ' + (x.result && x.result.winSide) + '" title="' + x.roundId + '"><span class="dot-num">' + shortId + '</span></span>';
+      const dotClass = x.state === 'cancelled' ? 'void' : (x.result && x.result.winSide) || '';
+      return '<span class="hist-dot ' + dotClass + '" title="' + x.roundId + ' (' + (x.state || '') + ')' + '"><span class="dot-num">' + shortId + '</span></span>';
     }).join('') + '</div>';
   }).join('');
   // Hero banner
@@ -1279,6 +1282,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.9.5';
+const FE_BUILD = '2.9.6';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

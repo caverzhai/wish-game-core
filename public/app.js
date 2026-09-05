@@ -549,31 +549,11 @@ function tickCountdown() {
   else {
     const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
     $('countdown').textContent = remain;
-    // Last 10 seconds: big number 2x, full screen, blink once per second, fireworks
+    // Last 10 seconds: big cool number, blink once per second, keep original background
     if (remain <= 10) {
       $('countdown').className = 'countdown final';
-      // Create fireworks if not already created
-      if (!$('fwContainer')) {
-        const fw = document.createElement('div');
-        fw.id = 'fwContainer';
-        fw.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:hidden;';
-        document.body.appendChild(fw);
-        // Create 8 fireworks
-        for (let i = 0; i < 8; i++) {
-          const p = document.createElement('div');
-          p.className = 'fw-particle';
-          p.style.left = (10 + Math.random() * 80) + '%';
-          p.style.top = (10 + Math.random() * 60) + '%';
-          p.style.animationDelay = (Math.random() * 1.5) + 's';
-          p.style.setProperty('--c1', ['#ffd700','#ff6b6b','#4ade80','#60a5fa','#f472b6','#fbbf24','#a78bfa','#fb923c'][i % 8]);
-          p.style.setProperty('--c2', ['#ff6b6b','#4ade80','#60a5fa','#f472b6','#fbbf24','#a78bfa','#fb923c','#34d399'][i % 8]);
-          fw.appendChild(p);
-        }
-      }
     } else {
       $('countdown').className = remain <= 30 ? 'countdown urgent' : 'countdown';
-      const fw = $('fwContainer');
-      if (fw) fw.remove();
     }
     // Round-card border marquee: green -> red, speed up as time passes
     const rc = $('roundCard');
@@ -1282,6 +1262,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.9.6';
+const FE_BUILD = '2.9.7';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

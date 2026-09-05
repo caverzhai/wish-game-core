@@ -316,17 +316,17 @@ route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, s
 // Debug: NPC activity status
 route('GET', '/debug/npc', async () => {
   const npcs = await npc.listNpcs();
-  const now = now();
+  const nowTs = now();
   return {
-    now,
+    now: nowTs,
     npcCount: npcs.length,
     rooms: (await voice.listRooms()).map(r => ({ id: r.roomId, name: r.name, type: r.type, members: r.memberCount })),
     npcs: npcs.map(n => ({
       id: n.npcId, uid: n.uid, wallet: n.wallet, lang: n.language,
       bal: n.balance,
-      chatDue: n.nextChatAt <= now, chatNextIn: Math.max(0, n.nextChatAt - now),
-      postDue: n.nextPostAt <= now, postNextIn: Math.max(0, n.nextPostAt - now),
-      betDue: n.nextBetAt <= now, betNextIn: Math.max(0, n.nextBetAt - now),
+      chatDue: n.nextChatAt <= nowTs, chatNextIn: Math.max(0, n.nextChatAt - nowTs),
+      postDue: n.nextPostAt <= nowTs, postNextIn: Math.max(0, n.nextPostAt - nowTs),
+      betDue: n.nextBetAt <= nowTs, betNextIn: Math.max(0, n.nextBetAt - nowTs),
       lastChat: n.lastChatAt, lastPost: n.lastPostAt, lastBet: n.lastBetAt,
     })),
   };

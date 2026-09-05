@@ -316,7 +316,7 @@ route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, s
 // Debug: NPC activity status
 route('GET', '/debug/npc', async () => {
   const npcs = await npc.listNpcs();
-  const now = nowSec();
+  const now = now();
   return {
     now,
     npcCount: npcs.length,

@@ -985,7 +985,7 @@ async function loadNpcs() {
       const betStatus = n.lastBetAt > 0 ? ('bet@' + new Date(n.lastBetAt*1000).toLocaleTimeString()) : 'no bet yet';
       const nextBet = n.nextBetAt > now ? ('next:' + Math.floor((n.nextBetAt-now)/60) + 'm') : 'due now';
       return '<div class="wl-row" data-npcid="' + escapeHtml(n.npcId) + '" style="flex-wrap:wrap;gap:4px">' +
-        '<span class="wl-addr" style="flex:1;min-width:120px">' + escapeHtml(n.wallet) + '</span>' +
+        '<span class="wl-addr" style="flex:1;min-width:80px;font-family:monospace">' + escapeHtml('...' + String(n.wallet).slice(-8)) + '</span>' +
         '<span class="wl-rate">' + (langNames[n.language] || n.language || 'EN') + '</span>' +
         '<span style="font-size:11px;color:#22c55e">bal:' + bal + '</span>' +
         '<span style="font-size:11px;color:#666">' + betStatus + ' | ' + nextBet + '</span>' +
@@ -1010,7 +1010,7 @@ function bindNpcAdd() {
       const r = await api('/admin/npc/add', { uid: state.uid, name: name || null, wallet: wallet || null, language: language || null });
       $('npcNameInput').value = '';
       if ($('npcWalletInput')) $('npcWalletInput').value = '';
-      showToast(t('npcAdded') + ': ' + (r.npc?.wallet || '').slice(0, 10) + '...');
+      showToast(t('npcAdded') + ': ...' + String(r.npc?.wallet || '').slice(-8));
       await loadNpcs();
     } catch (e) { alert(t('npcAddFail') + ': ' + e.message); }
     finally { btn.disabled = false; }
@@ -1211,6 +1211,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.8.6';
+const FE_BUILD = '2.8.7';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

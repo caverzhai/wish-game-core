@@ -24,7 +24,7 @@ const I18N = {
   en: {
     coinUnit: 'coins', platformTitle: 'Global Self-Service Charity Donation Platform', platformDesc: 'The Amsterdam team is committed to providing direct donations to people in need worldwide. Through blockchain, we offer transparent, fair, traceable free donation matching. Those in need receive lossless support, while donors gain recognition and rewards. Donation features are under rapid development.', appTitle: 'Three-Minute Wish Pool', loginTip: 'Connect a wallet to start. Invite links bind referrers automatically.', connectWallet: 'Connect Wallet', demoEnter: 'No wallet? Enter as demo', logout: 'Sign out',
     dockHome: 'Home', dockBbs: 'Board', dockIns: 'Insurance', dockMe: 'Me', disclaimerTitle: 'Serious Statement', disclaimerAgree: 'I have read and agree', announcement: 'Announcement', publishAnnouncement: 'Publish',
-    remainSec: 'seconds left', lockAt: 'closed at 150s', betCount: 'Wishes', redPool: 'Red Pool', greenPool: 'Green Pool',
+    remainSec: 'seconds left', lockAt: 'closed at 170s', betCount: 'Wishes', redPool: 'Red Pool', greenPool: 'Green Pool',
     oddWin: 'Odd sum → Red', evenWin: 'Even sum → Green', pickLabel: 'Pick a number (0-9)',
     amountLabel: 'Wish amount (1-99 枚, integer)', confirmWish: 'Confirm Wish', waitingStart: 'Waiting for the first wish…', historyTitle: 'Past rounds',
     insTitle: 'Wish Insurance', insSwitch: 'Insurance', premium: 'Premium', lossAccum: 'Net loss', depositPremium: 'Deposit premium',
@@ -545,11 +545,33 @@ function selectSide(side) {
   $('sideRed').classList.toggle('sel', side === 'red'); $('sideGreen').classList.toggle('sel', side === 'green');
 }
 function tickCountdown() {
-  if (!state.round) { $('countdown').textContent = '···'; }
+  if (!state.round) { $('countdown').textContent = '···'; $('countdown').className = 'countdown'; const pw = $('poolsWrapper'); if (pw) pw.style.animation = 'none'; }
   else {
     const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
     $('countdown').textContent = remain;
-    $('countdown').className = 'countdown' + (remain <= 30 ? ' urgent' : '');
+    // Last 10 seconds: big number, blink once per second
+    if (remain <= 10) {
+      $('countdown').className = 'countdown final';
+    } else if (remain <= 30) {
+      $('countdown').className = 'countdown urgent';
+    } else {
+      $('countdown').className = 'countdown';
+    }
+    // Border marquee: green -> red gradient, speed up as time passes
+    const pw = $('poolsWrapper');
+    if (pw) {
+      const total = 180;
+      const progress = Math.min(1, Math.max(0, (total - remain) / total));
+      // Color: laser green (#22c55e) -> red (#ef4444)
+      const r = Math.round(34 + (239 - 34) * progress);
+      const g = Math.round(197 + (68 - 197) * progress);
+      const b = Math.round(94 + (68 - 94) * progress);
+      const color = `rgb(${r},${g},${b})`;
+      // Animation duration: 3s at start, 0.5s at end (faster as time passes)
+      const dur = 3 - 2.5 * progress;
+      pw.style.background = `conic-gradient(from 0deg, ${color}, ${color})`;
+      pw.style.animation = `borderSpin ${dur.toFixed(2)}s linear infinite`;
+    }
   }
   updatePoolCountdown();
 }
@@ -564,15 +586,11 @@ function renderRound() {
     $('betCount').textContent = r.betCount ?? 0;
     tickCountdown();
   }
-  // History dots: 3 rows max, active round shown as 'ing', last row random 4-8
-  const settled = state.recent.filter((x) => x.state === 'settled');
+  // History dots: 3 rows max, chronological order (oldest first), active round 'ing' at the end, last row random 4-8
+  const settled = state.recent.filter((x) => x.state === 'settled').slice().reverse(); // reverse to chronological order
   const rows = [];
   let currentRow = [];
   let currentDay = null;
-  // Insert active round as 'ing' at the beginning of first row
-  if (state.round && state.round.state === 'active') {
-    currentRow.push({ roundId: state.round.roundId, active: true });
-  }
   for (const x of settled) {
     const ukDay = new Date((x.settleAt || 0) * 1000).toISOString().slice(0, 10);
     if (currentDay !== null && ukDay !== currentDay && currentRow.length > 0) {
@@ -588,12 +606,29 @@ function renderRound() {
     if (rows.length >= 3) break;
   }
   if (currentRow.length > 0 && rows.length < 3) rows.push(currentRow);
-  // Last row: random 4-8 dots (regenerated each render)
+  // Insert active round as 'ing' at the end of the last row
+  if (state.round && state.round.state === 'active' && rows.length > 0) {
+    const lastRow = rows[rows.length - 1];
+    if (lastRow.length < 10) {
+      lastRow.push({ roundId: state.round.roundId, active: true });
+    } else {
+      // If last row is full, create a new row for ing
+      if (rows.length < 3) rows.push([{ roundId: state.round.roundId, active: true }]);
+    }
+  }
+  // Last row: random 4-8 dots (regenerated each render), but keep 'ing' if present
   if (rows.length > 0) {
     const lastRow = rows[rows.length - 1];
+    const hasIng = lastRow.some((x) => x.active);
     const lastRowMax = 4 + Math.floor(Math.random() * 5); // 4-8
     if (lastRow.length > lastRowMax) {
-      rows[rows.length - 1] = lastRow.slice(0, lastRowMax);
+      if (hasIng) {
+        // Keep ing at the end, trim from the beginning
+        const ingItem = lastRow[lastRow.length - 1];
+        rows[rows.length - 1] = [...lastRow.slice(0, lastRowMax - 1), ingItem];
+      } else {
+        rows[rows.length - 1] = lastRow.slice(0, lastRowMax);
+      }
     }
   }
   const dotsHtml = rows.slice(0, 3).map((row) => {
@@ -1226,6 +1261,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.9.1';
+const FE_BUILD = '2.9.2';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

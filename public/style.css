@@ -52,7 +52,13 @@ body { display: flex; justify-content: center; }
 .bet-count { margin: 12px auto 0; display: inline-flex; align-items: baseline; gap: 8px; background: var(--card2); border: 1px solid var(--gold); border-radius: 999px; padding: 6px 18px; font-size: 13px; color: var(--muted); letter-spacing: 1px; }
 .bet-count b { color: var(--gold); font-size: 26px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 
-.pools { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.pools-wrapper { position: relative; padding: 3px; border-radius: calc(var(--radius) + 3px); margin: 12px 0; background: conic-gradient(from 0deg, #22c55e, #22c55e); animation: borderSpin 3s linear infinite; }
+.pools-wrapper .pools { margin: 0; position: relative; z-index: 1; }
+@keyframes borderSpin { to { transform: rotate(360deg); } }
+.pools-wrapper::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: inherit; animation: inherit; z-index: 0; }
+.pools-wrapper::after { content: ''; position: absolute; inset: 3px; border-radius: calc(var(--radius)); background: var(--bg); z-index: 0; }
+.countdown.final { font-size: 72px !important; color: var(--red) !important; animation: finalBlink 1s step-end infinite; }
+@keyframes finalBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.2; } }
 .pool { display: flex; flex-direction: column; gap: 4px; padding: 31px 8px; border-radius: var(--radius); cursor: pointer; border: 2px solid var(--line); background: var(--card); color: var(--txt); transition: background .15s, box-shadow .15s; }
 .pool small { color: var(--muted); font-size: 11px; }
 .pool .pool-name { font-size: 18px; font-weight: 800; }

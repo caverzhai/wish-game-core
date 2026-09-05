@@ -13,7 +13,7 @@ export const DEFAULT_CONFIG = {
   allowBothSides: true,      // allow both sides and multiple bets in same round
 
   // Round timing (seconds)
-  lockAfterSec: 150,         // lock 150s after first bet starts round
+  lockAfterSec: 170,         // lock 170s after first bet starts round (last 10s locked)
   settleAfterSec: 180,       // settle at 180s
 
   // Global fee 2.5%

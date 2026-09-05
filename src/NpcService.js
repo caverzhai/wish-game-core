@@ -303,6 +303,7 @@ export class NpcService {
           });
         } catch (e) { console.error('[npc:updateChat]', e.message); }
       }
+    }
     return actions;
   }
 }

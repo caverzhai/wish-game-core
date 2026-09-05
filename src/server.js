@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.5.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.5.1'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -364,6 +364,18 @@ setInterval(async () => {
     }
     if (langIdx > 0) console.log('[startup-repair] assigned languages to', langIdx, 'NPCs');
     if (funded > 0) console.log('[startup-repair] funded', funded, 'NPCs with 100 coins each (REMINDER: add', funded * 100, 'coins to withdrawal wallet)');
+    // Fix NPC wallet in users table: old NPCs may have wallet like "NPC-EN", update to npcs.wallet (NPC_xxx)
+    let walletFixed = 0;
+    for (const n of npcs) {
+      try {
+        const u = await store.getUser(n.uid);
+        if (u && u.wallet !== n.wallet) {
+          await store.exec('UPDATE users SET wallet = ? WHERE uid = ?', [n.wallet, n.uid]);
+          walletFixed++;
+        }
+      } catch { /* user may not exist */ }
+    }
+    if (walletFixed > 0) console.log('[startup-repair] fixed wallet for', walletFixed, 'NPCs');
   } catch (e) { console.error('[startup-repair npc-init]', e.message); }
   } catch (e) { console.error('[startup-repair]', e.message); }
 })();

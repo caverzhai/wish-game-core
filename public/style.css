@@ -347,3 +347,70 @@ textarea { resize: vertical; }
 .hist-dot.ing { background: #fdba74; box-shadow: 0 0 8px rgba(253,186,116,.8); animation: ingBlink 1s step-end infinite; }
 @keyframes ingBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.3; } }
 .dot-num { font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+
+
+/* Wish success animation - coins pouring into pool */
+.wish-success-overlay {
+  position: fixed; inset: 0; z-index: 10000; pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(255,215,0,.15) 0%, transparent 70%);
+  animation: overlayFade 2.5s ease-out forwards;
+}
+@keyframes overlayFade {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.wish-success-text {
+  position: absolute; top: 35%; left: 50%; transform: translateX(-50%);
+  font-size: 42px; font-weight: 900; color: #ffd700;
+  text-shadow: 0 0 20px rgba(255,215,0,1), 0 0 40px rgba(255,150,0,.8), 0 0 60px rgba(255,100,0,.6);
+  letter-spacing: 6px; white-space: nowrap;
+  animation: textPop 2.5s ease-out forwards;
+}
+@keyframes textPop {
+  0% { opacity: 0; transform: translateX(-50%) scale(0.3); }
+  20% { opacity: 1; transform: translateX(-50%) scale(1.2); }
+  30% { transform: translateX(-50%) scale(1); }
+  80% { opacity: 1; transform: translateX(-50%) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) scale(1.1); }
+}
+.wish-coin {
+  position: absolute; width: 24px; height: 24px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff8dc, #ffd700 40%, #daa520 80%, #b8860b);
+  box-shadow: 0 0 10px rgba(255,215,0,.8), inset 0 -2px 4px rgba(0,0,0,.3);
+  animation: coinFall linear forwards;
+}
+.wish-coin::before {
+  content: '¥'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 900; color: #b8860b; text-shadow: 0 1px 0 rgba(255,255,255,.5);
+}
+@keyframes coinFall {
+  0% { transform: translateY(-50px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  70% { transform: translateY(60vh) rotate(720deg); opacity: 1; }
+  85% { transform: translateY(65vh) rotate(900deg) scale(0.8); opacity: 0.8; }
+  100% { transform: translateY(70vh) rotate(1080deg) scale(0); opacity: 0; }
+}
+.wish-pool {
+  position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%);
+  width: 200px; height: 60px; border-radius: 0 0 100px 100px;
+  background: linear-gradient(180deg, rgba(255,215,0,.6) 0%, rgba(218,165,32,.8) 100%);
+  box-shadow: 0 0 30px rgba(255,215,0,.6), inset 0 -10px 20px rgba(0,0,0,.3);
+  animation: poolGlow 2.5s ease-out forwards;
+}
+@keyframes poolGlow {
+  0%, 60% { box-shadow: 0 0 30px rgba(255,215,0,.6), inset 0 -10px 20px rgba(0,0,0,.3); }
+  70% { box-shadow: 0 0 60px rgba(255,215,0,1), 0 0 100px rgba(255,150,0,.8), inset 0 -10px 20px rgba(0,0,0,.3); }
+  100% { box-shadow: 0 0 30px rgba(255,215,0,.6), inset 0 -10px 20px rgba(0,0,0,.3); }
+}
+.wish-splash {
+  position: absolute; bottom: 22%; left: 50%; transform: translateX(-50%);
+  width: 10px; height: 10px; border-radius: 50%;
+  background: rgba(255,215,0,.8);
+  animation: splash 0.5s ease-out infinite;
+}
+@keyframes splash {
+  0% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-40px) scale(0); opacity: 0; }
+}

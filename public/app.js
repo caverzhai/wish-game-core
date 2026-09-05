@@ -1187,7 +1187,99 @@ async function creditPending() {
 }
 
 // Bet success toast: show once after wish confirmed (in-site instant / on-chain top-up confirmed)
-function wishOkToast() { setTimeout(() => alert(t('winCongrats')), 150); }
+// Coin drop sound effect using Web Audio API -哗哗啦啦 coins pouring
+function playCoinSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    const duration = 1.8;
+    // 1. White noise for the '哗哗' rushing sound
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.5;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    // Bandpass filter to make it sound like metal coins clinking
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 3000;
+    filter.Q.value = 0.8;
+    // Highpass to remove low rumble
+    const highpass = ctx.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.value = 1500;
+    // Volume envelope: fade in, sustain, fade out
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0, now);
+    noiseGain.gain.linearRampToValueAtTime(0.25, now + 0.15);
+    noiseGain.gain.setValueAtTime(0.25, now + 1.0);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+    noise.connect(filter);
+    filter.connect(highpass);
+    highpass.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + duration);
+    // 2. Random high-pitched 'ding' sounds for individual coin clinks
+    const coinPitches = [1200, 1400, 1600, 1800, 2000, 2200, 2400, 2600, 2800, 3000];
+    for (let i = 0; i < 40; i++) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = coinPitches[Math.floor(Math.random() * coinPitches.length)] + (Math.random() - 0.5) * 200;
+      const startTime = now + 0.1 + Math.random() * 1.2;
+      const vol = 0.05 + Math.random() * 0.08;
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(vol, startTime + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.08 + Math.random() * 0.05);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 0.15);
+    }
+    // Cleanup
+    setTimeout(() => ctx.close(), 2500);
+  } catch (e) { /* audio not available */ }
+}
+function wishOkToast() {
+  playCoinSound();
+  // Create overlay
+  const overlay = document.createElement('div');
+  overlay.className = 'wish-success-overlay';
+  // Text
+  const text = document.createElement('div');
+  text.className = 'wish-success-text';
+  text.textContent = '许愿成功，心想事成';
+  overlay.appendChild(text);
+  // Pool at bottom
+  const pool = document.createElement('div');
+  pool.className = 'wish-pool';
+  overlay.appendChild(pool);
+  // Splash effect
+  for (let i = 0; i < 3; i++) {
+    const splash = document.createElement('div');
+    splash.className = 'wish-splash';
+    splash.style.left = (45 + Math.random() * 10) + '%';
+    splash.style.animationDelay = (0.5 + i * 0.3) + 's';
+    overlay.appendChild(splash);
+  }
+  // Coins falling
+  const coinCount = 25;
+  for (let i = 0; i < coinCount; i++) {
+    const coin = document.createElement('div');
+    coin.className = 'wish-coin';
+    coin.style.left = (15 + Math.random() * 70) + '%';
+    coin.style.animationDuration = (1.2 + Math.random() * 0.8) + 's';
+    coin.style.animationDelay = (Math.random() * 0.8) + 's';
+    coin.style.width = coin.style.height = (18 + Math.random() * 12) + 'px';
+    overlay.appendChild(coin);
+  }
+  document.body.appendChild(overlay);
+  setTimeout(() => overlay.remove(), 2600);
+}
 async function refresh() {
   if (!state.uid) return;
   creditPending(); // Auto-recover confirmed on-chain pending orders each round, clear pending and unlock immediately after confirmation
@@ -1265,6 +1357,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.9.8';
+const FE_BUILD = '2.9.9';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

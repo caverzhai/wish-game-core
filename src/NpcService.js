@@ -132,6 +132,7 @@ export class NpcService {
     this.social = app.social;
     this.voice = app.voice;
     this._langIndex = 0;
+    this._npcRoom = new Map(); // npcId -> current roomId
   }
 
   async addNpc(name) {
@@ -257,7 +258,7 @@ export class NpcService {
         } catch (e) { console.error('[npc:updatePost]', e.message); }
       }
 
-      // --- Random chat room message ---
+      // --- Random chat room message (NPC stays in room, no immediate leave) ---
       if (nowSecVal >= npc.nextChatAt) {
         let ok = false;
         try {
@@ -268,14 +269,22 @@ export class NpcService {
             .slice(0, 10);
           if (sorted.length > 0) {
             const room = sorted[Math.floor(Math.random() * sorted.length)];
-            try { await this.voice.join(room.roomId, npc.uid); } catch { /* already in or full */ }
-            const content = this._pickContent(lang);
+            const curRoom = this._npcRoom.get(npc.npcId);
+            // If NPC is in a different room, leave it first
+            if (curRoom && curRoom !== room.roomId) {
+              try { await this.voice.leave(curRoom, npc.uid); } catch { /* */ }
+              this._npcRoom.delete(npc.npcId);
+            }
+            // Join if not already in this room
+            if (this._npcRoom.get(npc.npcId) !== room.roomId) {
+              try { await this.voice.join(room.roomId, npc.uid); this._npcRoom.set(npc.npcId, room.roomId); } catch { /* already in or full */ }
+            }
+            const msgContent = this._pickContent(lang);
             try {
-              await this.voice.sendMessage(room.roomId, npc.uid, { type: 'text', content });
+              await this.voice.sendMessage(room.roomId, npc.uid, { type: 'text', content: msgContent });
               actions.chats.push({ npc: npc.name, room: room.name, lang });
               ok = true;
-            } catch { /* send failed */ }
-            try { await this.voice.leave(room.roomId, npc.uid); } catch { /* */ }
+            } catch { /* send failed, maybe room closed */ this._npcRoom.delete(npc.npcId); }
           }
         } catch (e) { /* voice not ready or no rooms */ }
         try {

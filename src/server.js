@@ -341,6 +341,20 @@ route('GET', '/debug/npc-columns', async () => {
     return { error: e.message };
   }
 });
+// Debug: manually add missing npc columns
+route('POST', '/debug/npc-fix-columns', async () => {
+  const results = [];
+  const missing = ['last_chat_at', 'next_chat_at'];
+  for (const col of missing) {
+    try {
+      await store.exec(`ALTER TABLE npcs ADD COLUMN ${col} BIGINT DEFAULT 0`);
+      results.push({ col, status: 'added' });
+    } catch (e) {
+      results.push({ col, status: 'failed', error: e.message });
+    }
+  }
+  return { results };
+});
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');

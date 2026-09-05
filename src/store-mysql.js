@@ -1,4 +1,4 @@
-﻿// =============================================================
+// =============================================================
 // store-mysql.js - MySQL persistent store, interface identical to MemoryStore
 // Railway injects MYSQLHOST/PORT/USER/PASSWORD/DATABASE when MySQL added, auto-enabled
 // Amount columns use BIGINT for 1e-6 min unit; write as string, read converts to BigInt
@@ -86,6 +86,13 @@ CREATE TABLE IF NOT EXISTS voice_rooms (
   created_at BIGINT, last_active_at BIGINT, empty_since BIGINT NULL,
   guest_uid VARCHAR(16) NULL, description VARCHAR(200) DEFAULT '',
   destroyed TINYINT DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS npcs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, npc_id VARCHAR(16) UNIQUE,
+  uid VARCHAR(16), wallet VARCHAR(128), name VARCHAR(64),
+  enabled TINYINT DEFAULT 1, created_at BIGINT,
+  last_post_at BIGINT DEFAULT 0, last_chat_at BIGINT DEFAULT 0,
+  next_post_at BIGINT DEFAULT 0, next_chat_at BIGINT DEFAULT 0
 );
 `;
 
@@ -415,6 +422,32 @@ export class MysqlStore {
     return B(a) + l.insurancePool + l.platform + l.pendingWithdraw;
   }
   async totalSource() { const l = await this.getLedger(); return l.issued - l.withdrawn; }
+  // -------- NPC bots (social-only, no betting) --------
+  async insertNpc(n) {
+    await this.exec('INSERT INTO npcs(npc_id,uid,wallet,name,enabled,created_at,last_post_at,last_chat_at,next_post_at,next_chat_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
+      [n.npcId, n.uid, n.wallet, n.name, n.enabled ? 1 : 0, n.createdAt, n.lastPostAt || 0, n.lastChatAt || 0, n.nextPostAt || 0, n.nextChatAt || 0]);
+  }
+  async listNpcs() {
+    return (await this.exec('SELECT * FROM npcs ORDER BY id')).map((r) => ({
+      npcId: r.npc_id, uid: r.uid, wallet: r.wallet, name: r.name,
+      enabled: !!r.enabled, createdAt: Number(r.created_at),
+      lastPostAt: Number(r.last_post_at), lastChatAt: Number(r.last_chat_at),
+      nextPostAt: Number(r.next_post_at), nextChatAt: Number(r.next_chat_at),
+    }));
+  }
+  async removeNpc(npcId) {
+    await this.exec('DELETE FROM npcs WHERE npc_id=?', [npcId]);
+    return true;
+  }
+  async updateNpc(npcId, p = {}) {
+    const col = { lastPostAt: 'last_post_at', lastChatAt: 'last_chat_at', nextPostAt: 'next_post_at', nextChatAt: 'next_chat_at', enabled: 'enabled' };
+    const sets = [], vals = [];
+    for (const k of Object.keys(p)) {
+      if (col[k]) { sets.push(`${col[k]}=?`); vals.push(k === 'enabled' ? (p[k] ? 1 : 0) : p[k]); }
+    }
+    if (sets.length) { vals.push(npcId); await this.exec(`UPDATE npcs SET ${sets.join(',')} WHERE npc_id=?`, vals); }
+  }
+
   async assertBalanced(t = '') {
     const inside = await this.totalInside(), source = await this.totalSource();
     if (inside !== source) throw new GameError(Codes.LEDGER_UNBALANCED, `Ledger unbalanced[${t}]: delta=${inside - source}`);

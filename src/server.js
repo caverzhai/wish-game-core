@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.3.25'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.4.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -31,9 +31,12 @@ function readBody(req) {
 }
 
 const app = await createApp();
-const { game, wallet, insurance, social, chain, store, cfg, voice } = app;
+const { game, wallet, insurance, social, chain, store, cfg, voice, npc } = app;
 const scheduler = new Scheduler(app);
-setInterval(() => { scheduler.tick(now()).catch((e) => console.error('[tick]', e.message)); }, 2000);
+setInterval(() => {
+  scheduler.tick(now()).catch((e) => console.error('[tick]', e.message));
+  npc.tick(now()).catch((e) => console.error('[npc-tick]', e.message));
+}, 2000);
 
 // BBS moderation: admin wallets (ADMIN_WALLETS env, comma-separated) + initial blocked words
 const ADMIN_WALLETS = new Set((process.env.ADMIN_WALLETS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
@@ -220,6 +223,10 @@ route('POST', '/admin/user/unban', async (b) => { await requireAdmin(b.uid); ret
 route('GET', '/admin/whitelist', async (b) => { await requireAdmin(b.uid); return { list: await store.listWhitelist() }; });
 route('POST', '/admin/whitelist/add', async (b) => { await requireAdmin(b.uid); return { list: await store.addWhitelist(b.wallet, b.perMille) }; });
 route('POST', '/admin/whitelist/remove', async (b) => { await requireAdmin(b.uid); return { list: await store.removeWhitelist(b.wallet) }; });
+// NPC bot management (social-only bots, no betting)
+route('GET', '/admin/npcs', async (b) => { await requireAdmin(b.uid); return { list: await npc.listNpcs() }; });
+route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return { npc: await npc.addNpc(b.name) }; });
+route('POST', '/admin/npc/remove', async (b) => { await requireAdmin(b.uid); return { removed: await npc.removeNpc(b.npcId) }; });
 // Chain config (public, no private key)
 route('GET', '/chain/config', () => chain.publicConfig());
 // Withdrawal: auto on-chain payout if payout key configured, otherwise create pending order

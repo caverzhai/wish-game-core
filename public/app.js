@@ -50,7 +50,7 @@ const I18N = {
     chainOn: 'On-chain: balance first, the shortfall is paid from your wallet.', chainOff: 'Off-chain balance mode (no token configured).', chainPending: 'Submitted, waiting for confirmation…', pendingLock: 'Previous transaction is still confirming on-chain. Wait a few seconds — do NOT submit again; it is credited automatically.', walletChanged: 'Active wallet differs from the logged-in account. Log out and reconnect the same wallet.',
     pendingTitle: 'Pending on-chain payments', pendingVerify: 'Verify & credit now', chainWillCredit: 'Paid on-chain. It is credited automatically once confirmed; you can also tap Verify under Me.', chainCreditedRedo: 'Your on-chain payment has been credited to balance, please place the wish again.',
     manualCredit: 'Credit by hash', manualTxPh: 'Paste 0x… tx hash to credit', manualOk: 'Credited to balance', manualAlready: 'This tx was already credited', manualBadHash: 'Invalid tx hash',
-    stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red', winGreen: 'Green',
+    stateActive: 'Live', stateLocked: 'Closed', stateSettled: 'Settled', stateCancelled: 'Void (empty), refunded', winRed: 'Red Pool', winGreen: 'Green Pool',
     nodeProgress: 'Progress', nodePeriod: 'Periods', pickNum: 'Pick', stake: 'Amount', detail: 'Detail', close: 'Close',
     needPick: 'Please pick a number 0-9 first', needAmount: 'Enter an integer 1-99 (枚)', copyOk: 'Copied', noWallet: 'No wallet extension detected',
     walletShort: 'Wallet balance short by', noWalletGap: 'No wallet detected. Open this site inside the TokenPocket DApp browser, or install & unlock a wallet extension.', offchainShort: 'Balance not enough (short',
@@ -91,7 +91,7 @@ const I18N = {
     chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…', pendingLock: '上一筆正在鏈上確認，請稍候幾秒、切勿重複許願，確認後會自動到帳。', walletChanged: '目前錢包帳戶與登入帳號不一致，請退出後重新連接同一個錢包。',
     pendingTitle: '待核驗的鏈上支付', pendingVerify: '重新核驗並入帳', chainWillCredit: '鏈上已支付，確認後會自動補入餘額，也可到「我的」手動核驗。', chainCreditedRedo: '鏈上支付已補入餘額，請重新許願。',
     manualCredit: '貼哈希補入帳', manualTxPh: '貼上 0x… 交易哈希補錄入帳', manualOk: '已補入餘額', manualAlready: '此交易先前已入帳', manualBadHash: '交易哈希格式不正確',
-    stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅勝', winGreen: '綠勝',
+    stateActive: '進行中', stateLocked: '已停止許願', stateSettled: '已開獎', stateCancelled: '無人對局已退款', winRed: '紅池', winGreen: '綠池',
     nodeProgress: '進度', nodePeriod: '已釋放期數', pickNum: '選號', stake: '投入', detail: '明細', close: '收起',
     needPick: '請先選擇 0-9 的數字', needAmount: '請輸入 1-99 的正整數（枚）', copyOk: '已複製', noWallet: '未檢測到錢包插件',
     walletShort: '錢包餘額不足，還差', noWalletGap: '未檢測到錢包：請在 TokenPocket 錢包的 DApp 瀏覽器內打開本站，或在瀏覽器安裝並解鎖錢包外掛', offchainShort: '站內餘額不足（差',
@@ -132,7 +132,7 @@ const I18N = {
     chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…', pendingLock: '直前の取引がオンチェーン承認待ちです。数秒お待ちください（重複提交はしないでください）。承認後に自動で反映されます。', walletChanged: '現在のウォレットがログイン中アカウントと異なります。ログアウトして同じウォレットを再接続してください。',
     pendingTitle: '未確認のオンチェーン支払い', pendingVerify: '再確認して入金', chainWillCredit: 'オンチェーンで支払い済み。承認後に自動入金されます。マイで手動確認も可能です。', chainCreditedRedo: 'オンチェーン支払いを残高に入金しました。もう一度願いを入力してください。',
     manualCredit: 'ハッシュで入金', manualTxPh: '0x… トランザクションハッシュを貼って入金', manualOk: '残高に入金しました', manualAlready: 'この取引は入金済みです', manualBadHash: 'トランザクションハッシュ形式が不正です',
-    stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤勝ち', winGreen: '緑勝ち',
+    stateActive: '進行中', stateLocked: '締切済み', stateSettled: '確定', stateCancelled: '不成立（無人）返金', winRed: '赤プール', winGreen: '緑プール',
     nodeProgress: '進捗', nodePeriod: '解放済期', pickNum: '数字', stake: '投入', detail: '詳細', close: '閉じる',
     needPick: '先に0-9の数字を選んでください', needAmount: '1-99の整数（枚）を入力', copyOk: 'コピーしました', noWallet: 'ウォレット拡張が未検出',
     walletShort: 'ウォレット残高不足（あと', noWalletGap: 'ウォレット未検出。TokenPocket のDAppブラウザで開くか、ウォレット拡張をインストール・解除してください', offchainShort: '残高不足（不足',
@@ -171,7 +171,7 @@ const I18N = {
     chainOn: 'على السلسلة: الرصيد أولاً، والجزء الناقص يُدفع من محفظتك.', chainOff: 'وضع الرصيد خارج السلسلة (لم يتم تكوين رمز مميز).', chainPending: 'تم الإرسال، بانتظار التأكيد…', pendingLock: 'المعاملة السابقة لا تزال قيد التأكيد على السلسلة. انتظر ثوانٍ — لا تُرسل مرة أخرى؛ سيُضاف تلقائياً.', walletChanged: 'المحفظة النشطة تختلف عن الحساب المسجل. اخرج وأعد الاتصال بنفس المحفظة.',
     pendingTitle: 'مدفوعات السلسلة قيد الانتظار', pendingVerify: 'تحقق وأضف الآن', chainWillCredit: 'تم الدفع على السلسلة. يُضاف تلقائياً بعد التأكيد؛ يمكنك أيضاً الضغط على تحقق ضمن حسابي.', chainCreditedRedo: 'تمت إضافة الدفع على السلسلة إلى الرصيد، يرجى إعادة تقديم الأمنية.',
     manualCredit: 'إضافة بالهاش', manualTxPh: 'الصق هاش 0x… للإضافة', manualOk: 'أُضيف إلى الرصيد', manualAlready: 'تمت إضافة هذه المعاملة سابقاً', manualBadHash: 'هاش معاملة غير صالح',
-    stateActive: 'مباشر', stateLocked: 'مغلق', stateSettled: 'مُحسم', stateCancelled: 'باطل (فارغ)، تم الاسترداد', winRed: 'أحمر', winGreen: 'أخضر',
+    stateActive: 'مباشر', stateLocked: 'مغلق', stateSettled: 'مُحسم', stateCancelled: 'باطل (فارغ)، تم الاسترداد', winRed: 'الحوض الأحمر', winGreen: 'الحوض الأخضر',
     nodeProgress: 'التقدم', nodePeriod: 'الفترات', pickNum: 'الرقم', stake: 'المبلغ', detail: 'التفاصيل', close: 'إغلاق',
     needPick: 'يرجى اختيار رقم 0-9 أولاً', needAmount: 'أدخل عدداً صحيحاً 1-99 (عملة)', copyOk: 'تم النسخ', noWallet: 'لم يتم اكتشاف إضافة محفظة',
     walletShort: 'رصيد المحفظة ناقص بمقدار', noWalletGap: 'لم يتم اكتشاف محفظة. افتح هذا الموقع داخل متصفح DApp في TokenPocket، أو ثبّت وافتح إضافة محفظة.', offchainShort: 'الرصيد غير كافٍ (ناقص',
@@ -210,7 +210,7 @@ const I18N = {
     chainOn: 'On-chain: utamakan saldo, kekurangan dibayar dari dompet Anda.', chainOff: 'Mode saldo off-chain (token belum dikonfigurasi).', chainPending: 'Terkirim, menunggu konfirmasi…', pendingLock: 'Transaksi sebelumnya masih dikonfirmasi di on-chain. Tunggu beberapa detik — JANGAN kirim lagi; akan dikreditkan otomatis.', walletChanged: 'Dompet aktif berbeda dengan akun yang masuk. Keluar dan sambungkan kembali dompet yang sama.',
     pendingTitle: 'Pembayaran on-chain tertunda', pendingVerify: 'Verifikasi & kredit sekarang', chainWillCredit: 'Dibayar on-chain. Dikreditkan otomatis setelah dikonfirmasi; Anda juga bisa ketuk Verifikasi di Saya.', chainCreditedRedo: 'Pembayaran on-chain telah dikreditkan ke saldo, silakan ajukan keinginan lagi.',
     manualCredit: 'Kredit via hash', manualTxPh: 'Tempel hash 0x… untuk dikreditkan', manualOk: 'Dikreditkan ke saldo', manualAlready: 'Transaksi ini sudah dikreditkan', manualBadHash: 'Hash transaksi tidak valid',
-    stateActive: 'Berlangsung', stateLocked: 'Tertutup', stateSettled: 'Selesai', stateCancelled: 'Batal (kosong), dikembalikan', winRed: 'Merah', winGreen: 'Hijau',
+    stateActive: 'Berlangsung', stateLocked: 'Tertutup', stateSettled: 'Selesai', stateCancelled: 'Batal (kosong), dikembalikan', winRed: 'Kolam Merah', winGreen: 'Kolam Hijau',
     nodeProgress: 'Kemajuan', nodePeriod: 'Periode', pickNum: 'Angka', stake: 'Jumlah', detail: 'Detail', close: 'Tutup',
     needPick: 'Silakan pilih angka 0-9 terlebih dahulu', needAmount: 'Masukkan bilangan bulat 1-99 (koin)', copyOk: 'Disalin', noWallet: 'Tidak ada ekstensi dompet terdeteksi',
     walletShort: 'Saldo dompet kurang', noWalletGap: 'Tidak ada dompet terdeteksi. Buka situs ini di dalam browser DApp TokenPocket, atau pasang & buka ekstensi dompet.', offchainShort: 'Saldo tidak cukup (kurang',
@@ -249,7 +249,7 @@ const I18N = {
     chainOn: '온체인: 잔액 우선, 부족분은 지갑에서 지불.', chainOff: '오프체인 잔액 모드 (토큰 미설정).', chainPending: '전송됨, 확인 대기 중…', pendingLock: '직전 거래가 아직 온체인 확인 중입니다. 몇 초 기다리세요 — 다시 제출하지 마세요. 자동 입금됩니다.', walletChanged: '활성 지갑이 로그인 계정과 다릅니다. 로그아웃 후 같은 지갑을 다시 연결하세요.',
     pendingTitle: '대기 중인 온체인 결제', pendingVerify: '지금 확인 및 입금', chainWillCredit: '온체인에서 결제되었습니다. 확인 후 자동 입금되며, 나의 메뉴에서 직접 확인할 수도 있습니다.', chainCreditedRedo: '온체인 결제가 잔액에 입금되었습니다. 다시 소원을 접수해 주세요.',
     manualCredit: '해시로 입금', manualTxPh: '0x… 트랜잭션 해시를 붙여 입금', manualOk: '잔액에 입금됨', manualAlready: '이 거래는 이미 입금됨', manualBadHash: '잘못된 트랜잭션 해시',
-    stateActive: '진행 중', stateLocked: '마감', stateSettled: '정산 완료', stateCancelled: '무효 (빈 라운드), 환불됨', winRed: '레드', winGreen: '그린',
+    stateActive: '진행 중', stateLocked: '마감', stateSettled: '정산 완료', stateCancelled: '무효 (빈 라운드), 환불됨', winRed: '레드 풀', winGreen: '그린 풀',
     nodeProgress: '진행률', nodePeriod: '지급 기간', pickNum: '선택 번호', stake: '금액', detail: '상세', close: '닫기',
     needPick: '먼저 0-9 숫자를 선택하세요', needAmount: '1-99 정수 (코인)를 입력하세요', copyOk: '복사됨', noWallet: '지갑 확장 프로그램이 감지되지 않음',
     walletShort: '지갑 잔액 부족', noWalletGap: '지갑이 감지되지 않습니다. TokenPocket DApp 브라우저에서 열거나, 지갑 확장 프로그램을 설치·잠금 해제하세요.', offchainShort: '잔액이 부족합니다 (부족',
@@ -288,7 +288,7 @@ const I18N = {
     chainOn: 'В сети: сначала баланс, недостаток оплачивается из кошелька.', chainOff: 'Режим внутрисетевого баланса (токен не настроен).', chainPending: 'Отправлено, ожидание подтверждения…', pendingLock: 'Предыдущая транзакция ещё подтверждается в сети. Подождите несколько секунд — НЕ отправляйте снова; зачислится автоматически.', walletChanged: 'Активный кошелёк отличается от вошедшего аккаунта. Выйдите и подключите тот же кошелёк заново.',
     pendingTitle: 'Ожидающие сетевые платежи', pendingVerify: 'Проверить и зачислить сейчас', chainWillCredit: 'Оплачено в сети. Зачислится автоматически после подтверждения; можно также нажать «Проверить» в профиле.', chainCreditedRedo: 'Сетевой платёж зачислен на баланс, отправьте желание заново.',
     manualCredit: 'Зачислить по хешу', manualTxPh: 'Вставьте хеш 0x… для зачисления', manualOk: 'Зачислено на баланс', manualAlready: 'Эта транзакция уже зачислена', manualBadHash: 'Неверный хеш транзакции',
-    stateActive: 'Идёт', stateLocked: 'Закрыт', stateSettled: 'Разыгран', stateCancelled: 'Отменён (пустой), возвращено', winRed: 'Красные', winGreen: 'Зелёные',
+    stateActive: 'Идёт', stateLocked: 'Закрыт', stateSettled: 'Разыгран', stateCancelled: 'Отменён (пустой), возвращено', winRed: 'Красный пул', winGreen: 'Зелёный пул',
     nodeProgress: 'Прогресс', nodePeriod: 'Периодов', pickNum: 'Число', stake: 'Сумма', detail: 'Детали', close: 'Закрыть',
     needPick: 'Сначала выберите число 0-9', needAmount: 'Введите целое 1-99 (монет)', copyOk: 'Скопировано', noWallet: 'Расширение кошелька не обнаружено',
     walletShort: 'Недостаточно средств в кошельке', noWalletGap: 'Кошелёк не обнаружен. Откройте сайт в DApp-браузере TokenPocket или установите и разблокируйте расширение кошелька.', offchainShort: 'Баланса недостаточно (не хватает',
@@ -327,7 +327,7 @@ const I18N = {
     chainOn: 'ऑन-चेन: पहले बैलेंस, कमी वॉलेट से भुगतान.', chainOff: 'ऑफ-चेन बैलेंस मोड (टोकन कॉन्फ़िगर नहीं).', chainPending: 'भेजा गया, पुष्टि की प्रतीक्षा में…', pendingLock: 'पिछला ट्रांज़ैक्शन अभी ऑन-चेन पुष्टि हो रहा है. कुछ सेकंड प्रतीक्षा करें — फिर से सबमिट न करें; स्वचालित जमा होगा.', walletChanged: 'सक्रिय वॉलेट लॉगिन खाते से भिन्न है. लॉग आउट करें और उसी वॉलेट को फिर कनेक्ट करें.',
     pendingTitle: 'लंबित ऑन-चेन भुगतान', pendingVerify: 'अभी सत्यापित करें और जमा करें', chainWillCredit: 'ऑन-चेन भुगतान हो गया. पुष्टि के बाद स्वचालित जमा होगा; आप मेरा में सत्यापन भी टैप कर सकते हैं.', chainCreditedRedo: 'ऑन-चेन भुगतान बैलेंस में जमा हो गया, कृपया फिर से विश सबमिट करें.',
     manualCredit: 'हैश से जमा', manualTxPh: 'जमा के लिए 0x… हैश पेस्ट करें', manualOk: 'बैलेंस में जमा हुआ', manualAlready: 'यह ट्रांज़ैक्शन पहले ही जमा हो चुका है', manualBadHash: 'अमान्य ट्रांज़ैक्शन हैश',
-    stateActive: 'चालू', stateLocked: 'बंद', stateSettled: 'निपटा', stateCancelled: 'रद्द (खाली), वापस', winRed: 'लाल', winGreen: 'हरा',
+    stateActive: 'चालू', stateLocked: 'बंद', stateSettled: 'निपटा', stateCancelled: 'रद्द (खाली), वापस', winRed: 'लाल पूल', winGreen: 'हरा पूल',
     nodeProgress: 'प्रगति', nodePeriod: 'अवधि', pickNum: 'अंक', stake: 'राशि', detail: 'विवरण', close: 'बंद करें',
     needPick: 'कृपया पहले 0-9 का अंक चुनें', needAmount: '1-99 का पूर्णांक (सिक्के) दर्ज करें', copyOk: 'कॉपी हुआ', noWallet: 'कोई वॉलेट एक्सटेंशन नहीं मिला',
     walletShort: 'वॉलेट बैलेंस कम है', noWalletGap: 'कोई वॉलेट नहीं मिला. इस साइट को TokenPocket DApp ब्राउज़र में खोलें, या वॉलेट एक्सटेंशन इंस्टॉल और अनलॉक करें.', offchainShort: 'बैलेंस पर्याप्त नहीं (कम',
@@ -366,7 +366,7 @@ const I18N = {
     chainOn: 'آن چین: پہلے بیلنس، کمی والیٹ سے ادا.', chainOff: 'آف چین بیلنس موڈ (ٹوکن کنفیگر نہیں).', chainPending: 'بھیجا گیا، تصدیق کا انتظار…', pendingLock: 'پچھلا ٹرانزیکشن ابھی آن چین پر تصدیق ہو رہا ہے. چند سیکنڈ انتظار کریں — دوبارہ جمع نہ کریں; خود بخود جمع ہو جائے گا.', walletChanged: 'فعال والیٹ لاگ اکاؤنٹ سے مختلف ہے. لاگ آؤٹ کر کے اسی والیٹ کو دوبارہ منسلک کریں.',
     pendingTitle: 'زیر التزام آن چین ادائیگیاں', pendingVerify: 'ابھی تصدیق کریں اور جمع کروائیں', chainWillCredit: 'آن چین ادائیگی ہو گئی. تصدیق کے بعد خود بخود جمع ہو جائے گی; آپ میرا میں تصدیق بھی ٹیپ کر سکتے ہیں.', chainCreditedRedo: 'آن چین ادائیگی بیلنس میں جمع ہو گئی، براہ کرم دوبارہ خواہش جمع کروائیں.',
     manualCredit: 'ہیش سے جمع', manualTxPh: 'جمع کرنے کے لیے 0x… ہیش پیسٹ کریں', manualOk: 'بیلنس میں جمع ہو گیا', manualAlready: 'یہ ٹرانزیکشن پہلے ہی جمع ہو چکی ہے', manualBadHash: 'غلط ٹرانزیکشن ہیش',
-    stateActive: 'جاری', stateLocked: 'بند', stateSettled: 'فیصلہ شدہ', stateCancelled: 'منسوخ (خالی)، واپس', winRed: 'سرخ', winGreen: 'سبز',
+    stateActive: 'جاری', stateLocked: 'بند', stateSettled: 'فیصلہ شدہ', stateCancelled: 'منسوخ (خالی)، واپس', winRed: 'سرخ تالاب', winGreen: 'سبز تالاب',
     nodeProgress: 'پیش رفت', nodePeriod: 'ادوار', pickNum: 'عدد', stake: 'رقم', detail: 'تفصیل', close: 'بند کریں',
     needPick: 'براہ کرم پہلے 0-9 کا عدد منتخب کریں', needAmount: '1-99 کا عدد صحیح (سکے) درج کریں', copyOk: 'کاپی ہو گیا', noWallet: 'کوئی والیٹ ایکسٹینشن نہیں ملا',
     walletShort: 'والیٹ بیلنس کم ہے', noWalletGap: 'کوئی والیٹ نہیں ملا. اس سائٹ کو TokenPocket DApp براؤزر میں کھولیں، یا والیٹ ایکسٹینشن انسٹال اور انلاک کریں.', offchainShort: 'بیلنس کافی نہیں (کم',
@@ -545,11 +545,11 @@ function selectSide(side) {
   $('sideRed').classList.toggle('sel', side === 'red'); $('sideGreen').classList.toggle('sel', side === 'green');
 }
 function tickCountdown() {
-  if (!state.round) { $('countdown').textContent = '···'; $('countdown').className = 'countdown'; const pw = $('poolsWrapper'); if (pw) pw.style.animation = 'none'; }
+  if (!state.round) { $('countdown').textContent = '···'; $('countdown').className = 'countdown'; const rc = $('roundCard'); if (rc) rc.style.setProperty('--border-color', '#22c55e'); }
   else {
     const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
     $('countdown').textContent = remain;
-    // Last 10 seconds: big number, blink once per second
+    // Last 10 seconds: big number 2x, full screen, blink once per second
     if (remain <= 10) {
       $('countdown').className = 'countdown final';
     } else if (remain <= 30) {
@@ -557,20 +557,19 @@ function tickCountdown() {
     } else {
       $('countdown').className = 'countdown';
     }
-    // Border marquee: green -> red gradient, speed up as time passes
-    const pw = $('poolsWrapper');
-    if (pw) {
+    // Round-card border marquee: green -> red, speed up as time passes
+    const rc = $('roundCard');
+    if (rc) {
       const total = 180;
       const progress = Math.min(1, Math.max(0, (total - remain) / total));
       // Color: laser green (#22c55e) -> red (#ef4444)
       const r = Math.round(34 + (239 - 34) * progress);
       const g = Math.round(197 + (68 - 197) * progress);
       const b = Math.round(94 + (68 - 94) * progress);
-      const color = `rgb(${r},${g},${b})`;
-      // Animation duration: 3s at start, 0.5s at end (faster as time passes)
-      const dur = 3 - 2.5 * progress;
-      pw.style.background = `conic-gradient(from 0deg, ${color}, ${color})`;
-      pw.style.animation = `borderSpin ${dur.toFixed(2)}s linear infinite`;
+      rc.style.setProperty('--border-color', `rgb(${r},${g},${b})`);
+      // Animation duration: 4s at start, 0.5s at end (faster as time passes)
+      const dur = 4 - 3.5 * progress;
+      rc.style.setProperty('animation-duration', `${dur.toFixed(2)}s`);
     }
   }
   updatePoolCountdown();
@@ -616,11 +615,17 @@ function renderRound() {
       if (rows.length < 3) rows.push([{ roundId: state.round.roundId, active: true }]);
     }
   }
-  // Last row: random 4-8 dots (regenerated each render), but keep 'ing' if present
+  // Last row: fixed 4-8 dots per round (determined once at round start), keep 'ing' if present
   if (rows.length > 0) {
     const lastRow = rows[rows.length - 1];
     const hasIng = lastRow.some((x) => x.active);
-    const lastRowMax = 4 + Math.floor(Math.random() * 5); // 4-8
+    // Determine last row count once per round, keep stable during the round
+    const curRoundId = state.round ? state.round.roundId : null;
+    if (state.lastRowRoundId !== curRoundId) {
+      state.lastRowRoundId = curRoundId;
+      state.lastRowCount = 4 + Math.floor(Math.random() * 5); // 4-8, fixed for this round
+    }
+    const lastRowMax = state.lastRowCount || 6;
     if (lastRow.length > lastRowMax) {
       if (hasIng) {
         // Keep ing at the end, trim from the beginning
@@ -1261,6 +1266,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.9.2';
+const FE_BUILD = '2.9.3';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

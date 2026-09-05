@@ -41,7 +41,7 @@
   <main id="main" class="hide">
     <!-- Home: rounds + history -->
     <section id="tab-home" class="panel active">
-      <div class="round-card">
+      <div class="round-card" id="roundCard">
         <div id="heroBanner" class="hero-banner"></div>
         <div class="hist-strip" id="histDots"></div>
         <div class="round-meta">
@@ -53,11 +53,9 @@
         <div class="bet-count"><span data-i18n="betCount">Wishes</span>：<b id="betCount">0</b></div>
       </div>
 
-      <div class="pools-wrapper" id="poolsWrapper">
-        <div class="pools">
-          <button id="sideRed" class="pool red"><span class="pool-name" data-i18n="redPool">Red Pool</span><small data-i18n="oddWin">Odd sum → Red</small></button>
-          <button id="sideGreen" class="pool green"><span class="pool-name" data-i18n="greenPool">Green Pool</span><small data-i18n="evenWin">Even sum → Green</small></button>
-        </div>
+      <div class="pools">
+        <button id="sideRed" class="pool red"><span class="pool-name" data-i18n="redPool">Red Pool</span><small data-i18n="oddWin">Odd sum → Red</small></button>
+        <button id="sideGreen" class="pool green"><span class="pool-name" data-i18n="greenPool">Green Pool</span><small data-i18n="evenWin">Even sum → Green</small></button>
       </div>
 
       <div class="pick-card">

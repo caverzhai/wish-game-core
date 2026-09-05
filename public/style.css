@@ -44,21 +44,21 @@ body { display: flex; justify-content: center; }
 .dot.red { background: var(--red); box-shadow: 0 0 6px rgba(229,72,77,.6); }
 .dot.green { background: var(--green); box-shadow: 0 0 6px rgba(47,184,111,.6); }
 .dot.void { background: transparent; border: 1px solid var(--muted); }
+.round-card { position: relative; padding: 16px; border-radius: var(--radius); background: var(--card); overflow: hidden; }
+.round-card::before { content: ''; position: absolute; inset: 0; padding: 2px; border-radius: inherit; background: conic-gradient(from var(--border-angle, 0deg), transparent 0%, var(--border-color, #22c55e) 10%, transparent 20%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: borderRotate 3s linear infinite; pointer-events: none; }
+@property --border-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+@keyframes borderRotate { to { --border-angle: 360deg; } }
 .round-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
 .countdown { font-size: 52px; font-weight: 800; letter-spacing: 2px; line-height: 1.1; color: var(--gold); font-variant-numeric: tabular-nums; }
 .countdown.urgent { color: var(--red); animation: pulse 1s infinite; }
+.countdown.final { font-size: 104px !important; color: var(--red) !important; animation: finalBlink 1s step-end infinite; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: rgba(0,0,0,.85); width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
+@keyframes finalBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.2; } }
 @keyframes pulse { 50% { opacity: .55; } }
 .cd-label { font-size: 12px; color: var(--muted); }
 .bet-count { margin: 12px auto 0; display: inline-flex; align-items: baseline; gap: 8px; background: var(--card2); border: 1px solid var(--gold); border-radius: 999px; padding: 6px 18px; font-size: 13px; color: var(--muted); letter-spacing: 1px; }
 .bet-count b { color: var(--gold); font-size: 26px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 
-.pools-wrapper { position: relative; padding: 3px; border-radius: calc(var(--radius) + 3px); margin: 12px 0; background: conic-gradient(from 0deg, #22c55e, #22c55e); animation: borderSpin 3s linear infinite; }
-.pools-wrapper .pools { margin: 0; position: relative; z-index: 1; }
-@keyframes borderSpin { to { transform: rotate(360deg); } }
-.pools-wrapper::before { content: ''; position: absolute; inset: 0; border-radius: inherit; background: inherit; animation: inherit; z-index: 0; }
-.pools-wrapper::after { content: ''; position: absolute; inset: 3px; border-radius: calc(var(--radius)); background: var(--bg); z-index: 0; }
-.countdown.final { font-size: 72px !important; color: var(--red) !important; animation: finalBlink 1s step-end infinite; }
-@keyframes finalBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.2; } }
+
 .pool { display: flex; flex-direction: column; gap: 4px; padding: 31px 8px; border-radius: var(--radius); cursor: pointer; border: 2px solid var(--line); background: var(--card); color: var(--txt); transition: background .15s, box-shadow .15s; }
 .pool small { color: var(--muted); font-size: 11px; }
 .pool .pool-name { font-size: 18px; font-weight: 800; }
@@ -315,6 +315,6 @@ textarea { resize: vertical; }
 .hist-dot.red { background: var(--red); box-shadow: 0 0 8px rgba(229,72,77,.7); }
 .hist-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(47,184,111,.7); }
 .hist-dot.void { background: transparent; border: 1px solid var(--muted); }
-.hist-dot.ing { background: linear-gradient(135deg, #f59e0b, #ef4444); box-shadow: 0 0 10px rgba(245,158,11,.8); animation: ingPulse 1.5s ease-in-out infinite; }
-@keyframes ingPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+.hist-dot.ing { background: #fdba74; box-shadow: 0 0 8px rgba(253,186,116,.8); animation: ingBlink 1s step-end infinite; }
+@keyframes ingBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.3; } }
 .dot-num { font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }

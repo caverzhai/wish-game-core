@@ -1,4 +1,4 @@
-﻿// =============================================================
+// =============================================================
 // server.js - HTTP API + static frontend hosting + built-in auto settlement/payout scheduler
 // Run: node src/server.js (port from PORT env, default 8080)
 // BigInt amounts in responses converted to 'units' numbers for frontend
@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.3.24'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.3.25'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -306,6 +306,26 @@ setInterval(async () => {
     await voice.flushPersistence();
   } catch (e) { console.error('[voice-tick]', e.message); }
 }, 60000);
+
+// Startup repair: force-cancel stuck rounds and fix ledger imbalance (caused by rolled-back NPC version)
+(async () => {
+  try {
+    const nowS = now();
+    const [stuck] = await store.pool.query("SELECT round_id FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
+    for (const row of stuck) {
+      await store.pool.query("UPDATE rounds SET state='cancelled', result_json=? WHERE round_id=?", [JSON.stringify({ status: 'cancelled', reason: 'startup_repair' }), row.round_id]);
+      console.log('[startup-repair] cancelled stuck round', row.round_id);
+    }
+    const inside = await store.totalInside();
+    const l = await store.getLedger();
+    const source = l.issued - l.withdrawn;
+    const delta = inside - source;
+    if (delta !== 0n) {
+      await store.pool.query('UPDATE ledger SET issued=issued+? WHERE id=1', [delta.toString()]);
+      console.log('[startup-repair] ledger fixed, delta=', delta.toString());
+    }
+  } catch (e) { console.error('[startup-repair]', e.message); }
+})();
 
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, '0.0.0.0', () => console.log(`wish-game listening 0.0.0.0:${PORT} store=${store.kind} chain=${chain.enabled}`));

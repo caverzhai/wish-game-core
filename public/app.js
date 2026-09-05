@@ -500,7 +500,7 @@ function switchDock(name) {
   if (name === 'home') renderHistory();
   if (name === 'bbs') loadBbs();
   if (name === 'insurance') updatePoolCountdown();
-  if (name === 'lottery' && typeof Lottery !== 'undefined') Lottery.loadProducts();
+  if (name === 'lottery' && typeof Lottery !== 'undefined') Lottery.init();
   if (name === 'me' && state.uid) { renderPending(); creditPending(); api('/withdraw/reap', { uid: state.uid }).then(refresh).catch(() => {}); }
 }
 
@@ -1462,7 +1462,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.11.6';
+const FE_BUILD = '2.11.7';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

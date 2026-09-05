@@ -57,8 +57,12 @@ export const LOTTERY_PRODUCTS = [
     totalAmount: 2000,
     image: '/lottery-2000.jpg',
     numDigits: 4,
-    comingSoon: true,
-    prizes: [],
+    prizes: [
+      { level: 1, name: '一等奖', count: 1, amount: 1000 },
+      { level: 2, name: '二等奖', count: 2, amount: 200 },
+      { level: 3, name: '三等奖', count: 5, amount: 50 },
+      { level: 4, name: '四等奖', count: 25, amount: 10 },
+    ],
   },
   {
     id: 'L5000',
@@ -66,8 +70,12 @@ export const LOTTERY_PRODUCTS = [
     totalAmount: 5000,
     image: '/lottery-5000.jpg',
     numDigits: 4,
-    comingSoon: true,
-    prizes: [],
+    prizes: [
+      { level: 1, name: '一等奖', count: 1, amount: 2000 },
+      { level: 2, name: '二等奖', count: 3, amount: 500 },
+      { level: 3, name: '三等奖', count: 5, amount: 100 },
+      { level: 4, name: '四等奖', count: 75, amount: 10 },
+    ],
   },
   {
     id: 'L10000',
@@ -75,8 +83,12 @@ export const LOTTERY_PRODUCTS = [
     totalAmount: 10000,
     image: '/lottery-10000.jpg',
     numDigits: 5,
-    comingSoon: true,
-    prizes: [],
+    prizes: [
+      { level: 1, name: '一等奖', count: 1, amount: 5000 },
+      { level: 2, name: '二等奖', count: 2, amount: 1000 },
+      { level: 3, name: '三等奖', count: 10, amount: 100 },
+      { level: 4, name: '四等奖', count: 150, amount: 10 },
+    ],
   },
 ];
 

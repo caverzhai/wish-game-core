@@ -65,7 +65,7 @@ const Lottery = (() => {
       const data = await res.json();
       currentProduct = data;
       renderDetail(data);
-      document.getElementById('lotteryList').classList.add('hide');
+      document.getElementById('lotteryListWrap').classList.add('hide');
       document.getElementById('lotteryDetail').classList.remove('hide');
       loadComments(productId);
       loadHistory(productId);
@@ -311,7 +311,7 @@ const Lottery = (() => {
   }
 
   function goBack() {
-    document.getElementById('lotteryList').classList.remove('hide');
+    document.getElementById('lotteryListWrap').classList.remove('hide');
     document.getElementById('lotteryDetail').classList.add('hide');
     currentProduct = null;
   }

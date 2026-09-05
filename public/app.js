@@ -549,11 +549,14 @@ function tickCountdown() {
   else {
     const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
     $('countdown').textContent = remain;
-    // Last 10 seconds: big cool number, blink once per second, keep original background
+    // Last 10 seconds: big cool number, blink once per second, pools alternate flashing 3x/sec
+    const poolsEl = document.querySelector('.pools');
     if (remain <= 10) {
       $('countdown').className = 'countdown final';
+      if (poolsEl) poolsEl.classList.add('final-10');
     } else {
       $('countdown').className = remain <= 30 ? 'countdown urgent' : 'countdown';
+      if (poolsEl) poolsEl.classList.remove('final-10');
     }
     // Round-card border marquee: green -> red, speed up as time passes
     const rc = $('roundCard');
@@ -1262,6 +1265,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.9.7';
+const FE_BUILD = '2.9.8';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

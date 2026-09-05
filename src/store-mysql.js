@@ -92,7 +92,8 @@ CREATE TABLE IF NOT EXISTS npcs (
   uid VARCHAR(16), wallet VARCHAR(128), name VARCHAR(64),
   enabled TINYINT DEFAULT 1, created_at BIGINT,
   last_post_at BIGINT DEFAULT 0, last_chat_at BIGINT DEFAULT 0,
-  next_post_at BIGINT DEFAULT 0, next_chat_at BIGINT DEFAULT 0
+  next_post_at BIGINT DEFAULT 0, next_chat_at BIGINT DEFAULT 0,
+  language VARCHAR(8) DEFAULT 'en'
 );
 `;
 
@@ -127,7 +128,7 @@ export class MysqlStore {
       await this.pool.query(stmt);
     }
     // Legacy DB idempotent migration: add later columns (DB error if column exists, ignore)
-    for (const alter of ['ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0', 'ALTER TABLE withdraws ADD COLUMN created_at BIGINT DEFAULT 0']) {
+    for (const alter of ['ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0', 'ALTER TABLE withdraws ADD COLUMN created_at BIGINT DEFAULT 0', 'ALTER TABLE npcs ADD COLUMN language VARCHAR(8) DEFAULT \'en\'']) {
       try { await this.pool.query(alter); } catch { /* column already exists */ }
     }
   }
@@ -424,8 +425,8 @@ export class MysqlStore {
   async totalSource() { const l = await this.getLedger(); return l.issued - l.withdrawn; }
   // -------- NPC bots (social-only, no betting) --------
   async insertNpc(n) {
-    await this.exec('INSERT INTO npcs(npc_id,uid,wallet,name,enabled,created_at,last_post_at,last_chat_at,next_post_at,next_chat_at) VALUES(?,?,?,?,?,?,?,?,?,?)',
-      [n.npcId, n.uid, n.wallet, n.name, n.enabled ? 1 : 0, n.createdAt, n.lastPostAt || 0, n.lastChatAt || 0, n.nextPostAt || 0, n.nextChatAt || 0]);
+    await this.exec('INSERT INTO npcs(npc_id,uid,wallet,name,enabled,created_at,last_post_at,last_chat_at,next_post_at,next_chat_at,language) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+      [n.npcId, n.uid, n.wallet, n.name, n.enabled ? 1 : 0, n.createdAt, n.lastPostAt || 0, n.lastChatAt || 0, n.nextPostAt || 0, n.nextChatAt || 0, n.language || 'en']);
   }
   async listNpcs() {
     return (await this.exec('SELECT * FROM npcs ORDER BY id')).map((r) => ({
@@ -433,6 +434,7 @@ export class MysqlStore {
       enabled: !!r.enabled, createdAt: Number(r.created_at),
       lastPostAt: Number(r.last_post_at), lastChatAt: Number(r.last_chat_at),
       nextPostAt: Number(r.next_post_at), nextChatAt: Number(r.next_chat_at),
+      language: r.language || 'en',
     }));
   }
   async removeNpc(npcId) {
@@ -440,7 +442,7 @@ export class MysqlStore {
     return true;
   }
   async updateNpc(npcId, p = {}) {
-    const col = { lastPostAt: 'last_post_at', lastChatAt: 'last_chat_at', nextPostAt: 'next_post_at', nextChatAt: 'next_chat_at', enabled: 'enabled' };
+    const col = { lastPostAt: 'last_post_at', lastChatAt: 'last_chat_at', nextPostAt: 'next_post_at', nextChatAt: 'next_chat_at', enabled: 'enabled', language: 'language' };
     const sets = [], vals = [];
     for (const k of Object.keys(p)) {
       if (col[k]) { sets.push(`${col[k]}=?`); vals.push(k === 'enabled' ? (p[k] ? 1 : 0) : p[k]); }

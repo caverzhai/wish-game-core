@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.4.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.4.1'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -331,6 +331,19 @@ setInterval(async () => {
       await store.pool.query('UPDATE ledger SET issued=issued+? WHERE id=1', [delta.toString()]);
       console.log('[startup-repair] ledger fixed, delta=', delta.toString());
     }
+  // Assign languages to existing NPCs (round-robin across 9 languages)
+  try {
+    const npcs = await store.listNpcs();
+    const langs = ['en', 'zh-TW', 'ja', 'ar', 'id', 'ko', 'ru', 'hi', 'ur'];
+    let idx = 0;
+    for (const n of npcs) {
+      if (!n.language || n.language === 'en') {
+        await store.updateNpc(n.npcId, { language: langs[idx % langs.length] });
+        idx++;
+      }
+    }
+    if (idx > 0) console.log('[startup-repair] assigned languages to', idx, 'NPCs');
+  } catch (e) { console.error('[startup-repair npc-lang]', e.message); }
   } catch (e) { console.error('[startup-repair]', e.message); }
 })();
 

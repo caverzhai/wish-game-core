@@ -978,10 +978,12 @@ async function loadNpcs() {
     const box = $('npcList');
     if (!box) return;
     if (!list.length) { box.innerHTML = '<span class="muted">No NPCs yet</span>'; return; }
+    const langNames = { en:'EN', 'zh-TW':'繁中', ja:'日本語', ar:'العربية', id:'ID', ko:'한국어', ru:'RU', hi:'हिन्दी', ur:'اردو' };
     box.innerHTML = list.map((n) => {
       return '<div class="wl-row" data-npcid="' + escapeHtml(n.npcId) + '">' +
         '<span class="wl-addr">' + escapeHtml(n.name) + '</span>' +
-        '<span class="wl-rate">' + (n.enabled ? 'Active' : 'Off') + '</span>' +
+        '<span class="wl-rate">' + (langNames[n.language] || n.language || 'EN') + '</span>' +
+        '<span class="wl-rate">' + (n.enabled ? 'On' : 'Off') + '</span>' +
         '<button class="btn-mini npc-del" data-npcid="' + escapeHtml(n.npcId) + '">×</button>' +
         '</div>';
     }).join('');
@@ -1199,6 +1201,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.4.0';
+const FE_BUILD = '2.4.1';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

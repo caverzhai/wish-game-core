@@ -42,7 +42,7 @@ const I18N = {
     directInvitees: 'Direct invites', downlineTotal: 'Total downline',
     invTierTip: 'Tier is set by how many direct friends ever generated a payout node; commission on their wish volume:', invColPeople: 'Qualified friends', invColRate: 'Rate', invPeopleUnit: '',
     bbsTitle: 'Board (plain text, up to 1024 bytes)', bbsPlaceholder: 'Say something (max 1024 bytes)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
-    adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words',
+    adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words', npcAdded: 'NPC added successfully', npcAddFail: 'Failed to add NPC', npcNamePh: 'Name (optional)', npcWalletPh: '0x wallet (optional)', npcAddBtn: 'Add',
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', flows: 'Transactions',
     wdOk: 'Withdrawal sent.', wdCheckReceive: 'Please check your wallet for the funds.', wdPending: 'Submitted, pending platform processing.',
     premiumWithdraw: 'Premium → balance (insurance OFF)', premiumOutPh: 'Blank = withdraw all', premiumNeed: 'Enter a positive integer amount',
@@ -83,7 +83,7 @@ const I18N = {
     directInvitees: '直推人數', downlineTotal: '下線總人數',
     invTierTip: '名下有「生成過賠付節點」的直邀好友數決定檔位，按好友許願流水返傭：', invColPeople: '達標好友', invColRate: '返傭率', invPeopleUnit: '人',
     bbsTitle: '廣場（1024位元組以內純文字）', bbsPlaceholder: '說點什麼吧（最多1024位元組）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
-    adminModeration: '管理員治理', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
+    adminModeration: '管理員治理', npcAdded: 'NPC添加成功', npcAddFail: 'NPC添加失敗', npcNamePh: '名稱（選填）', npcWalletPh: '0x錢包地址（選填）', npcAddBtn: '添加', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', flows: '收支流水',
     wdOk: '提現已發送', wdCheckReceive: '請注意查收。', wdPending: '已提交，待平台處理。',
     premiumWithdraw: '保費提回餘額（需先關閉保險）', premiumOutPh: '留空＝全部提回', premiumNeed: '請輸入正整數金額',
@@ -124,7 +124,7 @@ const I18N = {
     directInvitees: '直接招待数', downlineTotal: '下流れ合計人数',
     invTierTip: '返還ノードを生成した直招待人数で档位が決定、招待した人の投入額に応じて報酬：', invColPeople: '達成フレンド', invColRate: '報酬率', invPeopleUnit: '人',
     bbsTitle: '広場（1024バイト以内のテキスト）', bbsPlaceholder: 'ひとこと（最大1024バイト）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
-    adminModeration: 'モデレーション', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
+    adminModeration: 'モデレーション', npcAdded: 'NPC追加成功', npcAddFail: 'NPC追加失敗', npcNamePh: '名前（任意）', npcWalletPh: '0xウォレット（任意）', npcAddBtn: '追加', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', flows: '取引履歴',
     wdOk: '送金しました。', wdCheckReceive: 'ウォレットへの着金をご確認ください。', wdPending: '送信済み。プラットフォーム処理待ち。',
     premiumWithdraw: '保険料を残高へ戻す（保険OFF時）', premiumOutPh: '空欄＝全額戻す', premiumNeed: '正の整数を入力してください',
@@ -164,7 +164,7 @@ const I18N = {
     meWallet: 'المحفظة', meInvite: 'الدعوة', copy: 'نسخ', scanQr: 'امسح QR للانضمام', qualifiedInvitees: 'المؤهلون', curRate: 'النسبة', invTotal: 'الإجمالي',
     invTierTip: 'تُحدد الشريدة بعدد الأصدقاء المباشرين الذين ولد لهم عقد تعويض؛ العمولة على حجم أمنياتهم:', invColPeople: 'أصدقاء مؤهلون', invColRate: 'النسبة', invPeopleUnit: '',
     bbsTitle: 'المنتدى (نص عادي، حتى 1024 بايت)', bbsPlaceholder: 'قل شيئاً (حد أقصى 1024 بايت)', bbsSend: 'نشر', bbsEmpty: 'لا توجد مشاركات بعد. كن الأول.',
-    adminModeration: 'الإشراف', addBlockedWord: 'حظر كلمة', wordPh: 'أدخل كلمة للحظر', deletePost: 'حذف', banUser: 'حظر', unbanUser: 'رفع الحظر', bannedTag: 'محظور', noBlocked: 'لا توجد كلمات محظورة',
+    adminModeration: 'الإشراف', addBlockedWord: 'حظر كلمة', wordPh: 'أدخل كلمة للحظر', deletePost: 'حذف', banUser: 'حظر', unbanUser: 'رفع الحظر', bannedTag: 'محظور', noBlocked: 'لا توجد كلمات محظورة', npcAdded: 'تمت إضافة NPC بنجاح', npcAddFail: 'فشل إضافة NPC', npcNamePh: 'الاسم (اختياري)', npcWalletPh: '0x المحفظة (اختياري)', npcAddBtn: 'إضافة',
     avail: 'متاح', frozen: 'محتجز', withdraw: 'سحب (2-500، رسوم 1)', withdrawing: 'جارٍ المعالجة…', flows: 'المعاملات',
     wdOk: 'تم إرسال السحب.', wdCheckReceive: 'يرجى التحقق من محفظتك للحصول على الأموال.', wdPending: 'تم الإرسال، بانتظار معالجة المنصة.',
     premiumWithdraw: 'رسم التأمين → الرصيد (التأمين متوقف)', premiumOutPh: 'اتركه فارغاً = سحب الكل', premiumNeed: 'أدخل مبلغاً صحيحاً موجباً',
@@ -203,7 +203,7 @@ const I18N = {
     meWallet: 'Dompet', meInvite: 'Undangan', copy: 'Salin', scanQr: 'Pindai QR untuk bergabung', qualifiedInvitees: 'Memenuhi syarat', curRate: 'Rate', invTotal: 'Total',
     invTierTip: 'Tier ditentukan oleh jumlah teman langsung yang pernah menghasilkan node kompensasi; komisi atas volume keinginan mereka:', invColPeople: 'Teman memenuhi syarat', invColRate: 'Rate', invPeopleUnit: 'orang',
     bbsTitle: 'Forum (teks biasa, hingga 1024 byte)', bbsPlaceholder: 'Katakan sesuatu (maks 1024 byte)', bbsSend: 'Kirim', bbsEmpty: 'Belum ada kiriman. Jadilah yang pertama.',
-    adminModeration: 'Moderasi', addBlockedWord: 'Blokir kata', wordPh: 'Masukkan kata yang diblokir', deletePost: 'Hapus', banUser: 'Blokir', unbanUser: 'Buka blokir', bannedTag: 'DIBLOKIR', noBlocked: 'Tidak ada kata diblokir',
+    adminModeration: 'Moderasi', addBlockedWord: 'Blokir kata', wordPh: 'Masukkan kata yang diblokir', deletePost: 'Hapus', banUser: 'Blokir', unbanUser: 'Buka blokir', bannedTag: 'DIBLOKIR', noBlocked: 'Tidak ada kata diblokir', npcAdded: 'NPC berhasil ditambahkan', npcAddFail: 'Gagal menambahkan NPC', npcNamePh: 'Nama (opsional)', npcWalletPh: '0x dompet (opsional)', npcAddBtn: 'Tambah',
     avail: 'Tersedia', frozen: 'Ditahan', withdraw: 'Tarik (2-500, biaya 1)', withdrawing: 'Memproses…', flows: 'Transaksi',
     wdOk: 'Penarikan dikirim.', wdCheckReceive: 'Silakan cek dompet Anda untuk dana.', wdPending: 'Terkirim, menunggu pemrosesan platform.',
     premiumWithdraw: 'Premi → saldo (asuransi NONAKTIF)', premiumOutPh: 'Kosong = tarik semua', premiumNeed: 'Masukkan jumlah bilangan bulat positif',
@@ -242,7 +242,7 @@ const I18N = {
     meWallet: '지갑', meInvite: '초대', copy: '복사', scanQr: 'QR 코드 스캔', qualifiedInvitees: '조건 달성', curRate: '비율', invTotal: '누적',
     invTierTip: '보상 노드를 생성한 직접 초대 친구 수로 등급이 결정되며, 친구의 소원 금액에 따라 수수료 지급:', invColPeople: '달성 친구', invColRate: '수수료율', invPeopleUnit: '명',
     bbsTitle: '게시판 (순수 텍스트, 최대 1024바이트)', bbsPlaceholder: '하고 싶은 말 (최대 1024바이트)', bbsSend: '게시', bbsEmpty: '아직 게시글이 없습니다. 첫 글을 남겨보세요.',
-    adminModeration: '관리', addBlockedWord: '단어 차단', wordPh: '차단할 단어 입력', deletePost: '삭제', banUser: '차단', unbanUser: '차단 해제', bannedTag: '차단됨', noBlocked: '차단된 단어 없음',
+    adminModeration: '관리', addBlockedWord: '단어 차단', wordPh: '차단할 단어 입력', deletePost: '삭제', banUser: '차단', unbanUser: '차단 해제', bannedTag: '차단됨', noBlocked: '차단된 단어 없음', npcAdded: 'NPC 추가 성공', npcAddFail: 'NPC 추가 실패', npcNamePh: '이름 (선택)', npcWalletPh: '0x 지갑 (선택)', npcAddBtn: '추가',
     avail: '사용 가능', frozen: '보류', withdraw: '출금 (2-500, 수수료 1)', withdrawing: '처리 중…', flows: '거래 내역',
     wdOk: '출금이 전송되었습니다.', wdCheckReceive: '지갑에서 입금을 확인해 주세요.', wdPending: '접수되었습니다. 플랫폼 처리 대기 중.',
     premiumWithdraw: '보험료 → 잔액 (보험 OFF 시)', premiumOutPh: '비우면 전액 출금', premiumNeed: '양의 정수 금액을 입력하세요',
@@ -281,7 +281,7 @@ const I18N = {
     meWallet: 'Кошелёк', meInvite: 'Приглашения', copy: 'Копировать', scanQr: 'Сканировать QR', qualifiedInvitees: 'Квалифицированные', curRate: 'Ставка', invTotal: 'Всего',
     invTierTip: 'Уровень определяется числом прямых друзей, создавших узел выплат; комиссия с объёма их желаний:', invColPeople: 'Квалифицированные друзья', invColRate: 'Ставка', invPeopleUnit: '',
     bbsTitle: 'Форум (простой текст, до 1024 байт)', bbsPlaceholder: 'Напишите что-нибудь (макс. 1024 байт)', bbsSend: 'Опубликовать', bbsEmpty: 'Пока нет сообщений. Будьте первым.',
-    adminModeration: 'Модерация', addBlockedWord: 'Заблокировать слово', wordPh: 'Введите слово для блокировки', deletePost: 'Удалить', banUser: 'Забанить', unbanUser: 'Разбанить', bannedTag: 'ЗАБАНЕН', noBlocked: 'Нет заблокированных слов',
+    adminModeration: 'Модерация', addBlockedWord: 'Заблокировать слово', wordPh: 'Введите слово для блокировки', deletePost: 'Удалить', banUser: 'Забанить', unbanUser: 'Разбанить', bannedTag: 'ЗАБАНЕН', noBlocked: 'Нет заблокированных слов', npcAdded: 'NPC успешно добавлен', npcAddFail: 'Ошибка добавления NPC', npcNamePh: 'Имя (необязательно)', npcWalletPh: '0x кошелек (необязательно)', npcAddBtn: 'Добавить',
     avail: 'Доступно', frozen: 'Заморожено', withdraw: 'Вывод (2-500, комиссия 1)', withdrawing: 'Обработка…', flows: 'Транзакции',
     wdOk: 'Вывод отправлен.', wdCheckReceive: 'Проверьте кошелёк — средства должны поступить.', wdPending: 'Отправлено, ожидает обработки платформой.',
     premiumWithdraw: 'Премия → баланс (страховка ВЫКЛ)', premiumOutPh: 'Пусто = вывести всё', premiumNeed: 'Введите положительное целое число',
@@ -320,7 +320,7 @@ const I18N = {
     meWallet: 'वॉलेट', meInvite: 'निमंत्रण', copy: 'कॉपी', scanQr: 'जुड़ने के लिए QR स्कैन करें', qualifiedInvitees: 'योग्य', curRate: 'दर', invTotal: 'कुल',
     invTierTip: 'स्तर भुगतान नोड बनाने वाले सीधे दोस्तों की संख्या से तय होता है; उनके विश मात्रा पर कमीशन:', invColPeople: 'योग्य दोस्त', invColRate: 'दर', invPeopleUnit: '',
     bbsTitle: 'बोर्ड (सादा पाठ, 1024 बाइट तक)', bbsPlaceholder: 'कुछ लिखें (अधिकतम 1024 बाइट)', bbsSend: 'पोस्ट', bbsEmpty: 'अभी कोई पोस्ट नहीं. पहले बनें.',
-    adminModeration: 'मॉडरेशन', addBlockedWord: 'शब्द ब्लॉक करें', wordPh: 'ब्लॉक करने के लिए शब्द दर्ज करें', deletePost: 'हटाएँ', banUser: 'बैन', unbanUser: 'अनबैन', bannedTag: 'बैन्ड', noBlocked: 'कोई ब्लॉक शब्द नहीं',
+    adminModeration: 'मॉडरेशन', addBlockedWord: 'शब्द ब्लॉक करें', wordPh: 'ब्लॉक करने के लिए शब्द दर्ज करें', deletePost: 'हटाएँ', banUser: 'बैन', unbanUser: 'अनबैन', bannedTag: 'बैन्ड', noBlocked: 'कोई ब्लॉक शब्द नहीं', npcAdded: 'NPC सफलतापूर्वक जोड़ा गया', npcAddFail: 'NPC जोड़ने में विफल', npcNamePh: 'नाम (वैकल्पिक)', npcWalletPh: '0x वॉलेट (वैकल्पिक)', npcAddBtn: 'जोड़ें',
     avail: 'उपलब्ध', frozen: 'रोका गया', withdraw: 'निकासी (2-500, शुल्क 1)', withdrawing: 'प्रोसेसिंग…', flows: 'लेनदेन',
     wdOk: 'निकासी भेजी गई.', wdCheckReceive: 'कृपया धन के लिए अपना वॉलेट देखें.', wdPending: 'सबमिट हुआ, प्लेटफ़ॉर्म प्रोसेसिंग की प्रतीक्षा में.',
     premiumWithdraw: 'प्रीमियम → बैलेंस (बीमा बंद)', premiumOutPh: 'खाली = सब निकालें', premiumNeed: 'धनात्मक पूर्णांक राशि दर्ज करें',
@@ -359,7 +359,7 @@ const I18N = {
     meWallet: 'والیٹ', meInvite: 'دعوت', copy: 'کاپی', scanQr: 'شامل ہونے کے لیے QR اسکین کریں', qualifiedInvitees: 'اہل', curRate: 'شرح', invTotal: 'کل',
     invTierTip: 'درجہ براہ راست دوستوں کی تعداد سے طے ہوتا ہے جنہوں نے ادائیگی نوڈ بنایا; ان کی خواہش کی رقم پر کمیشن:', invColPeople: 'اہل دوست', invColRate: 'شرح', invPeopleUnit: '',
     bbsTitle: 'بورڈ (سادہ متن، 1024 بائٹ تک)', bbsPlaceholder: 'کچھ لکھیں (زیادہ سے زیادہ 1024 بائٹ)', bbsSend: 'پوسٹ', bbsEmpty: 'ابھی کوئی پوسٹ نہیں. پہلے بنیں.',
-    adminModeration: 'ماڈریشن', addBlockedWord: 'لفظ بلاک کریں', wordPh: 'بلاک کرنے کے لیے لفظ درج کریں', deletePost: 'حذف کریں', banUser: 'بین', unbanUser: 'ان بین', bannedTag: 'بین شدہ', noBlocked: 'کوئی بلاک شدہ لفظ نہیں',
+    adminModeration: 'ماڈریشن', npcAdded: 'NPC کامیابی سے شامل ہو گیا', npcAddFail: 'NPC شامل کرنے میں ناکامی', npcNamePh: 'نام (اختیاری)', npcWalletPh: '0x والیٹ (اختیاری)', npcAddBtn: 'شامل کریں', addBlockedWord: 'لفظ بلاک کریں', wordPh: 'بلاک کرنے کے لیے لفظ درج کریں', deletePost: 'حذف کریں', banUser: 'بین', unbanUser: 'ان بین', bannedTag: 'بین شدہ', noBlocked: 'کوئی بلاک شدہ لفظ نہیں',
     avail: 'دستیاب', frozen: 'روکا گیا', withdraw: 'نکاسی (2-500، فیس 1)', withdrawing: 'پروسیسنگ…', flows: 'لین دین',
     wdOk: 'نکاسی بھیج دی گئی.', wdCheckReceive: 'رقم کے لیے اپنا والیٹ چیک کریں.', wdPending: 'جمع ہو گیا، پلیٹ فارم پروسیسنگ کا انتظار.',
     premiumWithdraw: 'پریمیم → بیلنس (انشورنس آف)', premiumOutPh: 'خالی = سب نکالیں', premiumNeed: 'مثبت عدد صحیح رقم درج کریں',
@@ -1006,13 +1006,15 @@ function bindNpcAdd() {
     const name = $('npcNameInput').value.trim();
     const wallet = $('npcWalletInput') ? $('npcWalletInput').value.trim() : '';
     const language = $('npcLangSelect') ? $('npcLangSelect').value : '';
+    btn.disabled = true;
     try {
-      await api('/admin/npc/add', { uid: state.uid, name: name || null, wallet: wallet || null, language: language || null });
+      const r = await api('/admin/npc/add', { uid: state.uid, name: name || null, wallet: wallet || null, language: language || null });
       $('npcNameInput').value = '';
       if ($('npcWalletInput')) $('npcWalletInput').value = '';
-      showToast('NPC added');
-      loadNpcs();
-    } catch (e) { alert(e.message); }
+      showToast(t('npcAdded') + ': ' + (r.npc?.wallet || '').slice(0, 10) + '...');
+      await loadNpcs();
+    } catch (e) { alert(t('npcAddFail') + ': ' + e.message); }
+    finally { btn.disabled = false; }
   };
   loadNpcs();
 }
@@ -1210,6 +1212,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.6.1';
+const FE_BUILD = '2.6.2';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

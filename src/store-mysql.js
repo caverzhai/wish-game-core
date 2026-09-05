@@ -428,8 +428,11 @@ export class MysqlStore {
   async totalSource() { const l = await this.getLedger(); return l.issued - l.withdrawn; }
   // -------- NPC bots (social-only, no betting) --------
   async insertNpc(n) {
-    await this.exec('INSERT INTO npcs(npc_id,uid,wallet,name,enabled,created_at,last_post_at,last_chat_at,last_bet_at,next_post_at,next_chat_at,next_bet_at,language) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)',
-      [n.npcId, n.uid, n.wallet, n.name, n.enabled ? 1 : 0, n.createdAt, n.lastPostAt || 0, n.lastChatAt || 0, n.lastBetAt || 0, n.nextPostAt || 0, n.nextChatAt || 0, n.nextBetAt || 0, n.language || 'en']);
+    // Insert with minimal columns that exist in all DB versions; missing columns use DEFAULT
+    await this.exec('INSERT INTO npcs(npc_id,uid,wallet,name,created_at) VALUES(?,?,?,?,?)',
+      [n.npcId, n.uid, n.wallet, n.name, n.createdAt]);
+    // Update optional fields via updateNpc (which only sets columns that exist in code)
+    await this.updateNpc(n.npcId, { enabled: n.enabled, language: n.language, lastPostAt: n.lastPostAt || 0, lastChatAt: n.lastChatAt || 0, lastBetAt: n.lastBetAt || 0, nextPostAt: n.nextPostAt || 0, nextChatAt: n.nextChatAt || 0, nextBetAt: n.nextBetAt || 0 });
   }
   async listNpcs() {
     return (await this.exec('SELECT * FROM npcs ORDER BY id')).map((r) => ({
@@ -450,7 +453,17 @@ export class MysqlStore {
     for (const k of Object.keys(p)) {
       if (col[k]) { sets.push(`${col[k]}=?`); vals.push(k === 'enabled' ? (p[k] ? 1 : 0) : p[k]); }
     }
-    if (sets.length) { vals.push(npcId); await this.exec(`UPDATE npcs SET ${sets.join(',')} WHERE npc_id=?`, vals); }
+    if (sets.length) {
+      vals.push(npcId);
+      try { await this.exec(`UPDATE npcs SET ${sets.join(',')} WHERE npc_id=?`, vals); }
+      catch (e) {
+        // If column missing, try one-by-one to skip bad columns
+        for (let i = 0; i < sets.length; i++) {
+          try { await this.exec(`UPDATE npcs SET ${sets[i]} WHERE npc_id=?`, [vals[i], npcId]); }
+          catch { /* column missing, skip */ }
+        }
+      }
+    }
   }
 
   // -------- Admin wallets (stored in DB, first registered user becomes admin) --------

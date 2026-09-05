@@ -74,6 +74,9 @@ CREATE TABLE IF NOT EXISTS blocked_words (
 CREATE TABLE IF NOT EXISTS whitelist (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, wallet VARCHAR(128) UNIQUE, per_mille INT DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS admins (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, wallet VARCHAR(128) UNIQUE, created_at BIGINT
+);
 CREATE TABLE IF NOT EXISTS announcement (
   id TINYINT PRIMARY KEY, content TEXT, at BIGINT DEFAULT 0, uid VARCHAR(16) NULL, wallet VARCHAR(128) NULL
 );
@@ -448,6 +451,27 @@ export class MysqlStore {
       if (col[k]) { sets.push(`${col[k]}=?`); vals.push(k === 'enabled' ? (p[k] ? 1 : 0) : p[k]); }
     }
     if (sets.length) { vals.push(npcId); await this.exec(`UPDATE npcs SET ${sets.join(',')} WHERE npc_id=?`, vals); }
+  }
+
+  // -------- Admin wallets (stored in DB, first registered user becomes admin) --------
+  async listAdmins() {
+    return (await this.exec('SELECT wallet FROM admins')).map((r) => r.wallet.toLowerCase());
+  }
+  async addAdmin(wallet) {
+    await this.exec('INSERT IGNORE INTO admins(wallet, created_at) VALUES(?,?)', [String(wallet).toLowerCase(), Date.now()]);
+    return true;
+  }
+  async removeAdmin(wallet) {
+    await this.exec('DELETE FROM admins WHERE wallet=?', [String(wallet).toLowerCase()]);
+    return true;
+  }
+  async isAdminWallet(wallet) {
+    if (!wallet) return false;
+    const rows = await this.exec('SELECT id FROM admins WHERE wallet=? LIMIT 1', [String(wallet).toLowerCase()]);
+    return rows.length > 0;
+  }
+  async userCount() {
+    return (await this.exec('SELECT COUNT(*) c FROM users'))[0].c;
   }
 
   async assertBalanced(t = '') {

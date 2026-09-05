@@ -24,6 +24,7 @@ export class MemoryStore {
     this.announcement = null; // system announcement {content, at, uid, wallet}
     this.chainTxs = new Map(); // credited on-chain tx hash -> {uid,inner,at}, idempotent dedup (in-memory loses on restart, production uses MySQL)
     this.npcs = []; // NPC bot records
+    this.admins = []; // admin wallet addresses
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
     this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0, npc: 0 };
   }
@@ -230,6 +231,22 @@ export class MemoryStore {
     if (i >= 0) Object.assign(this.npcs[i], p);
   }
 
+  // -------- Admin wallets --------
+  async listAdmins() { return [...this.admins]; }
+  async addAdmin(wallet) {
+    const w = String(wallet).toLowerCase();
+    if (!this.admins.includes(w)) this.admins.push(w);
+    return true;
+  }
+  async removeAdmin(wallet) {
+    this.admins = this.admins.filter((w) => w !== String(wallet).toLowerCase());
+    return true;
+  }
+  async isAdminWallet(wallet) {
+    return !!wallet && this.admins.includes(String(wallet).toLowerCase());
+  }
+  async userCount() { return this.users.size; }
+
   async assertBalanced(tag = '') {
     const inside = await this.totalInside();
     const source = await this.totalSource();
@@ -246,6 +263,7 @@ export class MemoryStore {
       accounts: new Map([...this.accounts].map(([k, v]) => [k, { ...v }])),
       ledger: { ...this.ledger },
       len: { bets: this.bets.length, nodes: this.nodes.length, nodeLogs: this.nodeLogs.length, payoutBatches: this.payoutBatches.length, referralLogs: this.referralLogs.length, flows: this.flows.length, withdraws: this.withdraws.length, posts: this.posts.length, replies: this.replies.length, rounds: this.rounds.size, users: this.users.size, npcs: this.npcs.length },
+      admins: [...this.admins],
       seq: { ...this._seq },
     };
   }
@@ -258,5 +276,6 @@ export class MemoryStore {
     this.rounds = new Map([...this.rounds].slice(0, s.len.rounds));
     this.users = new Map([...this.users].slice(0, s.len.users));
     this._seq = s.seq;
+    this.admins = s.admins || [];
   }
 }

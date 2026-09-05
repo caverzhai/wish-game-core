@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.7.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.8.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -40,10 +40,25 @@ setInterval(() => {
 
 // BBS moderation: admin wallets (ADMIN_WALLETS env, comma-separated) + initial blocked words
 const ADMIN_WALLETS = new Set((process.env.ADMIN_WALLETS || '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean));
-const isAdminWallet = (w) => !!w && ADMIN_WALLETS.has(String(w).toLowerCase());
+// Cache admin wallets from DB, refresh every 30s
+let _adminCache = { wallets: new Set(), updatedAt: 0 };
+async function isAdminWallet(w) {
+  if (!w) return false;
+  const lw = String(w).toLowerCase();
+  if (ADMIN_WALLETS.has(lw)) return true;
+  const now = Date.now();
+  if (now - _adminCache.updatedAt > 30000) {
+    try {
+      const dbAdmins = await store.listAdmins();
+      _adminCache.wallets = new Set(dbAdmins);
+      _adminCache.updatedAt = now;
+    } catch { /* store may not have listAdmins yet */ }
+  }
+  return _adminCache.wallets.has(lw);
+}
 async function requireAdmin(uid) {
   const u = await store.getUser(uid);
-  if (!isAdminWallet(u.wallet)) throw new GameError(Codes.FORBIDDEN, 'Admin privileges required');
+  if (!(await isAdminWallet(u.wallet))) throw new GameError(Codes.FORBIDDEN, 'Admin privileges required');
   return u;
 }
 async function assertNotBanned(uid) {
@@ -63,9 +78,31 @@ const route = (method, p, h) => routes.push({ method, p, h });
 route('POST', '/login', async (b) => {
   const ex = await store.getUserByWallet(b.wallet);
   const u = ex || await game.register(b.wallet, b.inviterUid ?? null, now());
-  return { ...u, isAdmin: isAdminWallet(u.wallet) };
+  // Auto-promote first registered user to admin
+  if (!ex) {
+    try {
+      const count = await store.userCount();
+      if (count <= 1) {
+        await store.addAdmin(u.wallet);
+        _adminCache.updatedAt = 0; // force cache refresh
+        console.log('[admin] first user auto-promoted:', u.wallet);
+      }
+    } catch (e) { console.error('[admin] auto-promote failed:', e.message); }
+  }
+  return { ...u, isAdmin: await isAdminWallet(u.wallet) };
 });
-route('POST', '/register', (b) => game.register(b.wallet, b.inviterUid ?? null, now()));
+route('POST', '/register', async (b) => {
+  const u = await game.register(b.wallet, b.inviterUid ?? null, now());
+  try {
+    const count = await store.userCount();
+    if (count <= 1) {
+      await store.addAdmin(u.wallet);
+      _adminCache.updatedAt = 0;
+      console.log('[admin] first user auto-promoted:', u.wallet);
+    }
+  } catch (e) { console.error('[admin] auto-promote failed:', e.message); }
+  return u;
+});
 route('GET', /^\/user\/(.+)$/, async (b, m) => {
   const uid = m[1];
   const user = await store.getUser(uid);

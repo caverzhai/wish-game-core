@@ -79,6 +79,7 @@ export class GameService {
       if (visited.has(uid)) return;
       visited.add(uid);
       const u = await s.getUser(uid);
+      if (!u) { inviterByUid.set(uid, null); return; }
       inviterByUid.set(uid, u.inviterUid);
       const rate = await s.getWhitelistRate(u.wallet);
       if (rate !== null) whitelistByUid.set(uid, BigInt(rate));

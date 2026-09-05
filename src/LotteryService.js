@@ -51,6 +51,33 @@ export const LOTTERY_PRODUCTS = [
       { level: 3, name: '三等奖', count: 25, amount: 10 },
     ],
   },
+  {
+    id: 'L2000',
+    name: '2000枚幸运池',
+    totalAmount: 2000,
+    image: '/lottery-2000.jpg',
+    numDigits: 4,
+    comingSoon: true,
+    prizes: [],
+  },
+  {
+    id: 'L5000',
+    name: '5000枚幸运池',
+    totalAmount: 5000,
+    image: '/lottery-5000.jpg',
+    numDigits: 4,
+    comingSoon: true,
+    prizes: [],
+  },
+  {
+    id: 'L10000',
+    name: '10000枚幸运池',
+    totalAmount: 10000,
+    image: '/lottery-10000.jpg',
+    numDigits: 5,
+    comingSoon: true,
+    prizes: [],
+  },
 ];
 
 export class LotteryService {
@@ -64,7 +91,9 @@ export class LotteryService {
 
   _initRounds() {
     for (const p of LOTTERY_PRODUCTS) {
-      this.rounds.set(p.id, this._createRound(p.id));
+      if (!p.comingSoon) {
+        this.rounds.set(p.id, this._createRound(p.id));
+      }
       this.history.set(p.id, []);
       this.comments.set(p.id, []);
     }

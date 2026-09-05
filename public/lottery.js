@@ -17,9 +17,29 @@ const Lottery = (() => {
     if (!list) return;
     list.innerHTML = products.map(p => {
       const r = p.currentRound;
+      const roundNum = r ? r.roundId.split('_R')[1] : '0001';
+      if (p.comingSoon) {
+        return `
+          <div class="lottery-card coming-soon" data-id="${p.id}">
+            <div class="lottery-img-wrap">
+              <img src="${p.image}" alt="${p.name}" />
+              <div class="lottery-soon-overlay">Coming Soon</div>
+            </div>
+            <div class="lottery-card-info">
+              <div class="lottery-card-name">${p.name}</div>
+              <div class="lottery-card-meta">
+                <span>即将开放</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
       return `
         <div class="lottery-card" data-id="${p.id}">
-          <img src="${p.image}" alt="${p.name}" />
+          <div class="lottery-img-wrap">
+            <img src="${p.image}" alt="${p.name}" />
+            <div class="lottery-round-badge">第${roundNum}期</div>
+          </div>
           <div class="lottery-card-info">
             <div class="lottery-card-name">${p.name}</div>
             <div class="lottery-card-meta">
@@ -34,7 +54,7 @@ const Lottery = (() => {
       `;
     }).join('');
 
-    list.querySelectorAll('.lottery-card').forEach(card => {
+    list.querySelectorAll('.lottery-card:not(.coming-soon)').forEach(card => {
       card.onclick = () => openDetail(card.dataset.id);
     });
   }

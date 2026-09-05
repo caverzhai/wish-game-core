@@ -549,14 +549,24 @@ function tickCountdown() {
   else {
     const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
     $('countdown').textContent = remain;
-    // Last 10 seconds: big cool number, blink once per second, pools alternate flashing 3x/sec
+    // Last 10 seconds: big cool number, blink once per second, pools alternate flashing 3x/sec, voice countdown
     const poolsEl = document.querySelector('.pools');
-    if (remain <= 10) {
+    if (remain <= 10 && remain > 0) {
       $('countdown').className = 'countdown final';
       if (poolsEl) poolsEl.classList.add('final-10');
+      // Voice countdown in English (only once per second)
+      if (window._lastSpokenSec !== remain) {
+        window._lastSpokenSec = remain;
+        try {
+          const u = new SpeechSynthesisUtterance(String(remain));
+          u.lang = 'en-US'; u.rate = 1.2; u.volume = 0.8;
+          window.speechSynthesis.speak(u);
+        } catch (e) {}
+      }
     } else {
       $('countdown').className = remain <= 30 ? 'countdown urgent' : 'countdown';
       if (poolsEl) poolsEl.classList.remove('final-10');
+      window._lastSpokenSec = null;
     }
     // Round-card border marquee: green -> red, speed up as time passes
     const rc = $('roundCard');
@@ -774,7 +784,7 @@ const roundDetailCache = new Map();
 async function fillHistDetail(id, box) {
   let d = roundDetailCache.get(id);
   if (!d) { d = await api('/round/' + id); roundDetailCache.set(id, d); }
-  box.innerHTML = (d.bets || []).map((x) => `<div class="bet-line"><span class="tag ${x.side}">${x.side === 'red' ? t('winRed') : t('winGreen')}</span> ${x.uid} · ${t('stake')} ${fmt(x.amount)} · ${t('pickNum')} ${x.pick}</div>`).join('') || '<p class="muted">—</p>';
+  box.innerHTML = (d.bets || []).map((x) => `<div class="bet-line"><span class="tag ${x.side}">${x.side === 'red' ? t('redPool') : t('greenPool')}</span> ${x.uid} · ${t('stake')} ${fmt(x.amount)} · ${t('pickNum')} ${x.pick}</div>`).join('') || '<p class="muted">—</p>';
 }
 async function renderHistory() {
   const list = $('historyList');
@@ -1285,6 +1295,16 @@ async function refresh() {
   creditPending(); // Auto-recover confirmed on-chain pending orders each round, clear pending and unlock immediately after confirmation
   try {
     const [r, recent, me, pool] = await Promise.all([api('/round/current'), api('/recent'), api('/user/' + state.uid), api('/insurance/pool')]);
+    // Detect round settlement: announce winner in English
+    const prevRound = state.round;
+    if (prevRound && prevRound.state === 'active' && r && r.state !== 'active' && r.result && r.result.winSide) {
+      try {
+        const winner = r.result.winSide === 'red' ? 'Red wins' : 'Green wins';
+        const u = new SpeechSynthesisUtterance(winner);
+        u.lang = 'en-US'; u.rate = 1.0; u.volume = 0.9;
+        window.speechSynthesis.speak(u);
+      } catch (e) {}
+    }
     state.round = r; state.recent = recent; state.me = me; state.pool = pool;
     renderRound(); renderMe(); renderPoolPublic();
     if ($('tab-home').classList.contains('active')) renderHistory();
@@ -1357,6 +1377,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.10.0';
+const FE_BUILD = '2.10.1';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

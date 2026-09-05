@@ -549,25 +549,31 @@ function tickCountdown() {
   else {
     const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
     $('countdown').textContent = remain;
-    // Last 15 seconds: voice countdown starts at 15s, first number 10, every 1.5s
+    // Pool flashing phases: 30s=2s blink, 20s=1s blink, 10s=original 3x/sec alternate
     const poolsEl = document.querySelector('.pools');
+    if (poolsEl) {
+      poolsEl.classList.remove('phase-30', 'phase-20', 'final-10');
+      if (remain <= 10 && remain > 0) {
+        poolsEl.classList.add('final-10');
+      } else if (remain <= 20 && remain > 10) {
+        poolsEl.classList.add('phase-20');
+      } else if (remain <= 30 && remain > 20) {
+        poolsEl.classList.add('phase-30');
+      }
+    }
     if (remain <= 10 && remain > 0) {
       $('countdown').className = 'countdown final';
-      if (poolsEl) poolsEl.classList.add('final-10');
     } else {
       $('countdown').className = remain <= 30 ? 'countdown urgent' : 'countdown';
-      if (poolsEl) poolsEl.classList.remove('final-10');
     }
-    // Voice countdown: from 5s remaining, speak three,two,one in English (one per second)
-    if (remain <= 5 && remain > 0) {
-      const speakNum = remain - 2; // 5->3, 4->2, 3->1
-      const numWords = ['', 'one', 'two', 'three'];
-      if (speakNum >= 1 && speakNum <= 3 && window._lastSpokenNum !== speakNum) {
-        window._lastSpokenNum = speakNum;
-        speakRich(numWords[speakNum], { pitch: 0.4, rate: 0.85, volume: 0.85 });
+    // Countdown beep: deng deng every second in last 10 seconds
+    if (remain <= 10 && remain > 0) {
+      if (window._lastBeepSec !== remain) {
+        window._lastBeepSec = remain;
+        playCountdownBeep();
       }
     } else {
-      window._lastSpokenNum = null;
+      window._lastBeepSec = null;
     }
     // Round-card border marquee: green -> red, speed up as time passes
     const rc = $('roundCard');
@@ -1251,6 +1257,35 @@ if (window.speechSynthesis) {
   window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
   window.speechSynthesis.getVoices();
 }
+// Countdown beep sound using Web Audio API (deng deng like race start)
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+function playDeng(freq, duration, volume) {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration + 0.05);
+  } catch (e) {}
+}
+function playCountdownBeep() {
+  playDeng(880, 0.15, 0.15); // short deng, half volume
+}
+function playFinalBeep() {
+  playDeng(440, 0.8, 0.2); // long final beep, half volume
+  setTimeout(() => playDeng(660, 0.6, 0.15), 100);
+}
 // Coin drop sound effect using Web Audio API -哗哗啦啦 coins pouring
 function playCoinSound() {
   try {
@@ -1352,8 +1387,7 @@ async function refresh() {
     // Detect round settlement: announce winner in English
     const prevRound = state.round;
     if (prevRound && prevRound.state === 'active' && r && r.state !== 'active' && r.result && r.result.winSide) {
-      const winner = r.result.winSide === 'red' ? 'Red wins' : 'Green wins';
-      speakResult(winner);
+      playFinalBeep();
     }
     state.round = r; state.recent = recent; state.me = me; state.pool = pool;
     renderRound(); renderMe(); renderPoolPublic();
@@ -1427,6 +1461,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.10.3';
+const FE_BUILD = '2.10.4';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

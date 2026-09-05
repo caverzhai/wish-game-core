@@ -131,7 +131,18 @@ export class MysqlStore {
       await this.pool.query(stmt);
     }
     // Legacy DB idempotent migration: add later columns (DB error if column exists, ignore)
-    for (const alter of ['ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0', 'ALTER TABLE withdraws ADD COLUMN created_at BIGINT DEFAULT 0', 'ALTER TABLE npcs ADD COLUMN language VARCHAR(8) DEFAULT \'en\'', 'ALTER TABLE npcs ADD COLUMN last_bet_at BIGINT DEFAULT 0', 'ALTER TABLE npcs ADD COLUMN next_bet_at BIGINT DEFAULT 0']) {
+    for (const alter of [
+      'ALTER TABLE users ADD COLUMN banned TINYINT DEFAULT 0',
+      'ALTER TABLE withdraws ADD COLUMN created_at BIGINT DEFAULT 0',
+      'ALTER TABLE npcs ADD COLUMN language VARCHAR(8) DEFAULT \'en\'',
+      'ALTER TABLE npcs ADD COLUMN last_bet_at BIGINT DEFAULT 0',
+      'ALTER TABLE npcs ADD COLUMN next_bet_at BIGINT DEFAULT 0',
+      'ALTER TABLE npcs ADD COLUMN last_post_at BIGINT DEFAULT 0',
+      'ALTER TABLE npcs ADD COLUMN next_post_at BIGINT DEFAULT 0',
+      'ALTER TABLE npcs ADD COLUMN last_chat_at BIGINT DEFAULT 0',
+      'ALTER TABLE npcs ADD COLUMN next_chat_at BIGINT DEFAULT 0',
+      'ALTER TABLE npcs ADD COLUMN enabled TINYINT DEFAULT 1',
+    ]) {
       try { await this.pool.query(alter); } catch { /* column already exists */ }
     }
   }

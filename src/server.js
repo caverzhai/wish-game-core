@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.8.9'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.9.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -312,7 +312,7 @@ route('GET', '/ledger', async () => {
   const source = await store.totalSource();
   return { ...(await store.getLedger()), roomBalance: voice.totalRoomBalance(), storeKind: store.kind, balanced: inside === source, diff: inside - source };
 });
-route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now(), adminEnv: process.env.ADMIN_WALLETS || '(not set)', adminSetSize: ADMIN_WALLETS.size, adminSet: [...ADMIN_WALLETS] }));
+route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now() }));
 // Debug: NPC activity status
 route('GET', '/debug/npc', async () => {
   const npcs = await npc.listNpcs();
@@ -329,32 +329,9 @@ route('GET', '/debug/npc', async () => {
       betDue: n.nextBetAt <= nowTs, betNextIn: Math.max(0, n.nextBetAt - nowTs),
       lastChat: n.lastChatAt, lastPost: n.lastPostAt, lastBet: n.lastBetAt,
     })),
-    activityLog: npc.getActivityLog ? npc.getActivityLog() : [],
   };
 });
-// Debug: check npcs table columns
-route('GET', '/debug/npc-columns', async () => {
-  try {
-    const cols = await store.exec("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'npcs'");
-    return { columns: cols.map(c => c.COLUMN_NAME) };
-  } catch (e) {
-    return { error: e.message };
-  }
-});
-// Debug: manually add missing npc columns
-route('POST', '/debug/npc-fix-columns', async () => {
-  const results = [];
-  const missing = ['last_chat_at', 'next_chat_at'];
-  for (const col of missing) {
-    try {
-      await store.exec(`ALTER TABLE npcs ADD COLUMN ${col} BIGINT DEFAULT 0`);
-      results.push({ col, status: 'added' });
-    } catch (e) {
-      results.push({ col, status: 'failed', error: e.message });
-    }
-  }
-  return { results };
-});
+
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');

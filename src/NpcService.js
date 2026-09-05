@@ -192,11 +192,9 @@ export class NpcService {
     if (!npc) throw new Error('NPC not found');
     const amount = BigInt(Math.floor(Number(amountCoins))) * COIN;
     if (amount <= 0n) throw new Error('Invalid amount');
-    await this.store.transaction(async () => {
-      await this.store.applyLedger({ issued: amount });
-      await this.store.applyAccount(npc.uid, { avail: amount });
-      await this.store.addFlow(npc.uid, 'NPC_RECHARGE', amount, { note: 'admin recharge (minted)' });
-    }, 'npc-recharge');
+    await this.store.applyLedger({ issued: amount });
+    await this.store.applyAccount(npc.uid, { avail: amount });
+    await this.store.addFlow(npc.uid, 'NPC_RECHARGE', amount, { note: 'admin recharge (minted)' });
     return { npcId, amount: Number(amount) / Number(COIN) };
   }
 

@@ -98,6 +98,21 @@ CREATE TABLE IF NOT EXISTS npcs (
   next_post_at BIGINT DEFAULT 0, next_chat_at BIGINT DEFAULT 0, next_bet_at BIGINT DEFAULT 0,
   language VARCHAR(8) DEFAULT 'en'
 );
+CREATE TABLE IF NOT EXISTS lottery_rounds (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, round_id VARCHAR(32) UNIQUE,
+  product_id VARCHAR(16), status VARCHAR(16), total_sold INT DEFAULT 0,
+  created_at BIGINT, finished_at BIGINT NULL, winners_json TEXT NULL,
+  KEY idx_product(product_id), KEY idx_status(status)
+);
+CREATE TABLE IF NOT EXISTS lottery_entries (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, round_id VARCHAR(32), uid VARCHAR(16),
+  start_num INT, end_num INT, amount INT, created_at BIGINT,
+  KEY idx_round(round_id), KEY idx_uid(uid)
+);
+CREATE TABLE IF NOT EXISTS lottery_comments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, product_id VARCHAR(16), uid VARCHAR(16),
+  content VARCHAR(500), created_at BIGINT, KEY idx_product(product_id)
+);
 `;
 
 export class MysqlStore {
@@ -496,6 +511,54 @@ export class MysqlStore {
   }
   async userCount() {
     return (await this.exec('SELECT COUNT(*) c FROM users'))[0].c;
+  }
+
+  // -------- Lottery --------
+  async lotteryCreateRound(productId, roundId) {
+    await this.exec('INSERT INTO lottery_rounds (round_id, product_id, status, total_sold, created_at) VALUES (?, ?, ?, ?, ?)', [roundId, productId, 'selling', 0, Date.now()]);
+    return { roundId, productId, status: 'selling', totalSold: 0, createdAt: Date.now(), finishedAt: null, winners: [] };
+  }
+  async lotteryGetActiveRound(productId) {
+    const rows = await this.exec('SELECT * FROM lottery_rounds WHERE product_id = ? AND status = ? LIMIT 1', [productId, 'selling']);
+    if (!rows.length) return null;
+    const r = rows[0];
+    return { roundId: r.round_id, productId: r.product_id, status: r.status, totalSold: r.total_sold, createdAt: r.created_at, finishedAt: r.finished_at, winners: r.winners_json ? JSON.parse(r.winners_json) : [] };
+  }
+  async lotteryUpdateRound(roundId, updates) {
+    const sets = [], vals = [];
+    if (updates.status !== undefined) { sets.push('status = ?'); vals.push(updates.status); }
+    if (updates.totalSold !== undefined) { sets.push('total_sold = ?'); vals.push(updates.totalSold); }
+    if (updates.finishedAt !== undefined) { sets.push('finished_at = ?'); vals.push(updates.finishedAt); }
+    if (updates.winners !== undefined) { sets.push('winners_json = ?'); vals.push(JSON.stringify(updates.winners)); }
+    if (sets.length) { vals.push(roundId); await this.exec(`UPDATE lottery_rounds SET ${sets.join(', ')} WHERE round_id = ?`, vals); }
+  }
+  async lotteryAddEntry(roundId, uid, startNum, endNum, amount) {
+    await this.exec('INSERT INTO lottery_entries (round_id, uid, start_num, end_num, amount, created_at) VALUES (?, ?, ?, ?, ?, ?)', [roundId, uid, startNum, endNum, amount, Date.now()]);
+    return { roundId, uid, startNum, endNum, amount, createdAt: Date.now() };
+  }
+  async lotteryListEntries(roundId) {
+    const rows = await this.exec('SELECT * FROM lottery_entries WHERE round_id = ?', [roundId]);
+    return rows.map(e => ({ roundId: e.round_id, uid: e.uid, startNum: e.start_num, endNum: e.end_num, amount: e.amount, createdAt: e.created_at }));
+  }
+  async lotteryListMyNumbers(roundId, uid) {
+    const rows = await this.exec('SELECT * FROM lottery_entries WHERE round_id = ? AND uid = ?', [roundId, uid]);
+    return rows.map(e => ({ roundId: e.round_id, uid: e.uid, startNum: e.start_num, endNum: e.end_num, amount: e.amount, createdAt: e.created_at }));
+  }
+  async lotteryAddComment(productId, uid, content) {
+    const result = await this.exec('INSERT INTO lottery_comments (product_id, uid, content, created_at) VALUES (?, ?, ?, ?)', [productId, uid, content, Math.floor(Date.now() / 1000)]);
+    return { id: result.insertId, productId, uid, content, createdAt: Math.floor(Date.now() / 1000) };
+  }
+  async lotteryListComments(productId, limit = 50) {
+    const rows = await this.exec('SELECT * FROM lottery_comments WHERE product_id = ? ORDER BY id DESC LIMIT ?', [productId, limit]);
+    return rows.map(c => ({ id: c.id, productId: c.product_id, uid: c.uid, content: c.content, createdAt: c.created_at }));
+  }
+  async lotteryListHistory(productId, limit = 10) {
+    const rows = await this.exec('SELECT * FROM lottery_rounds WHERE product_id = ? AND status = ? ORDER BY id DESC LIMIT ?', [productId, 'finished', limit]);
+    return rows.map(r => ({ roundId: r.round_id, productId: r.product_id, totalSold: r.total_sold, winners: r.winners_json ? JSON.parse(r.winners_json) : [], finishedAt: r.finished_at }));
+  }
+  async lotteryCountFinished(productId) {
+    const rows = await this.exec('SELECT COUNT(*) as cnt FROM lottery_rounds WHERE product_id = ? AND status = ?', [productId, 'finished']);
+    return rows[0].cnt;
   }
 
   async assertBalanced(t = '') {

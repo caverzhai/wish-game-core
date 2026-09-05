@@ -105,7 +105,7 @@ const Lottery = (() => {
         <div class="lottery-section-title">${t('lotteryBuyNow') || '立即购买'}</div>
         <div class="lottery-buy-row">
           <label>${t('lotteryAmount') || '投入数量'}:</label>
-          <input type="number" id="lotteryAmount" min="1" max="${r.totalAmount - r.totalSold}" value="1" />
+          <input type="number" id="lotteryAmount" min="1" max="${r.totalAmount - r.totalSold}" value="55" />
           <span style="font-size:12px;color:var(--muted);">枚</span>
         </div>
         <button id="lotteryBuyBtn" class="btn-primary" style="width:100%;">${t('lotteryConfirmBuy') || '确认购买'}</button>

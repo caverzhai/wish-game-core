@@ -25,6 +25,9 @@ export class MemoryStore {
     this.chainTxs = new Map(); // credited on-chain tx hash -> {uid,inner,at}, idempotent dedup (in-memory loses on restart, production uses MySQL)
     this.npcs = []; // NPC bot records
     this.admins = []; // admin wallet addresses
+    this.lotteryRounds = new Map();
+    this.lotteryEntries = [];
+    this.lotteryComments = [];
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
     this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0, npc: 0 };
   }
@@ -142,6 +145,54 @@ export class MemoryStore {
   async saveRoom(room) { this.rooms.set(room.roomId, { ...room }); }
   async loadRooms() { return [...this.rooms.values()].filter((r) => !r.destroyed).map((r) => ({ ...r })); }
   async deleteRoom(roomId) { const r = this.rooms.get(roomId); if (r) r.destroyed = true; }
+
+  // -------- Lottery --------
+  async lotteryCreateRound(productId, roundId) {
+    const round = { roundId, productId, status: 'selling', totalSold: 0, createdAt: Date.now(), finishedAt: null, winners: [] };
+    this.lotteryRounds.set(roundId, round);
+    return round;
+  }
+  async lotteryGetActiveRound(productId) {
+    for (const r of this.lotteryRounds.values()) {
+      if (r.productId === productId && r.status === 'selling') return { ...r };
+    }
+    return null;
+  }
+  async lotteryUpdateRound(roundId, updates) {
+    const r = this.lotteryRounds.get(roundId);
+    if (!r) return null;
+    Object.assign(r, updates);
+    return { ...r };
+  }
+  async lotteryAddEntry(roundId, uid, startNum, endNum, amount) {
+    const entry = { roundId, uid, startNum, endNum, amount, createdAt: Date.now() };
+    this.lotteryEntries.push(entry);
+    return entry;
+  }
+  async lotteryListEntries(roundId) {
+    return this.lotteryEntries.filter(e => e.roundId === roundId).map(e => ({ ...e }));
+  }
+  async lotteryListMyNumbers(roundId, uid) {
+    return this.lotteryEntries.filter(e => e.roundId === roundId && e.uid === uid).map(e => ({ ...e }));
+  }
+  async lotteryAddComment(productId, uid, content) {
+    const comment = { id: Date.now() + Math.random(), productId, uid, content, createdAt: Math.floor(Date.now() / 1000) };
+    this.lotteryComments.push(comment);
+    return comment;
+  }
+  async lotteryListComments(productId, limit = 50) {
+    return this.lotteryComments.filter(c => c.productId === productId).slice(-limit).reverse().map(c => ({ ...c }));
+  }
+  async lotteryListHistory(productId, limit = 10) {
+    return [...this.lotteryRounds.values()]
+      .filter(r => r.productId === productId && r.status === 'finished')
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, limit)
+      .map(r => ({ roundId: r.roundId, productId: r.productId, totalSold: r.totalSold, winners: r.winners, finishedAt: r.finishedAt }));
+  }
+  async lotteryCountFinished(productId) {
+    return [...this.lotteryRounds.values()].filter(r => r.productId === productId && r.status === 'finished').length;
+  }
   async addFlow(uid, bizType, amount, ref = {}) {
     const id = await this.nextId('flow', 'F');
     this.flows.push({ id, uid, bizType, amount, ref, at: ref.at ?? Date.now() });

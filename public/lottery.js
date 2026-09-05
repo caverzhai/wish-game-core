@@ -308,13 +308,33 @@ const Lottery = (() => {
       const list = document.getElementById('lotteryHistoryList');
       if (!list) return;
       list.innerHTML = history.map(h => {
-        const winners = h.winners.map(w =>
-          `<span class="lottery-winner-tag winner-${w.level}">${w.levelName}: ${w.number}</span>`
-        ).join('');
+        // Group winners by level
+        const byLevel = {};
+        for (const w of h.winners) {
+          if (!byLevel[w.level]) byLevel[w.level] = { name: w.levelName, amount: w.amount, items: [] };
+          byLevel[w.level].items.push(w);
+        }
+        const levels = Object.keys(byLevel).sort((a, b) => a - b);
+        const winnerHtml = levels.map(lv => {
+          const g = byLevel[lv];
+          const items = g.items.map(w => {
+            const walletShort = w.wallet ? w.wallet.slice(0, 6) + '...' + w.wallet.slice(-4) : w.uid;
+            return `<div class="lottery-winner-row"><span class="lottery-winner-num">${w.number}</span><span class="lottery-winner-wallet">${walletShort}</span></div>`;
+          }).join('');
+          return `
+            <div class="lottery-prize-group">
+              <div class="lottery-prize-header">
+                <span class="lottery-prize-name">${g.name}</span>
+                <span class="lottery-prize-amount">${g.amount}枚</span>
+              </div>
+              <div class="lottery-prize-winners">${items}</div>
+            </div>
+          `;
+        }).join('');
         return `
           <div class="lottery-history-item">
-            <div style="margin-bottom:4px;"><strong>${h.roundId}</strong> - ${new Date(h.finishedAt * 1000).toLocaleDateString()}</div>
-            <div>${winners}</div>
+            <div style="margin-bottom:8px;"><strong>${h.roundId}</strong> - ${new Date(h.finishedAt * 1000).toLocaleDateString()}</div>
+            ${winnerHtml}
           </div>
         `;
       }).join('') || `<div style="font-size:12px;color:var(--muted);">${t('lotteryNoHistory') || '暂无开奖记录'}</div>`;

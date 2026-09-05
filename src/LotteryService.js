@@ -164,6 +164,13 @@ export class LotteryService {
       }
     }
 
+    // Build uid -> wallet map
+    const allUsers = await this.store.listUsers();
+    const uidWallet = {};
+    for (const u of allUsers) {
+      uidWallet[u.uid] = u.wallet;
+    }
+
     const shuffled = [...numberOwners].sort(() => Math.random() - 0.5);
     const winners = [];
     let idx = 0;
@@ -178,6 +185,7 @@ export class LotteryService {
         winners.push({
           number: String(pick.number).padStart(product.numDigits, '0'),
           uid: pick.uid,
+          wallet: uidWallet[pick.uid] || '',
           level: prize.level,
           levelName: prize.name,
           amount: prize.amount,

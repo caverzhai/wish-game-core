@@ -480,3 +480,12 @@ textarea { resize: vertical; }
 .winner-2 { background: rgba(192,192,192,.2); color: #c0c0c0; }
 .winner-3 { background: rgba(205,127,50,.2); color: #cd7f32; }
 .winner-4 { background: rgba(100,100,100,.2); color: #999; }
+.lottery-prize-group { margin-bottom: 10px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.lottery-prize-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--card2); font-size: 13px; }
+.lottery-prize-name { font-weight: 700; color: var(--gold); }
+.lottery-prize-amount { color: var(--txt); font-weight: 600; }
+.lottery-prize-winners { padding: 6px 10px; }
+.lottery-winner-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px; border-bottom: 1px dashed var(--line); }
+.lottery-winner-row:last-child { border-bottom: none; }
+.lottery-winner-num { font-family: monospace; color: var(--txt); font-weight: 600; }
+.lottery-winner-wallet { color: var(--muted); font-size: 11px; }

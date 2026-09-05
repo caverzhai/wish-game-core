@@ -970,6 +970,41 @@ function bindWhitelist() {
   };
   loadWhitelist();
 }
+// ---------------- NPC admin management ----------------
+async function loadNpcs() {
+  try {
+    const r = await api('/admin/npcs?uid=' + encodeURIComponent(state.uid));
+    const list = r.list || [];
+    const box = $('npcList');
+    if (!box) return;
+    if (!list.length) { box.innerHTML = '<span class="muted">No NPCs yet</span>'; return; }
+    box.innerHTML = list.map((n) => {
+      return '<div class="wl-row" data-npcid="' + escapeHtml(n.npcId) + '">' +
+        '<span class="wl-addr">' + escapeHtml(n.name) + '</span>' +
+        '<span class="wl-rate">' + (n.enabled ? 'Active' : 'Off') + '</span>' +
+        '<button class="btn-mini npc-del" data-npcid="' + escapeHtml(n.npcId) + '">×</button>' +
+        '</div>';
+    }).join('');
+    box.querySelectorAll('.npc-del').forEach((b) => b.onclick = () => {
+      if (!confirm('Remove this NPC?')) return;
+      api('/admin/npc/remove', { uid: state.uid, npcId: b.dataset.npcid }).then(loadNpcs).catch((e) => alert(e.message));
+    });
+  } catch (e) { /* not admin, ignore */ }
+}
+function bindNpcAdd() {
+  const btn = $('npcAddBtn');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const name = $('npcNameInput').value.trim();
+    try {
+      await api('/admin/npc/add', { uid: state.uid, name: name || null });
+      $('npcNameInput').value = '';
+      showToast('NPC added');
+      loadNpcs();
+    } catch (e) { alert(e.message); }
+  };
+  loadNpcs();
+}
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 async function postBbs() {
   const content = $('bbsInput').value.trim();
@@ -1132,7 +1167,7 @@ function init() {
     } catch (e) { alert(e.message); } finally { btn.disabled = false; }
   };
   $('wordAddBtn').onclick = adminAddWord;
-  bindWhitelist();
+  bindWhitelist(); bindNpcAdd();
   function fallbackCopy(text, cb) {
     const ta = document.createElement('textarea');
     ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
@@ -1164,6 +1199,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.3.24';
+const FE_BUILD = '2.4.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

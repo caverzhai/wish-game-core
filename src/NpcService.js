@@ -136,7 +136,7 @@ export class NpcService {
   }
 
   async addNpc(name) {
-    const wallet = 'NPC_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const wallet = '0x' + Array.from({length: 40}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
     const user = await this.game.register(wallet, null, nowSec());
     const lang = LANGUAGES[this._langIndex % LANGUAGES.length];
     this._langIndex++;

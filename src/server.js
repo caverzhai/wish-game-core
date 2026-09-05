@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.8.7'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.8.8'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -313,6 +313,24 @@ route('GET', '/ledger', async () => {
   return { ...(await store.getLedger()), roomBalance: voice.totalRoomBalance(), storeKind: store.kind, balanced: inside === source, diff: inside - source };
 });
 route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now(), adminEnv: process.env.ADMIN_WALLETS || '(not set)', adminSetSize: ADMIN_WALLETS.size, adminSet: [...ADMIN_WALLETS] }));
+// Debug: NPC activity status
+route('GET', '/debug/npc', async () => {
+  const npcs = await npc.listNpcs();
+  const now = nowSec();
+  return {
+    now,
+    npcCount: npcs.length,
+    rooms: (await voice.listRooms()).map(r => ({ id: r.roomId, name: r.name, type: r.type, members: r.memberCount })),
+    npcs: npcs.map(n => ({
+      id: n.npcId, uid: n.uid, wallet: n.wallet, lang: n.language,
+      bal: n.balance,
+      chatDue: n.nextChatAt <= now, chatNextIn: Math.max(0, n.nextChatAt - now),
+      postDue: n.nextPostAt <= now, postNextIn: Math.max(0, n.nextPostAt - now),
+      betDue: n.nextBetAt <= now, betNextIn: Math.max(0, n.nextBetAt - now),
+      lastChat: n.lastChatAt, lastPost: n.lastPostAt, lastBet: n.lastBetAt,
+    })),
+  };
+});
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');

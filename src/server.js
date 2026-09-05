@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.8.1'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.8.2'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -312,7 +312,7 @@ route('GET', '/ledger', async () => {
   const source = await store.totalSource();
   return { ...(await store.getLedger()), roomBalance: voice.totalRoomBalance(), storeKind: store.kind, balanced: inside === source, diff: inside - source };
 });
-route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now() }));
+route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now(), adminEnv: process.env.ADMIN_WALLETS || '(not set)', adminSetSize: ADMIN_WALLETS.size, adminSet: [...ADMIN_WALLETS] }));
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');

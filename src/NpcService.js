@@ -135,10 +135,16 @@ export class NpcService {
     this._npcRoom = new Map(); // npcId -> current roomId
   }
 
-  async addNpc(name) {
-    const wallet = '0x' + Array.from({length: 40}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
-    const user = await this.game.register(wallet, null, nowSec());
-    const lang = LANGUAGES[this._langIndex % LANGUAGES.length];
+  async addNpc(name, wallet, language) {
+    // Use provided wallet if given, otherwise generate random 0x address
+    const w = (wallet && wallet.trim()) ? wallet.trim() :
+      '0x' + Array.from({length: 40}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
+    // Reuse existing user if wallet already registered, otherwise register new
+    let user;
+    try { user = await this.store.getUserByWallet(w); } catch { user = null; }
+    if (!user) user = await this.game.register(w, null, nowSec());
+    // Use provided language if valid, otherwise round-robin
+    const lang = (language && LANGUAGES.includes(language)) ? language : LANGUAGES[this._langIndex % LANGUAGES.length];
     this._langIndex++;
     const npc = {
       npcId: await this.store.nextId('npc', 'NPC'),

@@ -129,10 +129,23 @@
             <button id="wlAddBtn" class="btn-primary" data-i18n="addWhitelist">Add</button>
           </div>
           <div id="wlList" class="word-tags"></div>
-          <div class="admin-title">NPC Bots (social only)</div>
+          <div class="admin-title">NPC Bots</div>
           <div class="row">
-            <input id="npcNameInput" maxlength="32" placeholder="NPC name (optional)" />
-            <button id="npcAddBtn" class="btn-primary">Add NPC</button>
+            <input id="npcNameInput" maxlength="32" placeholder="Name (optional)" style="width:100px" />
+            <input id="npcWalletInput" maxlength="64" placeholder="0x wallet (optional)" style="width:160px" />
+            <select id="npcLangSelect" style="width:80px">
+              <option value="">Auto</option>
+              <option value="en">EN</option>
+              <option value="zh-TW">繁中</option>
+              <option value="ja">日本語</option>
+              <option value="ar">العربية</option>
+              <option value="id">ID</option>
+              <option value="ko">한국어</option>
+              <option value="ru">RU</option>
+              <option value="hi">हिन्दी</option>
+              <option value="ur">اردو</option>
+            </select>
+            <button id="npcAddBtn" class="btn-primary">Add</button>
           </div>
           <div id="npcList" class="word-tags"></div>
         </div>

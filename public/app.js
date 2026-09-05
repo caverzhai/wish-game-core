@@ -1004,9 +1004,12 @@ function bindNpcAdd() {
   if (!btn) return;
   btn.onclick = async () => {
     const name = $('npcNameInput').value.trim();
+    const wallet = $('npcWalletInput') ? $('npcWalletInput').value.trim() : '';
+    const language = $('npcLangSelect') ? $('npcLangSelect').value : '';
     try {
-      await api('/admin/npc/add', { uid: state.uid, name: name || null });
+      await api('/admin/npc/add', { uid: state.uid, name: name || null, wallet: wallet || null, language: language || null });
       $('npcNameInput').value = '';
+      if ($('npcWalletInput')) $('npcWalletInput').value = '';
       showToast('NPC added');
       loadNpcs();
     } catch (e) { alert(e.message); }
@@ -1207,6 +1210,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.6.0';
+const FE_BUILD = '2.6.1';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

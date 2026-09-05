@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.6.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.6.1'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -225,7 +225,7 @@ route('POST', '/admin/whitelist/add', async (b) => { await requireAdmin(b.uid); 
 route('POST', '/admin/whitelist/remove', async (b) => { await requireAdmin(b.uid); return { list: await store.removeWhitelist(b.wallet) }; });
 // NPC bot management (social-only bots, no betting)
 route('GET', '/admin/npcs', async (b) => { await requireAdmin(b.uid); return { list: await npc.listNpcs() }; });
-route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return { npc: await npc.addNpc(b.name) }; });
+route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return { npc: await npc.addNpc(b.name, b.wallet, b.language) }; });
 route('POST', '/admin/npc/remove', async (b) => { await requireAdmin(b.uid); return { removed: await npc.removeNpc(b.npcId) }; });
 route('POST', '/admin/npc/recharge', async (b) => { await requireAdmin(b.uid); return await npc.rechargeNpc(b.npcId, b.amount); });
 // Chain config (public, no private key)

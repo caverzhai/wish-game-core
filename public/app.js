@@ -549,13 +549,31 @@ function tickCountdown() {
   else {
     const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
     $('countdown').textContent = remain;
-    // Last 10 seconds: big number 2x, full screen, blink once per second
+    // Last 10 seconds: big number 2x, full screen, blink once per second, fireworks
     if (remain <= 10) {
       $('countdown').className = 'countdown final';
-    } else if (remain <= 30) {
-      $('countdown').className = 'countdown urgent';
+      // Create fireworks if not already created
+      if (!$('fwContainer')) {
+        const fw = document.createElement('div');
+        fw.id = 'fwContainer';
+        fw.style.cssText = 'position:fixed;inset:0;z-index:9998;pointer-events:none;overflow:hidden;';
+        document.body.appendChild(fw);
+        // Create 8 fireworks
+        for (let i = 0; i < 8; i++) {
+          const p = document.createElement('div');
+          p.className = 'fw-particle';
+          p.style.left = (10 + Math.random() * 80) + '%';
+          p.style.top = (10 + Math.random() * 60) + '%';
+          p.style.animationDelay = (Math.random() * 1.5) + 's';
+          p.style.setProperty('--c1', ['#ffd700','#ff6b6b','#4ade80','#60a5fa','#f472b6','#fbbf24','#a78bfa','#fb923c'][i % 8]);
+          p.style.setProperty('--c2', ['#ff6b6b','#4ade80','#60a5fa','#f472b6','#fbbf24','#a78bfa','#fb923c','#34d399'][i % 8]);
+          fw.appendChild(p);
+        }
+      }
     } else {
-      $('countdown').className = 'countdown';
+      $('countdown').className = remain <= 30 ? 'countdown urgent' : 'countdown';
+      const fw = $('fwContainer');
+      if (fw) fw.remove();
     }
     // Round-card border marquee: green -> red, speed up as time passes
     const rc = $('roundCard');
@@ -605,20 +623,8 @@ function renderRound() {
     if (rows.length >= 3) break;
   }
   if (currentRow.length > 0 && rows.length < 3) rows.push(currentRow);
-  // Insert active round as 'ing' at the end of the last row
-  if (state.round && state.round.state === 'active' && rows.length > 0) {
-    const lastRow = rows[rows.length - 1];
-    if (lastRow.length < 10) {
-      lastRow.push({ roundId: state.round.roundId, active: true });
-    } else {
-      // If last row is full, create a new row for ing
-      if (rows.length < 3) rows.push([{ roundId: state.round.roundId, active: true }]);
-    }
-  }
-  // Last row: fixed 4-8 dots per round (determined once at round start), keep 'ing' if present
+  // Last row: fixed 4-8 dots per round (determined once at round start)
   if (rows.length > 0) {
-    const lastRow = rows[rows.length - 1];
-    const hasIng = lastRow.some((x) => x.active);
     // Determine last row count once per round, keep stable during the round
     const curRoundId = state.round ? state.round.roundId : null;
     if (state.lastRowRoundId !== curRoundId) {
@@ -626,13 +632,20 @@ function renderRound() {
       state.lastRowCount = 4 + Math.floor(Math.random() * 5); // 4-8, fixed for this round
     }
     const lastRowMax = state.lastRowCount || 6;
+    let lastRow = rows[rows.length - 1];
+    // Trim last row to lastRowMax (from the end, keep newest)
     if (lastRow.length > lastRowMax) {
-      if (hasIng) {
-        // Keep ing at the end, trim from the beginning
-        const ingItem = lastRow[lastRow.length - 1];
-        rows[rows.length - 1] = [...lastRow.slice(0, lastRowMax - 1), ingItem];
+      lastRow = lastRow.slice(lastRow.length - lastRowMax);
+      rows[rows.length - 1] = lastRow;
+    }
+    // Insert active round as 'ing' at the end of the last row (always, replace last if needed)
+    if (state.round && state.round.state === 'active') {
+      const ingItem = { roundId: state.round.roundId, active: true };
+      if (lastRow.length < lastRowMax) {
+        lastRow.push(ingItem);
       } else {
-        rows[rows.length - 1] = lastRow.slice(0, lastRowMax);
+        // Replace last item with ing
+        lastRow[lastRow.length - 1] = ingItem;
       }
     }
   }
@@ -1266,6 +1279,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.9.4';
+const FE_BUILD = '2.9.5';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

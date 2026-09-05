@@ -332,6 +332,15 @@ route('GET', '/debug/npc', async () => {
     activityLog: npc.getActivityLog ? npc.getActivityLog() : [],
   };
 });
+// Debug: check npcs table columns
+route('GET', '/debug/npc-columns', async () => {
+  try {
+    const cols = await store.exec("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'npcs'");
+    return { columns: cols.map(c => c.COLUMN_NAME) };
+  } catch (e) {
+    return { error: e.message };
+  }
+});
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');

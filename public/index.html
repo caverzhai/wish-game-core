@@ -170,10 +170,33 @@
     <!-- Lottery -->
     <section id="tab-lottery" class="panel">
       <div class="lottery-header">
-        <h3 class="lottery-main-title">好人有好报</h3>
-        <p class="lottery-subtitle">一枚最多得5000枚</p>
+        <h3 class="lottery-main-title" data-i18n="lotteryMainTitle">好人有好报</h3>
+        <p class="lottery-subtitle" data-i18n="lotterySubtitle">一枚最多得5000枚</p>
       </div>
       <div id="lotteryList" class="lottery-grid"></div>
+      <div class="lottery-rules">
+        <h4 data-i18n="lotteryRulesTitle">玩法说明</h4>
+        <div class="lottery-rule-item">
+          <span class="rule-num">1</span>
+          <span data-i18n="lotteryRule1">选择一个幸运池，投入整数枚数（最少1枚），系统按先来后到分配连续号码。</span>
+        </div>
+        <div class="lottery-rule-item">
+          <span class="rule-num">2</span>
+          <span data-i18n="lotteryRule2">号码售完后，系统自动随机开奖，完全公平公正，所有人均可查看中奖号码。</span>
+        </div>
+        <div class="lottery-rule-item">
+          <span class="rule-num">3</span>
+          <span data-i18n="lotteryRule3">奖金自动发放到您的余额，可立即提现，不押不申请不审核。</span>
+        </div>
+        <div class="lottery-rule-item">
+          <span class="rule-num">4</span>
+          <span data-i18n="lotteryRule4">每个号码中奖概率相同，买得越多中奖机会越大。一期结束自动开启下一期。</span>
+        </div>
+        <div class="lottery-rule-item">
+          <span class="rule-num">5</span>
+          <span data-i18n="lotteryRule5">平台收取5%手续费，用于平台运营与慈善捐助。好人有好报，祝您好运！</span>
+        </div>
+      </div>
       <div id="lotteryDetail" class="lottery-detail hide">
         <button id="lotteryBackBtn" class="btn-ghost">← Back</button>
         <div id="lotteryDetailContent"></div>

@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.11.5'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.11.6'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -265,6 +265,16 @@ route('GET', '/admin/npcs', async (b) => { await requireAdmin(b.uid); return { l
 route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return { npc: await npc.addNpc(b.name, b.wallet, b.language) }; });
 route('POST', '/admin/npc/remove', async (b) => { await requireAdmin(b.uid); return { removed: await npc.removeNpc(b.npcId) }; });
 route('POST', '/admin/npc/recharge', async (b) => { await requireAdmin(b.uid); return await npc.rechargeNpc(b.npcId, b.amount); });
+// Admin recharge user balance (for testing and manual top-up)
+route('POST', '/admin/recharge', async (b) => {
+  await requireAdmin(b.uid);
+  const amount = BigInt(Math.floor(Number(b.amount))) * 1000000n;
+  await store.applyAccount(b.targetUid, { avail: amount });
+  await store.applyLedger({ issued: amount });
+  await store.addFlow(b.targetUid, 'ADMIN_RECHARGE', amount, { by: b.uid });
+  const a = await store.getAccount(b.targetUid);
+  return { targetUid: b.targetUid, available: a.available };
+});
 // Chain config (public, no private key)
 route('GET', '/chain/config', () => chain.publicConfig());
 // Withdrawal: auto on-chain payout if payout key configured, otherwise create pending order
@@ -315,6 +325,7 @@ route('GET', '/ledger', async () => {
 // Lottery
 route('GET', '/lottery/products', () => lottery.getProducts());
 route('GET', /^\/lottery\/current\/(.+)$/, async (_, m) => lottery.getCurrentRound(m[1]));
+route('GET', /^\/lottery\/mynumbers\/(.+)\/(.+)$/, async (_, m) => lottery.getMyNumbers(m[1], m[2]));
 route('GET', /^\/lottery\/history\/(.+)$/, async (_, m) => lottery.getHistory(m[1]));
 route('GET', /^\/lottery\/comments\/(.+)$/, async (_, m) => lottery.getComments(m[1]));
 route('POST', '/lottery/buy', async (b) => {

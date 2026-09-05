@@ -139,36 +139,42 @@ export class NpcService {
     // Use provided wallet if given, otherwise generate random 0x address
     const w = (wallet && wallet.trim()) ? wallet.trim() :
       '0x' + Array.from({length: 40}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
-    // Reuse existing user if wallet already registered, otherwise register new
-    let user;
-    try { user = await this.store.getUserByWallet(w); } catch { user = null; }
-    if (!user) user = await this.game.register(w, null, nowSec());
-    // Use provided language if valid, otherwise round-robin
-    const lang = (language && LANGUAGES.includes(language)) ? language : LANGUAGES[this._langIndex % LANGUAGES.length];
-    this._langIndex++;
-    const npc = {
-      npcId: await this.store.nextId('npc', 'NPC'),
-      uid: user.uid,
-      wallet,
-      name: name || ('NPC-' + lang.toUpperCase()),
-      enabled: true,
-      createdAt: nowSec(),
-      lastPostAt: 0,
-      lastChatAt: 0,
-      lastBetAt: 0,
-      nextPostAt: this._rollNextTime(),
-      nextChatAt: this._rollNextTime(),
-      nextBetAt: this._rollBetTime(),
-      language: lang,
-    };
-    await this.store.insertNpc(npc);
-    // Fund NPC with 100 coins from platform account (ledger: platform decreases, account increases)
-    await this.store.transaction(async () => {
-      await this.store.applyLedger({ plat: -NPC_START_BALANCE });
-      await this.store.applyAccount(user.uid, { avail: NPC_START_BALANCE });
-      await this.store.addFlow(user.uid, 'NPC_FUND', NPC_START_BALANCE, { note: 'initial NPC funding from platform' });
-    }, 'npc-fund');
-    return npc;
+    try {
+      // Reuse existing user if wallet already registered, otherwise register new
+      let user;
+      try { user = await this.store.getUserByWallet(w); } catch { user = null; }
+      if (!user) user = await this.game.register(w, null, nowSec());
+      // Use provided language if valid, otherwise round-robin
+      const lang = (language && LANGUAGES.includes(language)) ? language : LANGUAGES[this._langIndex % LANGUAGES.length];
+      this._langIndex++;
+      const npc = {
+        npcId: await this.store.nextId('npc', 'NPC'),
+        uid: user.uid,
+        wallet: w,
+        name: name || ('NPC-' + lang.toUpperCase()),
+        enabled: true,
+        createdAt: nowSec(),
+        lastPostAt: 0,
+        lastChatAt: 0,
+        lastBetAt: 0,
+        nextPostAt: this._rollNextTime(),
+        nextChatAt: this._rollNextTime(),
+        nextBetAt: this._rollBetTime(),
+        language: lang,
+      };
+      await this.store.insertNpc(npc);
+      // Fund NPC with 100 coins from platform account (ledger: platform decreases, account increases)
+      await this.store.transaction(async () => {
+        await this.store.applyLedger({ plat: -NPC_START_BALANCE });
+        await this.store.applyAccount(user.uid, { avail: NPC_START_BALANCE });
+        await this.store.addFlow(user.uid, 'NPC_FUND', NPC_START_BALANCE, { note: 'initial NPC funding from platform' });
+      }, 'npc-fund');
+      console.log('[npc:add] success', npc.npcId, w, lang);
+      return npc;
+    } catch (e) {
+      console.error('[npc:add] FAILED', w, e.message, e.stack);
+      throw e;
+    }
   }
 
   async removeNpc(npcId) {

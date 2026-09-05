@@ -549,24 +549,25 @@ function tickCountdown() {
   else {
     const remain = Math.max(0, state.round.settleAt - Math.floor(Date.now() / 1000));
     $('countdown').textContent = remain;
-    // Last 10 seconds: big cool number, blink once per second, pools alternate flashing 3x/sec, voice countdown
+    // Last 15 seconds: voice countdown starts at 15s, first number 10, every 1.5s
     const poolsEl = document.querySelector('.pools');
     if (remain <= 10 && remain > 0) {
       $('countdown').className = 'countdown final';
       if (poolsEl) poolsEl.classList.add('final-10');
-      // Voice countdown in English (only once per second)
-      if (window._lastSpokenSec !== remain) {
-        window._lastSpokenSec = remain;
-        try {
-          const u = new SpeechSynthesisUtterance(String(remain));
-          u.lang = 'en-US'; u.rate = 1.2; u.volume = 0.8;
-          window.speechSynthesis.speak(u);
-        } catch (e) {}
-      }
     } else {
       $('countdown').className = remain <= 30 ? 'countdown urgent' : 'countdown';
       if (poolsEl) poolsEl.classList.remove('final-10');
-      window._lastSpokenSec = null;
+    }
+    // Voice countdown: from 5s remaining, speak three,two,one in English (one per second)
+    if (remain <= 5 && remain > 0) {
+      const speakNum = remain - 2; // 5->3, 4->2, 3->1
+      const numWords = ['', 'one', 'two', 'three'];
+      if (speakNum >= 1 && speakNum <= 3 && window._lastSpokenNum !== speakNum) {
+        window._lastSpokenNum = speakNum;
+        speakRich(numWords[speakNum], { pitch: 0.4, rate: 0.85, volume: 0.85 });
+      }
+    } else {
+      window._lastSpokenNum = null;
     }
     // Round-card border marquee: green -> red, speed up as time passes
     const rc = $('roundCard');
@@ -1197,6 +1198,76 @@ async function creditPending() {
 }
 
 // Bet success toast: show once after wish confirmed (in-site instant / on-chain top-up confirmed)
+// Deep male voice with 5-layer synthesis + moderate delay echo
+function speakRich(text, opts = {}) {
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const basePitch = opts.pitch || 0.4;
+    const baseRate = opts.rate || 0.85;
+    const baseVolume = (opts.volume || 1.0) * 0.5;
+    // Get all voices and find a deep male voice
+    const voices = window.speechSynthesis.getVoices();
+    const maleVoice = voices.find(v => /male|david|mark|daniel|alex|fred|george|thomas|guy|barry/i.test(v.name)) 
+      || voices.find(v => v.lang === 'en-US' && /male/i.test(v.name))
+      || voices.find(v => v.lang === 'en-US');
+    // 10 layers of different frequencies, all simultaneous, same rate
+    const layers = [
+      { pitch: basePitch, volume: baseVolume, rate: baseRate },
+      { pitch: Math.max(0, basePitch - 0.3), volume: baseVolume * 0.4, rate: baseRate },
+      { pitch: basePitch + 0.2, volume: baseVolume * 0.3, rate: baseRate },
+      { pitch: Math.max(0, basePitch - 0.15), volume: baseVolume * 0.35, rate: baseRate },
+      { pitch: basePitch + 0.35, volume: baseVolume * 0.2, rate: baseRate },
+      { pitch: Math.max(0, basePitch - 0.45), volume: baseVolume * 0.2, rate: baseRate },
+      { pitch: basePitch + 0.1, volume: baseVolume * 0.25, rate: baseRate },
+      { pitch: Math.max(0, basePitch - 0.08), volume: baseVolume * 0.3, rate: baseRate },
+      { pitch: basePitch + 0.45, volume: baseVolume * 0.12, rate: baseRate },
+      { pitch: Math.max(0, basePitch - 0.55), volume: baseVolume * 0.1, rate: baseRate },
+    ];
+    for (const layer of layers) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      u.pitch = layer.pitch;
+      u.rate = layer.rate;
+      u.volume = layer.volume;
+      if (maleVoice) u.voice = maleVoice;
+      window.speechSynthesis.speak(u);
+    }
+    // 15ms delay echo for spatial effect
+    setTimeout(() => {
+      const echo = new SpeechSynthesisUtterance(text);
+      echo.lang = 'en-US';
+      echo.pitch = basePitch - 0.05;
+      echo.rate = baseRate;
+      echo.volume = baseVolume * 0.5;
+      if (maleVoice) echo.voice = maleVoice;
+      window.speechSynthesis.speak(echo);
+    }, 15);
+  } catch (e) {}
+}
+// Single clear male voice for result announcement (no harmony, no repeat, one pass)
+function speakResult(text) {
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const voices = window.speechSynthesis.getVoices();
+    const maleVoice = voices.find(v => /male|david|mark|daniel|alex|fred|george|thomas|guy|barry/i.test(v.name)) 
+      || voices.find(v => v.lang === 'en-US' && /male/i.test(v.name))
+      || voices.find(v => v.lang === 'en-US');
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.pitch = 0.5;
+    u.rate = 0.85;
+    u.volume = 0.5;
+    if (maleVoice) u.voice = maleVoice;
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+// Preload voices
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  window.speechSynthesis.getVoices();
+}
 // Coin drop sound effect using Web Audio API -哗哗啦啦 coins pouring
 function playCoinSound() {
   try {
@@ -1298,12 +1369,8 @@ async function refresh() {
     // Detect round settlement: announce winner in English
     const prevRound = state.round;
     if (prevRound && prevRound.state === 'active' && r && r.state !== 'active' && r.result && r.result.winSide) {
-      try {
-        const winner = r.result.winSide === 'red' ? 'Red wins' : 'Green wins';
-        const u = new SpeechSynthesisUtterance(winner);
-        u.lang = 'en-US'; u.rate = 1.0; u.volume = 0.9;
-        window.speechSynthesis.speak(u);
-      } catch (e) {}
+      const winner = r.result.winSide === 'red' ? 'Red wins' : 'Green wins';
+      speakResult(winner);
     }
     state.round = r; state.recent = recent; state.me = me; state.pool = pool;
     renderRound(); renderMe(); renderPoolPublic();
@@ -1377,6 +1444,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.10.1';
+const FE_BUILD = '2.10.2';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

@@ -489,3 +489,7 @@ textarea { resize: vertical; }
 .lottery-winner-row:last-child { border-bottom: none; }
 .lottery-winner-num { font-family: monospace; color: var(--txt); font-weight: 600; }
 .lottery-winner-wallet { color: var(--muted); font-size: 11px; }
+.lottery-winners-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 8px; }
+.lottery-winners-grid .lottery-winner-row { border-bottom: none; padding: 2px 0; }
+.lottery-prize-header { cursor: pointer; user-select: none; }
+.hide { display: none !important; }

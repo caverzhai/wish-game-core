@@ -307,7 +307,7 @@ const Lottery = (() => {
       const history = await res.json();
       const list = document.getElementById('lotteryHistoryList');
       if (!list) return;
-      list.innerHTML = history.map(h => {
+      list.innerHTML = history.map((h, hi) => {
         // Group winners by level
         const byLevel = {};
         for (const w of h.winners) {
@@ -317,19 +317,37 @@ const Lottery = (() => {
         const levels = Object.keys(byLevel).sort((a, b) => a - b);
         const winnerHtml = levels.map(lv => {
           const g = byLevel[lv];
+          const collapsible = g.items.length > 6;
           const items = g.items.map(w => {
             const walletShort = w.wallet ? w.wallet.slice(0, 6) + '...' + w.wallet.slice(-4) : w.uid;
             return `<div class="lottery-winner-row"><span class="lottery-winner-num">${w.number}</span><span class="lottery-winner-wallet">${walletShort}</span></div>`;
           }).join('');
-          return `
-            <div class="lottery-prize-group">
-              <div class="lottery-prize-header">
-                <span class="lottery-prize-name">${g.name}</span>
-                <span class="lottery-prize-amount">${g.amount}枚</span>
+          const toggleId = `lottery-toggle-${hi}-${lv}`;
+          if (collapsible) {
+            return `
+              <div class="lottery-prize-group">
+                <div class="lottery-prize-header" onclick="document.getElementById('${toggleId}').classList.toggle('hide')">
+                  <span class="lottery-prize-name">${g.name} (${g.items.length}人)</span>
+                  <span class="lottery-prize-amount">${g.amount}枚 ▾</span>
+                </div>
+                <div id="${toggleId}" class="lottery-prize-winners lottery-winners-grid hide">
+                  ${items}
+                </div>
               </div>
-              <div class="lottery-prize-winners">${items}</div>
-            </div>
-          `;
+            `;
+          } else {
+            return `
+              <div class="lottery-prize-group">
+                <div class="lottery-prize-header">
+                  <span class="lottery-prize-name">${g.name}</span>
+                  <span class="lottery-prize-amount">${g.amount}枚</span>
+                </div>
+                <div class="lottery-prize-winners lottery-winners-grid">
+                  ${items}
+                </div>
+              </div>
+            `;
+          }
         }).join('');
         return `
           <div class="lottery-history-item">

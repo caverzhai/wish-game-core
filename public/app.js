@@ -981,7 +981,7 @@ async function loadNpcs() {
     const langNames = { en:'EN', 'zh-TW':'繁中', ja:'日本語', ar:'العربية', id:'ID', ko:'한국어', ru:'RU', hi:'हिन्दी', ur:'اردو' };
     box.innerHTML = list.map((n) => {
       return '<div class="wl-row" data-npcid="' + escapeHtml(n.npcId) + '">' +
-        '<span class="wl-addr">' + shortAddr(n.wallet) + '</span>' +
+        '<span class="wl-addr">' + escapeHtml(n.wallet) + '</span>' +
         '<span class="wl-rate">' + (langNames[n.language] || n.language || 'EN') + '</span>' +
         '<span class="wl-rate">' + (n.enabled ? 'On' : 'Off') + '</span>' +
         '<button class="btn-mini npc-del" data-npcid="' + escapeHtml(n.npcId) + '">×</button>' +
@@ -1201,6 +1201,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.4.1';
+const FE_BUILD = '2.4.2';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

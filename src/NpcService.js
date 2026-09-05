@@ -136,40 +136,39 @@ export class NpcService {
   }
 
   async addNpc(name, wallet, language) {
-    // Use provided wallet if given, otherwise generate random 0x address
     const w = (wallet && wallet.trim()) ? wallet.trim() :
       '0x' + Array.from({length: 40}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
     try {
-      // Reuse existing user if wallet already registered, otherwise register new
       let user;
       try { user = await this.store.getUserByWallet(w); } catch { user = null; }
       if (!user) user = await this.game.register(w, null, nowSec());
-      // Use provided language if valid, otherwise round-robin
       const lang = (language && LANGUAGES.includes(language)) ? language : LANGUAGES[this._langIndex % LANGUAGES.length];
       this._langIndex++;
+      const now = nowSec();
       const npc = {
         npcId: await this.store.nextId('npc', 'NPC'),
         uid: user.uid,
         wallet: w,
         name: name || ('NPC-' + lang.toUpperCase()),
         enabled: true,
-        createdAt: nowSec(),
+        createdAt: now,
         lastPostAt: 0,
         lastChatAt: 0,
         lastBetAt: 0,
         nextPostAt: this._rollNextTime(),
         nextChatAt: this._rollNextTime(),
-        nextBetAt: this._rollBetTime(),
+        nextBetAt: now, // bet immediately on creation for testing, second bet uses random interval
         language: lang,
       };
       await this.store.insertNpc(npc);
-      // Fund NPC with 100 coins from platform account (ledger: platform decreases, account increases)
+      // Fund NPC with 100 coins via issued (mint) - ledger stays balanced:
+      // totalInside +=100 (user avail), totalSource +=100 (issued)
       await this.store.transaction(async () => {
-        await this.store.applyLedger({ plat: -NPC_START_BALANCE });
+        await this.store.applyLedger({ issued: NPC_START_BALANCE });
         await this.store.applyAccount(user.uid, { avail: NPC_START_BALANCE });
-        await this.store.addFlow(user.uid, 'NPC_FUND', NPC_START_BALANCE, { note: 'initial NPC funding from platform' });
+        await this.store.addFlow(user.uid, 'NPC_FUND', NPC_START_BALANCE, { note: 'initial NPC funding (minted 100 coins)' });
       }, 'npc-fund');
-      console.log('[npc:add] success', npc.npcId, w, lang);
+      console.log('[npc:add] success', npc.npcId, w, lang, 'will bet immediately');
       return npc;
     } catch (e) {
       console.error('[npc:add] FAILED', w, e.message, e.stack);
@@ -182,30 +181,32 @@ export class NpcService {
   }
 
   async listNpcs() {
-    return await this.store.listNpcs();
+    const npcs = await this.store.listNpcs();
+    // Enrich with account balance for admin display
+    for (const npc of npcs) {
+      try {
+        const acct = await this.store.getAccount(npc.uid);
+        npc.balance = Number(acct.available || 0n) / Number(COIN);
+        npc.frozen = Number(acct.frozen || 0n) / Number(COIN);
+      } catch { npc.balance = 0; npc.frozen = 0; }
+    }
+    return npcs;
   }
 
-  // Admin manually recharges an NPC from platform account
+  // NPC recharge disabled: each NPC gets exactly 100 coins at creation, no manual top-up
+  // When balance runs out, NPC only does social posts/chat, no more betting
   async rechargeNpc(npcId, amountCoins) {
-    const npcs = await this.store.listNpcs();
-    const npc = npcs.find(n => n.npcId === npcId);
-    if (!npc) throw new Error('NPC not found');
-    const amount = BigInt(Math.floor(Number(amountCoins))) * COIN;
-    if (amount <= 0n) throw new Error('Invalid amount');
-    await this.store.applyLedger({ issued: amount });
-    await this.store.applyAccount(npc.uid, { avail: amount });
-    await this.store.addFlow(npc.uid, 'NPC_RECHARGE', amount, { note: 'admin recharge (minted)' });
-    return { npcId, amount: Number(amount) / Number(COIN) };
+    throw new Error('NPC recharge disabled. Each NPC gets exactly 100 coins at creation.');
   }
 
   _rollNextTime() {
-    // 1-5 min for social posts (testing mode)
+    // 20-60 min for social posts
     return nowSec() + Math.floor(Math.random() * 2400) + 1200;
   }
 
   _rollBetTime() {
-    // 1-5 min for bets (testing mode)
-    return nowSec() + Math.floor(Math.random() * 2400) + 1200;
+    // 30-60 min for bets
+    return nowSec() + Math.floor(Math.random() * 1800) + 1800;
   }
 
   _rollRetryTime() {

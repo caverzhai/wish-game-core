@@ -983,10 +983,16 @@ async function loadNpcs() {
       return '<div class="wl-row" data-npcid="' + escapeHtml(n.npcId) + '">' +
         '<span class="wl-addr">' + escapeHtml(n.wallet) + '</span>' +
         '<span class="wl-rate">' + (langNames[n.language] || n.language || 'EN') + '</span>' +
-        '<span class="wl-rate">' + (n.enabled ? 'On' : 'Off') + '</span>' +
+        '<button class="btn-mini npc-recharge" data-npcid="' + escapeHtml(n.npcId) + '">+100</button>' +
         '<button class="btn-mini npc-del" data-npcid="' + escapeHtml(n.npcId) + '">×</button>' +
         '</div>';
     }).join('');
+    box.querySelectorAll('.npc-recharge').forEach((b) => b.onclick = () => {
+      if (!confirm('Recharge this NPC with 100 coins from platform?')) return;
+      api('/admin/npc/recharge', { uid: state.uid, npcId: b.dataset.npcid, amount: 100 })
+        .then(() => { showToast('NPC recharged +100'); loadNpcs(); })
+        .catch((e) => alert(e.message));
+    });
     box.querySelectorAll('.npc-del').forEach((b) => b.onclick = () => {
       if (!confirm('Remove this NPC?')) return;
       api('/admin/npc/remove', { uid: state.uid, npcId: b.dataset.npcid }).then(loadNpcs).catch((e) => alert(e.message));
@@ -1201,6 +1207,6 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.4.2';
+const FE_BUILD = '2.5.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();

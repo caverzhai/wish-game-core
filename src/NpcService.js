@@ -1,13 +1,18 @@
 // =============================================================
-// NpcService.js - Automated NPC bots for social engagement only
-// NPCs post in BBS square and chat rooms, NEVER place bets
-// Each NPC speaks one fixed language (9 languages total)
+// NpcService.js - Automated NPC bots: social posts + chat messages + random betting
+// NPCs are regular users, no special treatment. Fixed 1 coin bets, no insurance.
+// Each NPC speaks one fixed language, bets every 30-60 min independently.
 // =============================================================
+import { SCALE } from './money.js';
+
 const nowSec = () => Math.floor(Date.now() / 1000);
+const COIN = BigInt(SCALE); // 1 coin in inner units
+const NPC_START_BALANCE = 100n * COIN; // 100 coins initial
+const BET_AMOUNT = 1n * COIN; // always bet 1 coin
 
 const LANGUAGES = ['en', 'zh-TW', 'ja', 'ar', 'id', 'ko', 'ru', 'hi', 'ur'];
 
-// Content pools per language: gameplay, principles, insurance, referral, withdrawal, chat guide, engagement
+// Content pools per language (same as before)
 const CONTENT_BY_LANG = {
   en: [
     "How to play: Choose Red Pool or Green Pool, deposit 1-99 coins, pick a number 0-9. If the sum of all numbers is odd, Red wins; if even, Green wins. 2.5% fee deducted, winners split by stake ratio.",
@@ -132,7 +137,6 @@ export class NpcService {
   async addNpc(name) {
     const wallet = 'NPC_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     const user = await this.game.register(wallet, null, nowSec());
-    // Assign language round-robin across 9 languages
     const lang = LANGUAGES[this._langIndex % LANGUAGES.length];
     this._langIndex++;
     const npc = {
@@ -144,11 +148,19 @@ export class NpcService {
       createdAt: nowSec(),
       lastPostAt: 0,
       lastChatAt: 0,
+      lastBetAt: 0,
       nextPostAt: this._rollNextTime(),
       nextChatAt: this._rollNextTime(),
+      nextBetAt: this._rollBetTime(),
       language: lang,
     };
     await this.store.insertNpc(npc);
+    // Fund NPC with 100 coins from platform account (ledger: platform decreases, account increases)
+    await this.store.transaction(async () => {
+      await this.store.applyLedger({ plat: -NPC_START_BALANCE });
+      await this.store.applyAccount(user.uid, { avail: NPC_START_BALANCE });
+      await this.store.addFlow(user.uid, 'NPC_FUND', NPC_START_BALANCE, { note: 'initial NPC funding from platform' });
+    }, 'npc-fund');
     return npc;
   }
 
@@ -160,8 +172,29 @@ export class NpcService {
     return await this.store.listNpcs();
   }
 
+  // Admin manually recharges an NPC from platform account
+  async rechargeNpc(npcId, amountCoins) {
+    const npcs = await this.store.listNpcs();
+    const npc = npcs.find(n => n.npcId === npcId);
+    if (!npc) throw new Error('NPC not found');
+    const amount = BigInt(Math.floor(Number(amountCoins))) * COIN;
+    if (amount <= 0n) throw new Error('Invalid amount');
+    await this.store.transaction(async () => {
+      await this.store.applyLedger({ plat: -amount });
+      await this.store.applyAccount(npc.uid, { avail: amount });
+      await this.store.addFlow(npc.uid, 'NPC_RECHARGE', amount, { note: 'admin recharge from platform' });
+    }, 'npc-recharge');
+    return { npcId, amount: Number(amount) / Number(COIN) };
+  }
+
   _rollNextTime() {
+    // 20-60 min for social posts
     return nowSec() + Math.floor(Math.random() * 2400) + 1200;
+  }
+
+  _rollBetTime() {
+    // 30-60 min for bets
+    return nowSec() + Math.floor(Math.random() * 1800) + 1800;
   }
 
   _rollRetryTime() {
@@ -175,12 +208,39 @@ export class NpcService {
 
   async tick(nowSecVal) {
     const npcs = await this.store.listNpcs();
-    const actions = { posts: [], chats: [] };
+    const actions = { posts: [], chats: [], bets: [] };
     for (const npc of npcs) {
       if (!npc.enabled) continue;
       const lang = npc.language || 'en';
 
-      // Random BBS post in NPC's language
+      // --- Random bet (30-60 min interval, 1 coin, random side/pick, no insurance) ---
+      if (nowSecVal >= npc.nextBetAt) {
+        let betOk = false;
+        try {
+          // Check balance first
+          const acc = await this.store.getAccount(npc.uid).catch(() => null);
+          if (acc && acc.available >= BET_AMOUNT) {
+            const side = Math.random() < 0.5 ? 'red' : 'green';
+            const pick = Math.floor(Math.random() * 10);
+            await this.game.bet(npc.uid, side, Number(BET_AMOUNT), pick, nowSecVal);
+            actions.bets.push({ npc: npc.name, side, pick });
+            betOk = true;
+          }
+          // If balance < 1 coin, skip (admin must manually recharge)
+        } catch (e) {
+          // ROUND_LOCKED: round in last 30s, give up and wait next interval
+          // INSUFFICIENT_BALANCE: skip, wait for admin recharge
+          // Other errors: retry soon
+        }
+        try {
+          await this.store.updateNpc(npc.npcId, {
+            lastBetAt: betOk ? nowSecVal : npc.lastBetAt,
+            nextBetAt: betOk ? this._rollBetTime() : this._rollBetTime(),
+          });
+        } catch (e) { console.error('[npc:updateBet]', e.message); }
+      }
+
+      // --- Random BBS post ---
       if (nowSecVal >= npc.nextPostAt) {
         let ok = false;
         try {
@@ -197,7 +257,7 @@ export class NpcService {
         } catch (e) { console.error('[npc:updatePost]', e.message); }
       }
 
-      // Random chat room message in NPC's language
+      // --- Random chat room message ---
       if (nowSecVal >= npc.nextChatAt) {
         let ok = false;
         try {

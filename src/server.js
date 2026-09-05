@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.4.2'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.5.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -227,6 +227,7 @@ route('POST', '/admin/whitelist/remove', async (b) => { await requireAdmin(b.uid
 route('GET', '/admin/npcs', async (b) => { await requireAdmin(b.uid); return { list: await npc.listNpcs() }; });
 route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return { npc: await npc.addNpc(b.name) }; });
 route('POST', '/admin/npc/remove', async (b) => { await requireAdmin(b.uid); return { removed: await npc.removeNpc(b.npcId) }; });
+route('POST', '/admin/npc/recharge', async (b) => { await requireAdmin(b.uid); return await npc.rechargeNpc(b.npcId, b.amount); });
 // Chain config (public, no private key)
 route('GET', '/chain/config', () => chain.publicConfig());
 // Withdrawal: auto on-chain payout if payout key configured, otherwise create pending order
@@ -331,19 +332,39 @@ setInterval(async () => {
       await store.pool.query('UPDATE ledger SET issued=issued+? WHERE id=1', [delta.toString()]);
       console.log('[startup-repair] ledger fixed, delta=', delta.toString());
     }
-  // Assign languages to existing NPCs (round-robin across 9 languages)
+  // Assign languages and initial funding to existing NPCs (created before v2.5.0)
   try {
     const npcs = await store.listNpcs();
     const langs = ['en', 'zh-TW', 'ja', 'ar', 'id', 'ko', 'ru', 'hi', 'ur'];
-    let idx = 0;
+    const COIN = 1000000n;
+    const START_BAL = 100n * COIN;
+    let langIdx = 0, funded = 0;
     for (const n of npcs) {
       if (!n.language || n.language === 'en') {
-        await store.updateNpc(n.npcId, { language: langs[idx % langs.length] });
-        idx++;
+        await store.updateNpc(n.npcId, { language: langs[langIdx % langs.length] });
+        langIdx++;
       }
+      // Set initial bet time if not set
+      if (!n.nextBetAt || n.nextBetAt === 0) {
+        const nextBet = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1800) + 1800;
+        await store.updateNpc(n.npcId, { nextBetAt: nextBet });
+      }
+      // Fund with 100 coins if balance is 0 (from platform account)
+      try {
+        const acc = await store.getAccount(n.uid);
+        if (acc.available < START_BAL / 2n) {
+          await store.transaction(async () => {
+            await store.applyLedger({ plat: -START_BAL });
+            await store.applyAccount(n.uid, { avail: START_BAL });
+            await store.addFlow(n.uid, 'NPC_FUND', START_BAL, { note: 'startup repair initial funding' });
+          }, 'npc-startup-fund');
+          funded++;
+        }
+      } catch { /* account may not exist, skip */ }
     }
-    if (idx > 0) console.log('[startup-repair] assigned languages to', idx, 'NPCs');
-  } catch (e) { console.error('[startup-repair npc-lang]', e.message); }
+    if (langIdx > 0) console.log('[startup-repair] assigned languages to', langIdx, 'NPCs');
+    if (funded > 0) console.log('[startup-repair] funded', funded, 'NPCs with 100 coins each (REMINDER: add', funded * 100, 'coins to withdrawal wallet)');
+  } catch (e) { console.error('[startup-repair npc-init]', e.message); }
   } catch (e) { console.error('[startup-repair]', e.message); }
 })();
 

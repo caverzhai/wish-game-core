@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.8.8'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.8.9'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -329,6 +329,7 @@ route('GET', '/debug/npc', async () => {
       betDue: n.nextBetAt <= nowTs, betNextIn: Math.max(0, n.nextBetAt - nowTs),
       lastChat: n.lastChatAt, lastPost: n.lastPostAt, lastBet: n.lastBetAt,
     })),
+    activityLog: npc.getActivityLog ? npc.getActivityLog() : [],
   };
 });
 

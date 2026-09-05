@@ -133,6 +133,18 @@ export class NpcService {
     this.voice = app.voice;
     this._langIndex = 0;
     this._npcRoom = new Map(); // npcId -> current roomId
+    this._activityLog = []; // recent NPC activity for debugging
+  }
+  
+  _log(msg) {
+    const entry = { t: nowSec(), msg };
+    this._activityLog.push(entry);
+    if (this._activityLog.length > 100) this._activityLog.shift();
+    console.log('[npc]', msg);
+  }
+  
+  getActivityLog() {
+    return [...this._activityLog];
   }
 
   async addNpc(name, wallet, language) {
@@ -274,30 +286,35 @@ export class NpcService {
         let ok = false;
         try {
           const rooms = this.voice.listRooms ? (await this.voice.listRooms()) : [];
+          this._log('[chat]', npc.name, 'rooms found:', rooms.length, 'chat rooms:', rooms.filter(r => r.type === 'chat').length);
           const sorted = rooms
             .filter(r => r.type === 'chat')
             .sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0))
             .slice(0, 10);
           if (sorted.length > 0) {
             const room = sorted[Math.floor(Math.random() * sorted.length)];
+            this._log('[chat]', npc.name, 'picked room:', room.name, 'id:', room.roomId);
             const curRoom = this._npcRoom.get(npc.npcId);
-            // If NPC is in a different room, leave it first
             if (curRoom && curRoom !== room.roomId) {
-              try { await this.voice.leave(curRoom, npc.uid); } catch { /* */ }
+              try { await this.voice.leave(curRoom, npc.uid); } catch (e) { console.log('[npc:chat] leave error:', e.message); }
               this._npcRoom.delete(npc.npcId);
             }
-            // Join if not already in this room
             if (this._npcRoom.get(npc.npcId) !== room.roomId) {
-              try { await this.voice.join(room.roomId, npc.uid); this._npcRoom.set(npc.npcId, room.roomId); } catch { /* already in or full */ }
+              try { await this.voice.join(room.roomId, npc.uid); this._npcRoom.set(npc.npcId, room.roomId); this._log('[chat]', npc.name, 'joined room'); }
+              catch (e) { console.log('[npc:chat] join error:', e.message); }
             }
             const msgContent = this._pickContent(lang);
+            this._log('[chat]', npc.name, 'sending msg, length:', msgContent?.length);
             try {
               await this.voice.sendMessage(room.roomId, npc.uid, { type: 'text', content: msgContent });
               actions.chats.push({ npc: npc.name, room: room.name, lang });
               ok = true;
-            } catch { /* send failed, maybe room closed */ this._npcRoom.delete(npc.npcId); }
+              this._log('[chat]', npc.name, 'message sent OK');
+            } catch (e) { console.log('[npc:chat] send error:', e.message); this._npcRoom.delete(npc.npcId); }
+          } else {
+            this._log('[chat]', npc.name, 'no chat rooms available');
           }
-        } catch (e) { /* voice not ready or no rooms */ }
+        } catch (e) { console.log('[npc:chat] outer error:', e.message); }
         try {
           await this.store.updateNpc(npc.npcId, {
             lastChatAt: ok ? nowSecVal : npc.lastChatAt,

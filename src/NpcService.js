@@ -189,13 +189,13 @@ export class NpcService {
   }
 
   _rollNextTime() {
-    // 20-60 min for social posts
+    // 1-5 min for social posts (testing mode)
     return nowSec() + Math.floor(Math.random() * 2400) + 1200;
   }
 
   _rollBetTime() {
-    // 30-60 min for bets
-    return nowSec() + Math.floor(Math.random() * 1800) + 1800;
+    // 1-5 min for bets (testing mode)
+    return nowSec() + Math.floor(Math.random() * 2400) + 1200;
   }
 
   _rollRetryTime() {
@@ -223,15 +223,15 @@ export class NpcService {
           if (acc && acc.available >= BET_AMOUNT) {
             const side = Math.random() < 0.5 ? 'red' : 'green';
             const pick = Math.floor(Math.random() * 10);
-            await this.game.bet(npc.uid, side, Number(BET_AMOUNT), pick, nowSecVal);
+            await this.game.bet(npc.uid, side, 1, pick, nowSecVal); // bet 1 coin (game handles unit conversion)
             actions.bets.push({ npc: npc.name, side, pick });
             betOk = true;
           }
           // If balance < 1 coin, skip (admin must manually recharge)
         } catch (e) {
+          console.error('[npc:bet]', npc.name, e.name, e.message);
           // ROUND_LOCKED: round in last 30s, give up and wait next interval
           // INSUFFICIENT_BALANCE: skip, wait for admin recharge
-          // Other errors: retry soon
         }
         try {
           await this.store.updateNpc(npc.npcId, {
@@ -262,7 +262,7 @@ export class NpcService {
       if (nowSecVal >= npc.nextChatAt) {
         let ok = false;
         try {
-          const rooms = this.voice.listRooms ? this.voice.listRooms() : [];
+          const rooms = this.voice.listRooms ? (await this.voice.listRooms()) : [];
           const sorted = rooms
             .filter(r => r.type === 'chat')
             .sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0))

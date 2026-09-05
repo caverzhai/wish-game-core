@@ -23,8 +23,9 @@ export class MemoryStore {
     this.whitelist = new Map(); // wallet(lowercase) -> perMille (number), invite commission whitelist
     this.announcement = null; // system announcement {content, at, uid, wallet}
     this.chainTxs = new Map(); // credited on-chain tx hash -> {uid,inner,at}, idempotent dedup (in-memory loses on restart, production uses MySQL)
+    this.npcs = []; // NPC bot records
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
-    this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0 };
+    this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0, npc: 0 };
   }
 
   async init() { /* in-memory version needs no tables */ }
@@ -220,6 +221,15 @@ export class MemoryStore {
     return userSum + L.insurancePool + L.platform + L.pendingWithdraw;
   }
   async totalSource() { return this.ledger.issued - this.ledger.withdrawn; }
+  // -------- NPC bots --------
+  async insertNpc(n) { this.npcs.push({ ...n }); }
+  async listNpcs() { return [...this.npcs].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); }
+  async removeNpc(npcId) { this.npcs = this.npcs.filter((n) => n.npcId !== npcId); return true; }
+  async updateNpc(npcId, p = {}) {
+    const i = this.npcs.findIndex((n) => n.npcId === npcId);
+    if (i >= 0) Object.assign(this.npcs[i], p);
+  }
+
   async assertBalanced(tag = '') {
     const inside = await this.totalInside();
     const source = await this.totalSource();
@@ -235,7 +245,7 @@ export class MemoryStore {
     return {
       accounts: new Map([...this.accounts].map(([k, v]) => [k, { ...v }])),
       ledger: { ...this.ledger },
-      len: { bets: this.bets.length, nodes: this.nodes.length, nodeLogs: this.nodeLogs.length, payoutBatches: this.payoutBatches.length, referralLogs: this.referralLogs.length, flows: this.flows.length, withdraws: this.withdraws.length, posts: this.posts.length, replies: this.replies.length, rounds: this.rounds.size, users: this.users.size },
+      len: { bets: this.bets.length, nodes: this.nodes.length, nodeLogs: this.nodeLogs.length, payoutBatches: this.payoutBatches.length, referralLogs: this.referralLogs.length, flows: this.flows.length, withdraws: this.withdraws.length, posts: this.posts.length, replies: this.replies.length, rounds: this.rounds.size, users: this.users.size, npcs: this.npcs.length },
       seq: { ...this._seq },
     };
   }

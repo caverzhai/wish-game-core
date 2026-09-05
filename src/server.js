@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.10.4'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.11.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -31,7 +31,7 @@ function readBody(req) {
 }
 
 const app = await createApp();
-const { game, wallet, insurance, social, chain, store, cfg, voice, npc } = app;
+const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery } = app;
 const scheduler = new Scheduler(app);
 setInterval(() => {
   scheduler.tick(now()).catch((e) => console.error('[tick]', e.message));
@@ -311,6 +311,19 @@ route('GET', '/ledger', async () => {
   const inside = (await store.totalInside()) + voice.totalRoomBalance();
   const source = await store.totalSource();
   return { ...(await store.getLedger()), roomBalance: voice.totalRoomBalance(), storeKind: store.kind, balanced: inside === source, diff: inside - source };
+});
+// Lottery
+route('GET', '/lottery/products', () => lottery.getProducts());
+route('GET', /^\/lottery\/current\/(.+)$/, async (_, m) => lottery.getCurrentRound(m[1]));
+route('GET', /^\/lottery\/history\/(.+)$/, async (_, m) => lottery.getHistory(m[1]));
+route('GET', /^\/lottery\/comments\/(.+)$/, async (_, m) => lottery.getComments(m[1]));
+route('POST', '/lottery/buy', async (b) => {
+  await assertNotBanned(b.uid);
+  return lottery.buy(b.uid, b.productId, parseInt(b.amount, 10));
+});
+route('POST', '/lottery/comment', async (b) => {
+  await assertNotBanned(b.uid);
+  return lottery.addComment(b.productId, b.uid, String(b.content || '').slice(0, 200));
 });
 route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now() }));
 // Debug: NPC activity status

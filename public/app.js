@@ -23,7 +23,7 @@ const pad2 = (n) => String(n).padStart(2, '0');
 const I18N = {
   en: {
     coinUnit: 'coins', platformTitle: 'Global Self-Service Charity Donation Platform', platformDesc: 'The Amsterdam team is committed to providing direct donations to people in need worldwide. Through blockchain, we offer transparent, fair, traceable free donation matching. Those in need receive lossless support, while donors gain recognition and rewards. Donation features are under rapid development.', appTitle: 'Three-Minute Wish Pool', loginTip: 'Connect a wallet to start. Invite links bind referrers automatically.', connectWallet: 'Connect Wallet', demoEnter: 'No wallet? Enter as demo', logout: 'Sign out',
-    dockHome: 'Home', dockBbs: 'Board', dockIns: 'Insurance', dockMe: 'Me', disclaimerTitle: 'Serious Statement', disclaimerAgree: 'I have read and agree', announcement: 'Announcement', publishAnnouncement: 'Publish',
+    dockHome: 'Home', dockLottery: 'Lucky', dockBbs: 'Board', dockIns: 'Insurance', dockMe: 'Me', disclaimerTitle: 'Serious Statement', disclaimerAgree: 'I have read and agree', lotteryTitle: 'Lucky Draw Pools', lotterySubtitle: 'Pick a pool, buy numbers, win big!', announcement: 'Announcement', publishAnnouncement: 'Publish',
     remainSec: 'seconds left', lockAt: 'closed at 170s', betCount: 'Wishes', redPool: 'Red Pool', greenPool: 'Green Pool',
     oddWin: 'Odd sum → Red', evenWin: 'Even sum → Green', pickLabel: 'Pick a number (0-9)',
     amountLabel: 'Wish amount (1-99 枚, integer)', confirmWish: 'Confirm Wish', waitingStart: 'Waiting for the first wish…', historyTitle: 'Past rounds',
@@ -64,7 +64,7 @@ const I18N = {
   },
   'zh-TW': {
     coinUnit: '枚', platformTitle: '全球自助慈善捐助平台', platformDesc: '阿姆斯特丹團隊致力為全球有需要的人士提供直接捐助，以區塊鏈模式，公開、公正、可追溯的自由捐贈撮合服務，除了讓需要的人得到無損資助外，讓愛心人士也能得到肯定和收益。捐助服務功能正在加緊開發，近期將正式與大家見面。', appTitle: '三分鐘願望池', loginTip: '連接錢包即可開始，邀請連結自動綁定推薦關係', connectWallet: '連接錢包', demoEnter: '未裝錢包？以演示身份進入', logout: '退出',
-    dockHome: '首頁', dockBbs: '廣場', dockIns: '保險', dockMe: '我的', disclaimerTitle: '嚴重聲明', disclaimerAgree: '我已閱讀並同意', announcement: '系統公告', publishAnnouncement: '發布公告',
+    dockHome: '首頁', dockLottery: '抽獎', dockBbs: '廣場', dockIns: '保險', dockMe: '我的', disclaimerTitle: '嚴重聲明', disclaimerAgree: '我已閱讀並同意', lotteryTitle: '幸運抽獎池', lotterySubtitle: '選擇獎池，購買號碼，贏取大獎！', announcement: '系統公告', publishAnnouncement: '發布公告',
     remainSec: '剩餘秒數', lockAt: '150秒停止許願', betCount: '許願筆數', redPool: '紅願池', greenPool: '綠願池',
     oddWin: '選號總和為單 → 紅勝', evenWin: '選號總和為雙 → 綠勝', pickLabel: '選擇一個數字（0-9）',
     amountLabel: '許願金（1-99 枚，正整數）', confirmWish: '確認許願', waitingStart: '等待第一個願望進場…', historyTitle: '往期記錄',
@@ -500,11 +500,12 @@ function switchDock(name) {
   if (name === 'home') renderHistory();
   if (name === 'bbs') loadBbs();
   if (name === 'insurance') updatePoolCountdown();
+  if (name === 'lottery' && typeof Lottery !== 'undefined') Lottery.loadProducts();
   if (name === 'me' && state.uid) { renderPending(); creditPending(); api('/withdraw/reap', { uid: state.uid }).then(refresh).catch(() => {}); }
 }
 
 // ---------------- Swipe to switch dock ----------------
-const DOCK_ORDER = ['home', 'bbs', 'insurance', 'me'];
+const DOCK_ORDER = ['home', 'lottery', 'bbs', 'insurance', 'me'];
 function bindSwipe() {
   let sx = 0, sy = 0, active = false;
   const NO_SWIPE = 'input, textarea, button, select, .room-msgs, .num-grid, .pool, .room-input-bar, .room-members, .bbs-list, .history-list';
@@ -1461,6 +1462,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.10.4';
+const FE_BUILD = '2.11.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
+if (typeof Lottery !== 'undefined') Lottery.init();

@@ -9,6 +9,7 @@ import { SocialService } from './SocialService.js';
 import { ChainService } from './ChainService.js';
 import { VoiceRoomService } from './VoiceRoomService.js';
 import { NpcService } from './NpcService.js';
+import { LotteryService } from './LotteryService.js';
 
 const MYSQL_KEYS = ['DATABASE_URL', 'MYSQL_URL', 'MYSQL_PUBLIC_URL', 'MYSQL_PRIVATE_URL', 'MYSQLHOST', 'MYSQL_HOST', 'MYSQLDATABASE', 'MYSQL_DATABASE'];
 export function useMysql(env = process.env) {
@@ -25,6 +26,7 @@ export async function createApp(cfg = DEFAULT_CONFIG, env = process.env) {
   const chain = new ChainService(env); // On-chain adapter (disabled if unconfigured, falls back to in-site balance)
   const voice = new VoiceRoomService(store);
   const npc = new NpcService({ store, game, social, voice });
+  const lottery = new LotteryService(store);
   // Fix historical voice room unrecorded platform revenue (pre-v2.2.5 room creation deducted user balance but not platform, causing ledger imbalance)
   try {
     const inside = await store.totalInside();
@@ -36,5 +38,5 @@ export async function createApp(cfg = DEFAULT_CONFIG, env = process.env) {
       console.log(`[ledger-fix] backfill voice room platform revenue diff=${diff} inside=${inside} source=${source}`);
     }
   } catch (e) { console.error('[ledger-fix] error', e.message); }
-  return { store, cfg, insurance, game, wallet, social, chain, voice, npc, storeKind: store.kind };
+  return { store, cfg, insurance, game, wallet, social, chain, voice, npc, lottery, storeKind: store.kind };
 }

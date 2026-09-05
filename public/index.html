@@ -167,6 +167,19 @@
       </div>
     </section>
 
+    <!-- Lottery -->
+    <section id="tab-lottery" class="panel">
+      <div class="lottery-header">
+        <h3 data-i18n="lotteryTitle">Lucky Draw Pools</h3>
+        <p class="lottery-subtitle" data-i18n="lotterySubtitle">Pick a pool, buy numbers, win big!</p>
+      </div>
+      <div id="lotteryList" class="lottery-grid"></div>
+      <div id="lotteryDetail" class="lottery-detail hide">
+        <button id="lotteryBackBtn" class="btn-ghost">← Back</button>
+        <div id="lotteryDetailContent"></div>
+      </div>
+    </section>
+
     <!-- Insurance -->
     <section id="tab-insurance" class="panel">
       <h3 data-i18n="insTitle">Wish Insurance</h3>
@@ -307,6 +320,7 @@
   <!-- Bottom dock -->
   <nav id="dock" class="dock hide">
     <button data-dock="home" class="dock-item active"><span class="dock-ico">⌂</span><span data-i18n="dockHome">Home</span></button>
+    <button data-dock="lottery" class="dock-item"><span class="dock-ico">🎁</span><span data-i18n="dockLottery">Lucky</span></button>
     <button data-dock="bbs" class="dock-item"><span class="dock-ico">✎</span><span data-i18n="dockBbs">Board</span></button>
     <button data-dock="insurance" class="dock-item"><span class="dock-ico">✦</span><span data-i18n="dockIns">Insurance</span></button>
     <button data-dock="me" class="dock-item"><span class="dock-ico">◔</span><span data-i18n="dockMe">Me</span></button>
@@ -321,6 +335,7 @@
 </div>
 <script src="/qrcode.min.js"></script>
 <script src="/app.js"></script>
+<script src="/lottery.js"></script>
 <script src="/voice.js"></script>
 </body>
 </html>

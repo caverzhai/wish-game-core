@@ -276,6 +276,7 @@ export class MemoryStore {
   // -------- NPC bots --------
   async insertNpc(n) { this.npcs.push({ ...n }); }
   async listNpcs() { return [...this.npcs].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); }
+  async getNpc(npcId) { return this.npcs.find((n) => n.npcId === npcId) || null; }
   async removeNpc(npcId) { this.npcs = this.npcs.filter((n) => n.npcId !== npcId); return true; }
   async updateNpc(npcId, p = {}) {
     const i = this.npcs.findIndex((n) => n.npcId === npcId);

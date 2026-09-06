@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.13.2'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.13.3'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -265,6 +265,7 @@ route('GET', '/admin/npcs', async (b) => { await requireAdmin(b.uid); return { l
 route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return { npc: await npc.addNpc(b.name, b.wallet, b.language) }; });
 route('POST', '/admin/npc/remove', async (b) => { await requireAdmin(b.uid); return { removed: await npc.removeNpc(b.npcId) }; });
 route('POST', '/admin/npc/recharge', async (b) => { await requireAdmin(b.uid); return await npc.rechargeNpc(b.npcId, b.amount); });
+route('POST', '/admin/npc/insurance', async (b) => { await requireAdmin(b.uid); return await npc.setInsurance(b.npcId, b.enabled === true || b.enabled === 'true', b.premiumCoins || 20); });
 // Admin recharge user balance (for testing and manual top-up)
 route('POST', '/admin/recharge', async (b) => {
   await requireAdmin(b.uid);

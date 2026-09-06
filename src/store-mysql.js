@@ -469,6 +469,17 @@ export class MysqlStore {
       language: r.language || 'en',
     }));
   }
+  async getNpc(npcId) {
+    const r = await this.exec('SELECT * FROM npcs WHERE npc_id=? LIMIT 1', [npcId]);
+    if (!r[0]) return null;
+    return {
+      npcId: r[0].npc_id, uid: r[0].uid, wallet: r[0].wallet, name: r[0].name,
+      enabled: !!r[0].enabled, createdAt: Number(r[0].created_at),
+      lastPostAt: Number(r[0].last_post_at), lastChatAt: Number(r[0].last_chat_at), lastBetAt: Number(r[0].last_bet_at || 0),
+      nextPostAt: Number(r[0].next_post_at), nextChatAt: Number(r[0].next_chat_at), nextBetAt: Number(r[0].next_bet_at || 0),
+      language: r[0].language || 'en',
+    };
+  }
   async removeNpc(npcId) {
     await this.exec('DELETE FROM npcs WHERE npc_id=?', [npcId]);
     return true;

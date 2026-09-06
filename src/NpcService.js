@@ -182,13 +182,18 @@ export class NpcService {
 
   async listNpcs() {
     const npcs = await this.store.listNpcs();
-    // Enrich with account balance for admin display
+    // Enrich with account balance and insurance status for admin display
     for (const npc of npcs) {
       try {
         const acct = await this.store.getAccount(npc.uid);
         npc.balance = Number(acct.available || 0n) / Number(COIN);
         npc.frozen = Number(acct.frozen || 0n) / Number(COIN);
-      } catch { npc.balance = 0; npc.frozen = 0; }
+        npc.premium = Number(acct.premium || 0n) / Number(COIN);
+      } catch { npc.balance = 0; npc.frozen = 0; npc.premium = 0; }
+      try {
+        const u = await this.store.getUser(npc.uid);
+        npc.insuranceEnabled = !!u.insSwitch;
+      } catch { npc.insuranceEnabled = false; }
     }
     return npcs;
   }
@@ -197,6 +202,48 @@ export class NpcService {
   // When balance runs out, NPC only does social posts/chat, no more betting
   async rechargeNpc(npcId, amountCoins) {
     throw new Error('NPC recharge disabled. Each NPC gets exactly 100 coins at creation.');
+  }
+
+  // NPC insurance: admin can toggle insurance for any NPC
+  // When enabled: set insSwitch=true and ensure premium >= 20 coins (deposit if needed)
+  // When disabled: set insSwitch=false (premium stays in account, can be withdrawn later)
+  async setInsurance(npcId, enabled, premiumCoins = 20) {
+    const npc = await this.store.getNpc(npcId);
+    if (!npc) throw new Error('NPC not found');
+    const COIN = 1000000n;
+    const premiumMin = BigInt(premiumCoins) * COIN;
+
+    return await this.store.transaction(async () => {
+      // Set insurance switch
+      await this.store.setUserSwitch(npc.uid, !!enabled);
+
+      if (enabled) {
+        // Ensure premium balance >= minimum
+        const acct = await this.store.getAccount(npc.uid);
+        if (acct.premium < premiumMin) {
+          const need = premiumMin - acct.premium;
+          // Deposit from available balance if enough, otherwise issue (mint) the premium
+          if (acct.available >= need) {
+            await this.store.applyAccount(npc.uid, { avail: -need, premium: need });
+            await this.store.addFlow(npc.uid, 'PREMIUM_IN', need, { note: 'NPC insurance auto-deposit from balance' });
+          } else {
+            // Mint premium directly (ledger: issued increases, premium increases)
+            await this.store.applyLedger({ issued: need });
+            await this.store.applyAccount(npc.uid, { premium: need });
+            await this.store.addFlow(npc.uid, 'PREMIUM_IN', need, { note: 'NPC insurance initial funding (minted)' });
+          }
+        }
+      }
+
+      const after = await this.store.getAccount(npc.uid);
+      return {
+        npcId,
+        uid: npc.uid,
+        insuranceEnabled: enabled,
+        premium: Number(after.premium) / Number(COIN),
+        available: Number(after.available) / Number(COIN),
+      };
+    }, 'npc-insurance');
   }
 
   _rollNextTime() {

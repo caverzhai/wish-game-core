@@ -604,50 +604,21 @@ function renderRound() {
     $('betCount').textContent = r.betCount ?? 0;
     tickCountdown();
   }
-  // History dots: 3 rows max, show most recent rounds, chronological order (oldest first), active round 'ing' at the end
-  // Take most recent 30 rounds first, then reverse to chronological order
-  const recentSettled = state.recent.filter((x) => x.state === 'settled' || x.state === 'cancelled').slice(0, 30);
-  const settled = recentSettled.slice().reverse(); // reverse to chronological order (oldest first)
+  // History dots: fixed 27 settled rounds + 1 active = 28 positions
+  // 3 rows: row1=10, row2=10, row3=7 settled + position 8 = active 'ing'
+  const settledRounds = state.recent.filter((x) => x.state === 'settled' || x.state === 'cancelled');
+  // Take most recent 27, reverse to chronological (oldest first)
+  const recent27 = settledRounds.slice(0, 27).slice().reverse();
   const rows = [];
-  let currentRow = [];
-  let currentDay = null;
-  for (const x of settled) {
-    const ukDay = new Date((x.settleAt || x.createdAt || 0) * 1000).toISOString().slice(0, 10);
-    if (currentDay !== null && ukDay !== currentDay && currentRow.length > 0) {
-      rows.push(currentRow);
-      currentRow = [];
-    }
-    currentDay = ukDay;
-    currentRow.push(x);
-    if (currentRow.length >= 10) {
-      rows.push(currentRow);
-      currentRow = [];
-    }
-    if (rows.length >= 3) break;
-  }
-  if (currentRow.length > 0 && rows.length < 3) rows.push(currentRow);
-  // Show exactly 24 most recent rounds: 3 rows x 8 columns, no random trimming
-  const PER_ROW = 8;
-  const TOTAL = 24;
-  // Flatten all rows, take most recent TOTAL items
-  const allItems = rows.flat();
-  const recentItems = allItems.slice(-TOTAL);
-  // Insert active round as 'ing' at the end (if there's an active round)
+  rows.push(recent27.slice(0, 10));   // row 1: positions 0-9
+  rows.push(recent27.slice(10, 20));  // row 2: positions 10-19
+  const row3 = recent27.slice(20, 27); // row 3: positions 20-26 (7 items)
+  // Insert active round at position 8 of row 3 (index 7)
   if (state.round && state.round.state === 'active') {
     const ingItem = { roundId: state.round.roundId, active: true };
-    if (recentItems.length < TOTAL) {
-      recentItems.push(ingItem);
-    } else {
-      recentItems[recentItems.length - 1] = ingItem;
-    }
+    row3[7] = ingItem;
   }
-  // Rebuild rows with PER_ROW items each
-  rows = [];
-  for (let i = 0; i < recentItems.length; i += PER_ROW) {
-    rows.push(recentItems.slice(i, i + PER_ROW));
-  }
-  // Pad to 3 rows if needed
-  while (rows.length < 3) rows.push([]);
+  rows.push(row3);
   const dotsHtml = rows.slice(0, 3).map((row) => {
     return '<div class="dot-row">' + row.map((x) => {
       if (x.active) {
@@ -1497,7 +1468,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.14.5';
+const FE_BUILD = '2.14.6';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

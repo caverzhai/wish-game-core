@@ -20,7 +20,7 @@ const Lottery = (() => {
   function renderProducts(products) {
     const list = document.getElementById('lotteryList');
     if (!list) return;
-    const coinUnit = t('coinUnitLottery') || '枚';
+    const coinUnit = t('coinUnitLottery') || 'coins';
     list.innerHTML = products.map(p => {
       const r = p.currentRound;
       const roundNum = r ? r.roundId.split('_R')[1] : '0001';
@@ -33,7 +33,7 @@ const Lottery = (() => {
             <div class="lottery-round-badge">${t('lotteryRound') || 'Round'} ${roundNum}</div>
           </div>
           <div class="lottery-card-info">
-            <div class="lottery-card-name">${t('maxDonation') || '最高可受捐'} ${maxDonation} ${coinUnit}</div>
+            <div class="lottery-card-name">${t('maxDonation') || 'Max Donation'} ${maxDonation} ${coinUnit}</div>
             <div class="lottery-card-meta">
               <span>${r ? r.participantCount : 0} ${t('lotteryPlayers') || 'players'}</span>
               <span>${r ? r.progress : 0}%</span>
@@ -76,7 +76,7 @@ const Lottery = (() => {
     const maxDonation = firstPrize ? firstPrize.amount : 0;
 
     const prizeNames = { 1: t('prize1') || 'First Prize', 2: t('prize2') || 'Second Prize', 3: t('prize3') || 'Third Prize', 4: t('prize4') || 'Fourth Prize' };
-    const coinUnit = t('coinUnitLottery') || '枚';
+    const coinUnit = t('coinUnitLottery') || 'coins';
     const prizesHtml = p.prizes.map(prize => `
       <div class="lottery-prize-row">
         <span class="lottery-prize-level">${prizeNames[prize.level] || prize.name} × ${prize.count}</span>
@@ -86,46 +86,46 @@ const Lottery = (() => {
 
     content.innerHTML = `
       <div class="lottery-detail-header-large">
-        <h2 class="lottery-product-name-large">${t('maxDonation') || '最高可受捐'} ${maxDonation} ${coinUnit}</h2>
+        <h2 class="lottery-product-name-large">${t('maxDonation') || 'Max Donation'} ${maxDonation} ${coinUnit}</h2>
       </div>
 
       <div class="lottery-desc-box">
-        <div class="lottery-desc-title">${t('howToPlay') || '玩法说明'}</div>
-        <p class="lottery-desc-text">${t('lotteryDescDetail') || '投入整数枚数，系统按先来后到分配连续号码。号码售完后系统自动随机开奖，奖金即时发放到余额。'}</p>
+        <div class="lottery-desc-title">${t('howToPlay') || 'How to Play'}</div>
+        <p class="lottery-desc-text">${t('lotteryDescDetail') || 'Enter an integer amount. Numbers assigned sequentially. Auto draw when sold out. Prizes credited instantly.'}</p>
         <p class="lottery-desc-text">${p.desc}</p>
       </div>
 
       <div class="lottery-prizes">
-        <div class="lottery-section-title">${t('lotteryPrizePool') || '奖池结构'}</div>
+        <div class="lottery-section-title">${t('lotteryPrizePool') || 'Prize Structure'}</div>
         ${prizesHtml}
       </div>
 
       <div class="lottery-buy-section">
-        <div class="lottery-section-title">${t('lotteryBuyNow') || '立即购买'}</div>
+        <div class="lottery-section-title">${t('lotteryBuyNow') || 'Buy Now'}</div>
         <div class="lottery-buy-row">
-          <label>${t('lotteryAmount') || '投入数量'}:</label>
+          <label>${t('lotteryAmount') || 'Amount'}:</label>
           <input type="number" id="lotteryAmount" min="1" max="${r.totalAmount - r.totalSold}" value="55" />
           <span style="font-size:12px;color:var(--muted);">${coinUnit}</span>
         </div>
-        <button id="lotteryBuyBtn" class="btn-primary" style="width:100%;">${t('lotteryConfirmBuy') || '确认购买'}</button>
+        <button id="lotteryBuyBtn" class="btn-primary" style="width:100%;">${t('lotteryConfirmBuy') || 'Confirm Buy'}</button>
         <div id="lotteryResult" class="lottery-result" style="margin-top:10px;"></div>
       </div>
 
       <div class="lottery-mynumbers">
-        <div class="lottery-section-title">${t('lotteryMyNumbers') || '我的号码'}</div>
-        <div id="lotteryMyNumbersList" style="font-size:13px;color:var(--txt);">${t('lotteryNoNumbers') || '暂无购买记录'}</div>
+        <div class="lottery-section-title">${t('lotteryMyNumbers') || 'My Numbers'}</div>
+        <div id="lotteryMyNumbersList" style="font-size:13px;color:var(--txt);">${t('lotteryNoNumbers') || 'No purchases yet'}</div>
       </div>
 
       <div class="lottery-history">
-        <div class="lottery-section-title">${t('lotteryHistory') || '开奖记录'}</div>
+        <div class="lottery-section-title">${t('lotteryHistory') || 'Draw History'}</div>
         <div id="lotteryHistoryList"></div>
       </div>
 
       <div class="lottery-comments">
-        <div class="lottery-section-title">${t('lotteryComments') || '评论'}</div>
+        <div class="lottery-section-title">${t('lotteryComments') || 'Comments'}</div>
         <div class="lottery-comment-input">
-          <input type="text" id="lotteryCommentInput" placeholder="${t('lotteryCommentPh') || '说点什么...'}" maxlength="200" />
-          <button id="lotteryCommentBtn" class="btn-primary" style="flex:0 0 auto;">${t('send') || '发送'}</button>
+          <input type="text" id="lotteryCommentInput" placeholder="${t('lotteryCommentPh') || 'Say something...'}" maxlength="200" />
+          <button id="lotteryCommentBtn" class="btn-primary" style="flex:0 0 auto;">${t('send') || 'Send'}</button>
         </div>
         <div id="lotteryCommentList" class="lottery-comment-list"></div>
       </div>
@@ -139,45 +139,45 @@ const Lottery = (() => {
     if (!currentProduct) return;
     const amount = parseInt(document.getElementById('lotteryAmount').value, 10);
     if (!amount || amount < 1) {
-      alert(t('lotteryNeedAmount') || '请输入有效的数量');
+      alert(t('lotteryNeedAmount') || 'Please enter a valid amount');
       return;
     }
 
     if (typeof state === 'undefined' || !state.uid) {
-      alert(t('needWallet') || '请先连接钱包');
+      alert(t('needWallet') || 'Please connect wallet first');
       return;
     }
 
     const resultEl = document.getElementById('lotteryResult');
-    resultEl.innerHTML = t('lotteryProcessing') || '处理中...';
+    resultEl.innerHTML = t('lotteryProcessing') || 'Processing...';
     resultEl.style.color = 'var(--muted)';
 
     try {
       const data = await tryBuy(amount);
       if (data.success) {
-        resultEl.innerHTML = `<span style="color:var(--gold);font-weight:700;">${t('lotteryBuySuccess') || '购买成功！'} 号码: ${data.startNum} - ${data.endNum}</span>`;
+        resultEl.innerHTML = `<span style="color:var(--gold);font-weight:700;">${t('lotteryBuySuccess') || 'Purchase successful!'} Numbers: ${data.startNum} - ${data.endNum}</span>`;
         setTimeout(() => {
           openDetail(currentProduct.product.id);
         }, 1500);
         return;
       }
       if (data.needWallet) {
-        resultEl.innerHTML = t('lotteryNeedWallet') || '余额不足，正在调用钱包...';
+        resultEl.innerHTML = t('lotteryNeedWallet') || 'Insufficient balance, charging wallet...';
         const ok = await topUpAndBuy(amount, data.cost);
         if (ok) {
           const data2 = await tryBuy(amount);
           if (data2.success) {
-            resultEl.innerHTML = `<span style="color:var(--gold);font-weight:700;">${t('lotteryBuySuccess') || '购买成功！'} 号码: ${data2.startNum} - ${data2.endNum}</span>`;
+            resultEl.innerHTML = `<span style="color:var(--gold);font-weight:700;">${t('lotteryBuySuccess') || 'Purchase successful!'} Numbers: ${data2.startNum} - ${data2.endNum}</span>`;
             setTimeout(() => openDetail(currentProduct.product.id), 1500);
           } else {
-            resultEl.innerHTML = `<span style="color:#ef4444;">${t('lotteryBuyFail') || '购买失败'}</span>`;
+            resultEl.innerHTML = `<span style="color:#ef4444;">${t('lotteryBuyFail') || 'Purchase failed'}</span>`;
           }
         } else {
-          resultEl.innerHTML = `<span style="color:#ef4444;">${t('lotteryWalletCancel') || '钱包支付已取消或失败'}</span>`;
+          resultEl.innerHTML = `<span style="color:#ef4444;">${t('lotteryWalletCancel') || 'Wallet payment cancelled or failed'}</span>`;
         }
       }
     } catch (e) {
-      resultEl.innerHTML = `<span style="color:#ef4444;">${t('lotteryBuyFail') || '购买失败'}: ${e.message}</span>`;
+      resultEl.innerHTML = `<span style="color:#ef4444;">${t('lotteryBuyFail') || 'Purchase failed'}: ${e.message}</span>`;
     }
   }
 
@@ -196,7 +196,7 @@ const Lottery = (() => {
 
   async function topUpAndBuy(amount, totalCost) {
     if (typeof alignWallet !== 'function' || typeof ensureWalletReady !== 'function') {
-      alert(t('chainNotConfigured') || '钱包功能未配置，请使用线上站点');
+      alert(t('chainNotConfigured') || 'Wallet not configured, please use online site');
       return false;
     }
     const S6 = 1_000_000;
@@ -214,7 +214,7 @@ const Lottery = (() => {
     const wbal = await walletTokenWei();
     if (wbal < needWei) {
       const s = Number(needWei - wbal) / (10 ** diff);
-      alert((t('walletShort') || '钱包余额不足') + ' ' + (s / S6) + ' 枚');
+      alert((t('walletShort') || 'Insufficient wallet balance') + ' ' + (s / S6) + ' coins');
       return false;
     }
     const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
@@ -251,10 +251,10 @@ const Lottery = (() => {
       const list = document.getElementById('lotteryMyNumbersList');
       if (!list) return;
       if (numbers.length === 0) {
-        list.innerHTML = t('lotteryNoNumbers') || '暂无购买记录';
+        list.innerHTML = t('lotteryNoNumbers') || 'No purchases yet';
       } else {
         list.innerHTML = numbers.map(n =>
-          `<div style="padding:4px 0;">${t('lotteryNumberRange') || '号码'}: <strong>${n.startNum} - ${n.endNum}</strong> (${n.amount}枚)</div>`
+          `<div style="padding:4px 0;">${t('lotteryNumberRange') || 'Numbers'}: <strong>${n.startNum} - ${n.endNum}</strong> (${n.amount} coins)</div>`
         ).join('');
       }
     } catch (e) {
@@ -273,7 +273,7 @@ const Lottery = (() => {
           <div class="lottery-comment-user">${c.uid}</div>
           <div class="lottery-comment-text">${escapeHtml(c.content)}</div>
         </div>
-      `).join('') || `<div style="font-size:12px;color:var(--muted);">${t('lotteryNoComments') || '暂无评论'}</div>`;
+      `).join('') || `<div style="font-size:12px;color:var(--muted);">${t('lotteryNoComments') || 'No comments yet'}</div>`;
     } catch (e) {
       console.error('loadComments error', e);
     }
@@ -284,7 +284,7 @@ const Lottery = (() => {
     const content = input.value.trim();
     if (!content) return;
     if (typeof state === 'undefined' || !state.uid) {
-      alert(t('needWallet') || '请先连接钱包');
+      alert(t('needWallet') || 'Please connect wallet first');
       return;
     }
     try {
@@ -315,8 +315,8 @@ const Lottery = (() => {
         }
         const levels = Object.keys(byLevel).sort((a, b) => a - b);
         const prizeNames = { 1: t('prize1') || 'First Prize', 2: t('prize2') || 'Second Prize', 3: t('prize3') || 'Third Prize', 4: t('prize4') || 'Fourth Prize' };
-        const coinUnit = t('coinUnitLottery') || '枚';
-        const peopleUnit = t('lotteryPlayers') || '人';
+        const coinUnit = t('coinUnitLottery') || 'coins';
+        const peopleUnit = t('lotteryPlayers') || 'people';
         const winnerHtml = levels.map(lv => {
           const g = byLevel[lv];
           const prizeName = prizeNames[lv] || g.name;
@@ -358,7 +358,7 @@ const Lottery = (() => {
             ${winnerHtml}
           </div>
         `;
-      }).join('') || `<div style="font-size:12px;color:var(--muted);">${t('lotteryNoHistory') || '暂无开奖记录'}</div>`;
+      }).join('') || `<div style="font-size:12px;color:var(--muted);">${t('lotteryNoHistory') || 'No draws yet'}</div>`;
     } catch (e) {
       console.error('loadHistory error', e);
     }
@@ -385,5 +385,16 @@ const Lottery = (() => {
     loadProducts();
   }
 
-  return { init, loadProducts };
+  function refresh() {
+    if (currentProduct) {
+      renderDetail(currentProduct);
+      loadMyNumbers(currentProduct.product.id);
+      loadComments(currentProduct.product.id);
+      loadHistory(currentProduct.product.id);
+    } else {
+      loadProducts();
+    }
+  }
+
+  return { init, loadProducts, refresh };
 })();

@@ -1418,6 +1418,7 @@ function init() {
       opt.classList.add('active');
       $('langMenu').classList.add('hide');
       applyI18n(); refresh();
+      if (typeof Lottery !== 'undefined' && Lottery.refresh) Lottery.refresh();
     };
   });
   $('langTrigger').onclick = (e) => { e.stopPropagation(); $('langMenu').classList.toggle('hide'); };
@@ -1485,7 +1486,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.12.9';
+const FE_BUILD = '2.13.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

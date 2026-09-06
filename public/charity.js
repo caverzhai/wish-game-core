@@ -281,7 +281,7 @@
           </div>
           <div class="charity-comment-text">${c.content}</div>
         </div>
-      `).join('') || '<div style="color:var(--muted);text-align:center;padding:10px;">${t('lotteryNoComments')}</div>';
+      `).join('') || `<div style="color:var(--muted);text-align:center;padding:10px;">${t('lotteryNoComments')}</div>`;
     } catch {}
   }
 

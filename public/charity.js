@@ -307,15 +307,15 @@
   }
 
   function showView(viewId) {
-    document.querySelectorAll('.panel').forEach(v => v.classList.add('hide'));
+    document.querySelectorAll('.panel').forEach(v => v.classList.remove('active'));
     const el = $(viewId);
-    if (el) el.classList.remove('hide');
+    if (el) el.classList.add('active');
   }
 
   function backToList() {
-    document.querySelectorAll('.panel').forEach(v => v.classList.add('hide'));
+    document.querySelectorAll('.panel').forEach(v => v.classList.remove('active'));
     const el = $('tab-lottery');
-    if (el) el.classList.remove('hide');
+    if (el) el.classList.add('active');
     if (typeof Lottery !== 'undefined' && Lottery.refresh) Lottery.refresh();
   }
 

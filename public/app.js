@@ -1405,8 +1405,24 @@ async function refresh() {
 
 // ---------------- Init ----------------
 function init() {
-  $('langSel').value = state.lang; applyI18n();
-  $('langSel').onchange = (e) => { state.lang = e.target.value; localStorage.setItem('lang', state.lang); applyI18n(); refresh(); };
+  // Custom language dropdown (no native select popup)
+  const langNames = { en: 'EN', 'zh-TW': '繁體', ja: '日本語', ar: 'العربية', id: 'Indonesia', ko: '한국어', ru: 'Русский', hi: 'हिन्दी', ur: 'اردو' };
+  $('langCurrent').textContent = langNames[state.lang] || 'EN';
+  document.querySelectorAll('.lang-option').forEach(opt => {
+    if (opt.dataset.lang === state.lang) opt.classList.add('active');
+    opt.onclick = () => {
+      state.lang = opt.dataset.lang;
+      localStorage.setItem('lang', state.lang);
+      $('langCurrent').textContent = langNames[state.lang] || 'EN';
+      document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      $('langMenu').classList.add('hide');
+      applyI18n(); refresh();
+    };
+  });
+  $('langTrigger').onclick = (e) => { e.stopPropagation(); $('langMenu').classList.toggle('hide'); };
+  document.addEventListener('click', () => $('langMenu').classList.add('hide'));
+  applyI18n();
   $('connectBtn').onclick = connectWallet; $('demoBtn').onclick = demoEnter;
   $('sideRed').onclick = () => selectSide('red'); $('sideGreen').onclick = () => selectSide('green');
   $('betBtn').onclick = submitWish;
@@ -1469,7 +1485,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.12.3';
+const FE_BUILD = '2.12.4';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

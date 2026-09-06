@@ -11,17 +11,23 @@
   <header class="topbar">
     <div class="brand"><span class="logo">✦</span><span data-i18n="appTitle">Three-Minute Wish Pool</span><span id="feBuild" style="font-size:10px;opacity:.5;margin-left:6px;"></span></div>
     <div class="top-right">
-      <select id="langSel" class="lang-sel">
-        <option value="en">EN</option>
-        <option value="zh-TW">繁體</option>
-        <option value="ja">日本語</option>
-        <option value="ar">العربية</option>
-        <option value="id">Indonesia</option>
-        <option value="ko">한국어</option>
-        <option value="ru">Русский</option>
-        <option value="hi">हिन्दी</option>
-        <option value="ur">اردو</option>
-      </select>
+      <div class="lang-dropdown" id="langDropdown">
+        <button class="lang-trigger" id="langTrigger">
+          <span id="langCurrent">EN</span>
+          <span class="lang-arrow">▾</span>
+        </button>
+        <div class="lang-menu hide" id="langMenu">
+          <div class="lang-option" data-lang="en">EN</div>
+          <div class="lang-option" data-lang="zh-TW">繁體</div>
+          <div class="lang-option" data-lang="ja">日本語</div>
+          <div class="lang-option" data-lang="ar">العربية</div>
+          <div class="lang-option" data-lang="id">Indonesia</div>
+          <div class="lang-option" data-lang="ko">한국어</div>
+          <div class="lang-option" data-lang="ru">Русский</div>
+          <div class="lang-option" data-lang="hi">हिन्दी</div>
+          <div class="lang-option" data-lang="ur">اردو</div>
+        </div>
+      </div>
       <span id="who" class="who hide"></span>
     </div>
   </header>

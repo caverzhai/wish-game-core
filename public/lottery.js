@@ -68,6 +68,40 @@ const Lottery = (() => {
     }
   }
 
+  function getProductDesc(productId) {
+    const descs = {
+      en: {
+        L100: 'Enter 1 coin to participate. Max win 50 coins. Numbers 00-99. Draw when sold out.',
+        L200: 'Enter 1 coin to participate. Max win 100 coins. Numbers 000-199. Draw when sold out.',
+        L500: 'Enter 1 coin to participate. Max win 200 coins. Numbers 000-499. Draw when sold out.',
+        L1000: 'Enter 1 coin to participate. Max win 500 coins. Numbers 000-999. Draw when sold out.',
+        L2000: 'Enter 1 coin to participate. Max win 1000 coins. Numbers 0000-1999. Draw when sold out.',
+        L5000: 'Enter 1 coin to participate. Max win 2000 coins. Numbers 0000-4999. Draw when sold out.',
+        L10000: 'Enter 1 coin to participate. Max win 5000 coins. Numbers 00000-09999. Draw when sold out.',
+      },
+      'zh-TW': {
+        L100: '投入1枚即可參與，最高可得50枚。號碼00-99，售完即開。',
+        L200: '投入1枚即可參與，最高可得100枚。號碼000-199，售完即開。',
+        L500: '投入1枚即可參與，最高可得200枚。號碼000-499，售完即開。',
+        L1000: '投入1枚即可參與，最高可得500枚。號碼000-999，售完即開。',
+        L2000: '投入1枚即可參與，最高可得1000枚。號碼0000-1999，售完即開。',
+        L5000: '投入1枚即可參與，最高可得2000枚。號碼0000-4999，售完即開。',
+        L10000: '投入1枚即可參與，最高可得5000枚。號碼00000-09999，售完即開。',
+      },
+      ja: {
+        L100: '1枚から参加可能。最高50枚獲得。番号00-99。完売で抽選。',
+        L200: '1枚から参加可能。最高100枚獲得。番号000-199。完売で抽選。',
+        L500: '1枚から参加可能。最高200枚獲得。番号000-499。完売で抽選。',
+        L1000: '1枚から参加可能。最高500枚獲得。番号000-999。完売で抽選。',
+        L2000: '1枚から参加可能。最高1000枚獲得。番号0000-1999。完売で抽選。',
+        L5000: '1枚から参加可能。最高2000枚獲得。番号0000-4999。完売で抽選。',
+        L10000: '1枚から参加可能。最高5000枚獲得。番号00000-09999。完売で抽選。',
+      },
+    };
+    const lang = (typeof state !== 'undefined' && state.lang) || 'en';
+    return (descs[lang] && descs[lang][productId]) || (descs.en && descs.en[productId]) || productId;
+  }
+
   function renderDetail(data) {
     const p = data.product;
     const r = data.summary;
@@ -92,7 +126,7 @@ const Lottery = (() => {
       <div class="lottery-desc-box">
         <div class="lottery-desc-title">${t('howToPlay') || 'How to Play'}</div>
         <p class="lottery-desc-text">${t('lotteryDescDetail') || 'Enter an integer amount. Numbers assigned sequentially. Auto draw when sold out. Prizes credited instantly.'}</p>
-        <p class="lottery-desc-text">${p.desc}</p>
+        <p class="lottery-desc-text">${getProductDesc(p.id)}</p>
       </div>
 
       <div class="lottery-prizes">

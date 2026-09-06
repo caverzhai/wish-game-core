@@ -20,17 +20,20 @@ const Lottery = (() => {
   function renderProducts(products) {
     const list = document.getElementById('lotteryList');
     if (!list) return;
+    const coinUnit = t('coinUnitLottery') || '枚';
     list.innerHTML = products.map(p => {
       const r = p.currentRound;
       const roundNum = r ? r.roundId.split('_R')[1] : '0001';
+      const firstPrize = p.prizes.find(pr => pr.level === 1) || p.prizes[0];
+      const maxDonation = firstPrize ? firstPrize.amount : 0;
       return `
         <div class="lottery-card" data-id="${p.id}">
           <div class="lottery-img-wrap">
             <img src="${p.image}" alt="${p.name}" />
-            <div class="lottery-round-badge">第${roundNum}期</div>
+            <div class="lottery-round-badge">${t('lotteryRound') || 'Round'} ${roundNum}</div>
           </div>
           <div class="lottery-card-info">
-            <div class="lottery-card-name">${p.name}</div>
+            <div class="lottery-card-name">${t('maxDonation') || '最高可受捐'} ${maxDonation} ${coinUnit}</div>
             <div class="lottery-card-meta">
               <span>${r ? r.participantCount : 0} ${t('lotteryPlayers') || 'players'}</span>
               <span>${r ? r.progress : 0}%</span>
@@ -72,23 +75,24 @@ const Lottery = (() => {
     const firstPrize = p.prizes.find(pr => pr.level === 1) || p.prizes[0];
     const maxDonation = firstPrize ? firstPrize.amount : 0;
 
+    const prizeNames = { 1: t('prize1') || 'First Prize', 2: t('prize2') || 'Second Prize', 3: t('prize3') || 'Third Prize', 4: t('prize4') || 'Fourth Prize' };
+    const coinUnit = t('coinUnitLottery') || '枚';
     const prizesHtml = p.prizes.map(prize => `
       <div class="lottery-prize-row">
-        <span class="lottery-prize-level">${prize.name} × ${prize.count}</span>
-        <span class="lottery-prize-amount">${prize.amount} 枚</span>
+        <span class="lottery-prize-level">${prizeNames[prize.level] || prize.name} × ${prize.count}</span>
+        <span class="lottery-prize-amount">${prize.amount} ${coinUnit}</span>
       </div>
     `).join('');
 
     content.innerHTML = `
       <div class="lottery-detail-header-large">
-        <h2 class="lottery-product-name-large">${t('maxDonation') || '最高可受捐'} ${maxDonation}</h2>
-        <div class="lottery-detail-meta">
-          <span>${t('lotteryRound') || 'Round'}: ${r.roundId}</span>
-          <span>${r.totalSold}/${r.totalAmount} ${t('lotterySold') || 'sold'}</span>
-        </div>
-        <div class="lottery-progress">
-          <div class="lottery-progress-bar" style="width:${r.progress}%"></div>
-        </div>
+        <h2 class="lottery-product-name-large">${t('maxDonation') || '最高可受捐'} ${maxDonation} ${coinUnit}</h2>
+      </div>
+
+      <div class="lottery-desc-box">
+        <div class="lottery-desc-title">${t('howToPlay') || '玩法说明'}</div>
+        <p class="lottery-desc-text">${t('lotteryDescDetail') || '投入整数枚数，系统按先来后到分配连续号码。号码售完后系统自动随机开奖，奖金即时发放到余额。'}</p>
+        <p class="lottery-desc-text">${p.desc}</p>
       </div>
 
       <div class="lottery-prizes">
@@ -101,7 +105,7 @@ const Lottery = (() => {
         <div class="lottery-buy-row">
           <label>${t('lotteryAmount') || '投入数量'}:</label>
           <input type="number" id="lotteryAmount" min="1" max="${r.totalAmount - r.totalSold}" value="55" />
-          <span style="font-size:12px;color:var(--muted);">枚</span>
+          <span style="font-size:12px;color:var(--muted);">${coinUnit}</span>
         </div>
         <button id="lotteryBuyBtn" class="btn-primary" style="width:100%;">${t('lotteryConfirmBuy') || '确认购买'}</button>
         <div id="lotteryResult" class="lottery-result" style="margin-top:10px;"></div>
@@ -310,8 +314,12 @@ const Lottery = (() => {
           byLevel[w.level].items.push(w);
         }
         const levels = Object.keys(byLevel).sort((a, b) => a - b);
+        const prizeNames = { 1: t('prize1') || 'First Prize', 2: t('prize2') || 'Second Prize', 3: t('prize3') || 'Third Prize', 4: t('prize4') || 'Fourth Prize' };
+        const coinUnit = t('coinUnitLottery') || '枚';
+        const peopleUnit = t('lotteryPlayers') || '人';
         const winnerHtml = levels.map(lv => {
           const g = byLevel[lv];
+          const prizeName = prizeNames[lv] || g.name;
           const collapsible = g.items.length > 6;
           const items = g.items.map(w => {
             const walletShort = w.wallet ? w.wallet.slice(0, 6) + '...' + w.wallet.slice(-4) : w.uid;
@@ -322,8 +330,8 @@ const Lottery = (() => {
             return `
               <div class="lottery-prize-group">
                 <div class="lottery-prize-header" onclick="document.getElementById('${toggleId}').classList.toggle('hide')">
-                  <span class="lottery-prize-name">${g.name} (${g.items.length}人)</span>
-                  <span class="lottery-prize-amount">${g.amount}枚 ▾</span>
+                  <span class="lottery-prize-name">${prizeName} (${g.items.length}${peopleUnit})</span>
+                  <span class="lottery-prize-amount">${g.amount}${coinUnit} ▾</span>
                 </div>
                 <div id="${toggleId}" class="lottery-prize-winners lottery-winners-grid hide">
                   ${items}
@@ -334,8 +342,8 @@ const Lottery = (() => {
             return `
               <div class="lottery-prize-group">
                 <div class="lottery-prize-header">
-                  <span class="lottery-prize-name">${g.name}</span>
-                  <span class="lottery-prize-amount">${g.amount}枚</span>
+                  <span class="lottery-prize-name">${prizeName}</span>
+                  <span class="lottery-prize-amount">${g.amount}${coinUnit}</span>
                 </div>
                 <div class="lottery-prize-winners lottery-winners-grid">
                   ${items}

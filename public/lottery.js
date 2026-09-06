@@ -69,6 +69,8 @@ const Lottery = (() => {
     const p = data.product;
     const r = data.summary;
     const content = document.getElementById('lotteryDetailContent');
+    const firstPrize = p.prizes.find(pr => pr.level === 1) || p.prizes[0];
+    const maxDonation = firstPrize ? firstPrize.amount : 0;
 
     const prizesHtml = p.prizes.map(prize => `
       <div class="lottery-prize-row">
@@ -79,7 +81,7 @@ const Lottery = (() => {
 
     content.innerHTML = `
       <div class="lottery-detail-header-large">
-        <h2 class="lottery-product-name-large">${p.name}</h2>
+        <h2 class="lottery-product-name-large">${t('maxDonation') || '最高可受捐'} ${maxDonation}</h2>
         <div class="lottery-detail-meta">
           <span>${t('lotteryRound') || 'Round'}: ${r.roundId}</span>
           <span>${r.totalSold}/${r.totalAmount} ${t('lotterySold') || 'sold'}</span>

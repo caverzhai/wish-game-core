@@ -78,8 +78,8 @@ const Lottery = (() => {
     `).join('');
 
     content.innerHTML = `
-      <div class="lottery-detail-header">
-        <h3>${p.name}</h3>
+      <div class="lottery-detail-header-large">
+        <h2 class="lottery-product-name-large">${p.name}</h2>
         <div class="lottery-detail-meta">
           <span>${t('lotteryRound') || 'Round'}: ${r.roundId}</span>
           <span>${r.totalSold}/${r.totalAmount} ${t('lotterySold') || 'sold'}</span>
@@ -87,13 +87,6 @@ const Lottery = (() => {
         <div class="lottery-progress">
           <div class="lottery-progress-bar" style="width:${r.progress}%"></div>
         </div>
-      </div>
-
-      <div class="lottery-product-desc">
-        <div class="lottery-desc-title">${t('lotteryProductDesc') || '产品说明'}</div>
-        <p>${p.desc}</p>
-        <p>${t('lotteryDesc1') || '每人投入整数枚数，按先来后到分配连续号码。号码售完后系统自动随机开奖，完全公平公正。'}</p>
-        <p>${t('lotteryDesc2') || '奖金自动发放到余额，可立即提现，不押不申请不审核。'}</p>
       </div>
 
       <div class="lottery-prizes">

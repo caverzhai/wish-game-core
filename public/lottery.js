@@ -113,7 +113,7 @@ const Lottery = (() => {
     const coinUnit = t('coinUnitLottery') || 'coins';
     const prizesHtml = p.prizes.map(prize => `
       <div class="lottery-prize-row">
-        <span class="lottery-prize-level">${prizeNames[prize.level] || prize.name} × ${prize.count}</span>
+        <span class="lottery-prize-level">${prizeNames[prize.level] || ('Prize Level ' + prize.level)} × ${prize.count}</span>
         <span class="lottery-prize-amount">${prize.amount} ${coinUnit}</span>
       </div>
     `).join('');
@@ -353,7 +353,7 @@ const Lottery = (() => {
         const peopleUnit = t('lotteryPlayers') || 'people';
         const winnerHtml = levels.map(lv => {
           const g = byLevel[lv];
-          const prizeName = prizeNames[lv] || g.name;
+          const prizeName = prizeNames[lv] || ('Prize Level ' + lv);
           const collapsible = g.items.length > 6;
           const items = g.items.map(w => {
             const walletShort = w.wallet ? w.wallet.slice(0, 6) + '...' + w.wallet.slice(-4) : w.uid;

@@ -113,6 +113,34 @@ CREATE TABLE IF NOT EXISTS lottery_comments (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, product_id VARCHAR(16), uid VARCHAR(16),
   content VARCHAR(500), created_at BIGINT, KEY idx_product(product_id)
 );
+CREATE TABLE IF NOT EXISTS charity_projects (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, project_id VARCHAR(16) UNIQUE,
+  uid VARCHAR(16), name VARCHAR(100), gender VARCHAR(16), photo TEXT,
+  country VARCHAR(100), city VARCHAR(100), help_type VARCHAR(200),
+  reason TEXT, target_amount BIGINT, goal_amount BIGINT, raised BIGINT DEFAULT 0,
+  proof TEXT, status VARCHAR(16) DEFAULT 'active',
+  support_votes INT DEFAULT 0, oppose_votes INT DEFAULT 0,
+  comment_count INT DEFAULT 0, donor_count INT DEFAULT 0,
+  created_at BIGINT, settled_at BIGINT NULL,
+  KEY idx_status(status), KEY idx_raised(raised), KEY idx_support(support_votes)
+);
+CREATE TABLE IF NOT EXISTS charity_donations (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, donation_id VARCHAR(16) UNIQUE,
+  project_id VARCHAR(16), uid VARCHAR(16), amount BIGINT,
+  status VARCHAR(16) DEFAULT 'frozen', created_at BIGINT,
+  KEY idx_project(project_id), KEY idx_uid(uid)
+);
+CREATE TABLE IF NOT EXISTS charity_votes (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, vote_id VARCHAR(16) UNIQUE,
+  uid VARCHAR(16), project_id VARCHAR(16), support TINYINT DEFAULT 1,
+  created_at BIGINT, UNIQUE KEY uid_project(uid, project_id)
+);
+CREATE TABLE IF NOT EXISTS charity_comments (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, comment_id VARCHAR(16) UNIQUE,
+  project_id VARCHAR(16), uid VARCHAR(16), content VARCHAR(1024),
+  donor_amount BIGINT DEFAULT 0, created_at BIGINT,
+  KEY idx_project(project_id)
+);
 `;
 
 export class MysqlStore {
@@ -479,6 +507,98 @@ export class MysqlStore {
       nextPostAt: Number(r[0].next_post_at), nextChatAt: Number(r[0].next_chat_at), nextBetAt: Number(r[0].next_bet_at || 0),
       language: r[0].language || 'en',
     };
+  }
+
+  // -------- Charity relief projects --------
+  _charityRow(r) {
+    if (!r) return null;
+    return {
+      projectId: r.project_id, uid: r.uid, name: r.name, gender: r.gender, photo: r.photo,
+      country: r.country, city: r.city || '', helpType: r.help_type, reason: r.reason,
+      targetAmount: BigInt(r.target_amount), goalAmount: BigInt(r.goal_amount), raised: BigInt(r.raised),
+      proof: r.proof || '', status: r.status,
+      supportVotes: Number(r.support_votes), opposeVotes: Number(r.oppose_votes),
+      commentCount: Number(r.comment_count), donorCount: Number(r.donor_count),
+      createdAt: Number(r.created_at), settledAt: r.settled_at ? Number(r.settled_at) : null,
+    };
+  }
+  async insertCharityProject(p) {
+    await this.exec('INSERT INTO charity_projects(project_id,uid,name,gender,photo,country,city,help_type,reason,target_amount,goal_amount,raised,proof,status,support_votes,oppose_votes,comment_count,donor_count,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      [p.projectId, p.uid, p.name, p.gender, p.photo, p.country, p.city, p.helpType, p.reason,
+       p.targetAmount.toString(), p.goalAmount.toString(), p.raised.toString(), p.proof,
+       p.status, p.supportVotes, p.opposeVotes, p.commentCount, p.donorCount, p.createdAt]);
+  }
+  async listCharityProjects(limit = 50, offset = 0) {
+    const rows = await this.exec('SELECT * FROM charity_projects ORDER BY raised DESC, support_votes DESC, comment_count DESC LIMIT ? OFFSET ?', [limit, offset]);
+    return rows.map(r => this._charityRow(r));
+  }
+  async getCharityProject(projectId) {
+    const r = await this.exec('SELECT * FROM charity_projects WHERE project_id=? LIMIT 1', [projectId]);
+    return this._charityRow(r[0]);
+  }
+  async getCharityProjectForUpdate(projectId) {
+    const forUpdate = this.tx.getStore() ? ' FOR UPDATE' : '';
+    const r = await this.exec(`SELECT * FROM charity_projects WHERE project_id=? LIMIT 1${forUpdate}`, [projectId]);
+    return this._charityRow(r[0]);
+  }
+  async updateCharityProject(projectId, p = {}) {
+    const col = { raised: 'raised', status: 'status', settledAt: 'settled_at', supportVotes: 'support_votes', opposeVotes: 'oppose_votes', commentCount: 'comment_count', donorCount: 'donor_count' };
+    const sets = [], vals = [];
+    for (const k of Object.keys(p)) {
+      if (col[k]) {
+        if (k === 'supportVotes' || k === 'opposeVotes' || k === 'commentCount' || k === 'donorCount') {
+          sets.push(`${col[k]}=${col[k]}+?`);
+          vals.push(p[k]);
+        } else if (k === 'raised') {
+          sets.push(`${col[k]}=?`);
+          vals.push(p[k].toString());
+        } else {
+          sets.push(`${col[k]}=?`);
+          vals.push(p[k]);
+        }
+      }
+    }
+    if (sets.length) await this.exec(`UPDATE charity_projects SET ${sets.join(',')} WHERE project_id=?`, [...vals, projectId]);
+  }
+  async addCharityDonation(d) {
+    await this.exec('INSERT INTO charity_donations(donation_id,project_id,uid,amount,status,created_at) VALUES(?,?,?,?,?,?)',
+      [d.donationId, d.projectId, d.uid, d.amount.toString(), d.status, d.createdAt]);
+  }
+  async listCharityDonations(projectId) {
+    const rows = await this.exec('SELECT * FROM charity_donations WHERE project_id=?', [projectId]);
+    return rows.map(r => ({ donationId: r.donation_id, projectId: r.project_id, uid: r.uid, amount: BigInt(r.amount), status: r.status, createdAt: Number(r.created_at) }));
+  }
+  async hasCharityDonation(uid, projectId) {
+    const r = await this.exec('SELECT COUNT(*) as c FROM charity_donations WHERE uid=? AND project_id=?', [uid, projectId]);
+    return r[0].c > 0;
+  }
+  async getCharityDonationTotal(uid, projectId) {
+    const r = await this.exec('SELECT COALESCE(SUM(amount),0) as total FROM charity_donations WHERE uid=? AND project_id=? AND status IN (?,?)', [uid, projectId, 'frozen', 'won']);
+    return BigInt(r[0].total);
+  }
+  async updateCharityDonation(donationId, p = {}) {
+    const col = { status: 'status' };
+    const sets = [], vals = [];
+    for (const k of Object.keys(p)) {
+      if (col[k]) { sets.push(`${col[k]}=?`); vals.push(p[k]); }
+    }
+    if (sets.length) await this.exec(`UPDATE charity_donations SET ${sets.join(',')} WHERE donation_id=?`, [...vals, donationId]);
+  }
+  async getCharityVote(uid, projectId) {
+    const r = await this.exec('SELECT * FROM charity_votes WHERE uid=? AND project_id=? LIMIT 1', [uid, projectId]);
+    return r[0] ? { voteId: r[0].vote_id, uid: r[0].uid, projectId: r[0].project_id, support: !!r[0].support, createdAt: Number(r[0].created_at) } : null;
+  }
+  async addCharityVote(v) {
+    await this.exec('INSERT INTO charity_votes(vote_id,uid,project_id,support,created_at) VALUES(?,?,?,?,?)',
+      [v.voteId, v.uid, v.projectId, v.support ? 1 : 0, v.createdAt]);
+  }
+  async addCharityComment(c) {
+    await this.exec('INSERT INTO charity_comments(comment_id,project_id,uid,content,donor_amount,created_at) VALUES(?,?,?,?,?,?)',
+      [c.commentId, c.projectId, c.uid, c.content, c.donorAmount.toString(), c.createdAt]);
+  }
+  async listCharityComments(projectId, limit = 50) {
+    const rows = await this.exec('SELECT * FROM charity_comments WHERE project_id=? ORDER BY id DESC LIMIT ?', [projectId, limit]);
+    return rows.map(r => ({ commentId: r.comment_id, projectId: r.project_id, uid: r.uid, content: r.content, donorAmount: BigInt(r.donor_amount), createdAt: Number(r.created_at) }));
   }
   async removeNpc(npcId) {
     await this.exec('DELETE FROM npcs WHERE npc_id=?', [npcId]);

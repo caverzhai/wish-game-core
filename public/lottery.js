@@ -417,6 +417,9 @@ const Lottery = (() => {
       backBtn.onclick = goBack;
     }
     loadProducts();
+    if (typeof Charity !== 'undefined' && Charity.renderCharitySection) {
+      Charity.renderCharitySection();
+    }
   }
 
   function refresh() {

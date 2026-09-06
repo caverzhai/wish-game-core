@@ -12,6 +12,12 @@ export class InsuranceService {
     const a = await this.store.getAccount(uid);
     return !!u.insSwitch && a.premium >= this.cfg.premiumMin;
   }
+  async hasActiveNodes(uid) {
+    try {
+      const nodes = await this.store.listNodes({ uid });
+      return nodes && nodes.length > 0;
+    } catch { return false; }
+  }
   async setSwitch(uid, on) {
     await this.store.getUser(uid);
     return await this.store.setUserSwitch(uid, !!on);

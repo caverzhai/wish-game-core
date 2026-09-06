@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.13.4'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.14.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -31,7 +31,7 @@ function readBody(req) {
 }
 
 const app = await createApp();
-const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery } = app;
+const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery, charity } = app;
 const scheduler = new Scheduler(app);
 setInterval(() => {
   scheduler.tick(now()).catch((e) => console.error('[tick]', e.message));
@@ -323,6 +323,55 @@ route('GET', '/ledger', async () => {
   const source = await store.totalSource();
   return { ...(await store.getLedger()), roomBalance: voice.totalRoomBalance(), storeKind: store.kind, balanced: inside === source, diff: inside - source };
 });
+// Charity relief projects
+route('GET', '/charity/projects', async (b) => {
+  const limit = parseInt(b.limit) || 50;
+  const offset = parseInt(b.offset) || 0;
+  return { list: await charity.listProjects(limit, offset) };
+});
+route('GET', /^\/charity\/project\/(.+)$/, async (_, m) => {
+  return await charity.getProject(m[1]);
+});
+route('POST', '/charity/create', async (b) => {
+  await assertNotBanned(b.uid);
+  return await charity.createProject(b.uid, b);
+});
+route('POST', '/charity/donate', async (b) => {
+  await assertNotBanned(b.uid);
+  return await charity.donate(b.uid, b.projectId, parseInt(b.amount));
+});
+route('POST', '/charity/vote', async (b) => {
+  await assertNotBanned(b.uid);
+  return await charity.vote(b.uid, b.projectId, b.support);
+});
+route('POST', '/charity/comment', async (b) => {
+  await assertNotBanned(b.uid);
+  return await charity.comment(b.uid, b.projectId, b.content);
+});
+route('GET', /^\/charity\/comments\/(.+)$/, async (_, m) => {
+  return { list: await charity.getComments(m[1]) };
+});
+route('POST', '/charity/dissolve', async (b) => {
+  await requireAdmin(b.uid);
+  return await charity.dissolve(b.projectId, b.reason);
+});
+route('POST', '/charity/upload', async (b, _, req) => {
+  // Simple photo upload - accept base64 data URL
+  await assertNotBanned(b.uid);
+  const dataUrl = b.photo || '';
+  if (!dataUrl.startsWith('data:image/')) throw new Error('Invalid image');
+  const matches = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+  if (!matches) throw new Error('Invalid image format');
+  const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+  const buf = Buffer.from(matches[2], 'base64');
+  const filename = 'charity_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  const fs = require('fs');
+  const path = require('path');
+  const PUBLIC_DIR = path.resolve(__dirname, '../public');
+  fs.writeFileSync(path.join(PUBLIC_DIR, filename), buf);
+  return { url: '/' + filename };
+});
+
 // Lottery
 route('GET', '/lottery/products', () => lottery.getProducts());
 route('GET', /^\/lottery\/current\/(.+)$/, async (_, m) => lottery.getCurrentRound(m[1]));

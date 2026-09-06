@@ -278,6 +278,48 @@ export class MemoryStore {
   async listNpcs() { return [...this.npcs].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); }
   async getNpc(npcId) { return this.npcs.find((n) => n.npcId === npcId) || null; }
   async removeNpc(npcId) { this.npcs = this.npcs.filter((n) => n.npcId !== npcId); return true; }
+
+  // -------- Charity relief projects (memory) --------
+  charityProjects = [];
+  charityDonations = [];
+  charityVotes = [];
+  charityComments = [];
+  async insertCharityProject(p) { this.charityProjects.push({ ...p }); }
+  async listCharityProjects(limit = 50, offset = 0) {
+    return [...this.charityProjects]
+      .sort((a, b) => (b.raised - a.raised) || (b.supportVotes - a.supportVotes) || (b.commentCount - a.commentCount))
+      .slice(offset, offset + limit);
+  }
+  async getCharityProject(projectId) { return this.charityProjects.find(p => p.projectId === projectId) || null; }
+  async getCharityProjectForUpdate(projectId) { return this.charityProjects.find(p => p.projectId === projectId) || null; }
+  async updateCharityProject(projectId, p = {}) {
+    const i = this.charityProjects.findIndex(x => x.projectId === projectId);
+    if (i < 0) return;
+    for (const k of Object.keys(p)) {
+      if (k === 'supportVotes' || k === 'opposeVotes' || k === 'commentCount' || k === 'donorCount') {
+        this.charityProjects[i][k] = (this.charityProjects[i][k] || 0) + p[k];
+      } else {
+        this.charityProjects[i][k] = p[k];
+      }
+    }
+  }
+  async addCharityDonation(d) { this.charityDonations.push({ ...d }); }
+  async listCharityDonations(projectId) { return this.charityDonations.filter(d => d.projectId === projectId); }
+  async hasCharityDonation(uid, projectId) { return this.charityDonations.some(d => d.uid === uid && d.projectId === projectId); }
+  async getCharityDonationTotal(uid, projectId) {
+    return this.charityDonations.filter(d => d.uid === uid && d.projectId === projectId && ['frozen','won'].includes(d.status))
+      .reduce((s, d) => s + d.amount, 0n);
+  }
+  async updateCharityDonation(donationId, p = {}) {
+    const i = this.charityDonations.findIndex(d => d.donationId === donationId);
+    if (i >= 0) Object.assign(this.charityDonations[i], p);
+  }
+  async getCharityVote(uid, projectId) { return this.charityVotes.find(v => v.uid === uid && v.projectId === projectId) || null; }
+  async addCharityVote(v) { this.charityVotes.push({ ...v }); }
+  async addCharityComment(c) { this.charityComments.push({ ...c }); }
+  async listCharityComments(projectId, limit = 50) {
+    return [...this.charityComments].filter(c => c.projectId === projectId).sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+  }
   async updateNpc(npcId, p = {}) {
     const i = this.npcs.findIndex((n) => n.npcId === npcId);
     if (i >= 0) Object.assign(this.npcs[i], p);

@@ -63,6 +63,8 @@
       alert('Image too large, max 2MB');
       return;
     }
+    const nameEl = $('charityPhotoName');
+    if (nameEl) nameEl.textContent = file.name;
     const reader = new FileReader();
     reader.onload = async (e) => {
       const dataUrl = e.target.result;

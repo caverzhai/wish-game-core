@@ -17,10 +17,10 @@
       const data = await api('/charity/projects?limit=6');
       const projects = data.list || [];
       if (projects.length === 0) {
-        container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);">No relief applications yet</div>`;
+        container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);">${t('charityNoProjects')}</div>`;
         return;
       }
-      const coinUnit = t('coinUnitLottery') || 'coins';
+      const coinUnit = t('coinUnitLottery') || t('coinUnitLottery') || 'coins';
       container.innerHTML = `
         <div class="charity-grid">
           ${projects.map(p => {
@@ -91,7 +91,7 @@
     const form = $('charityApplyForm');
     const photoData = $('charityPhotoData').value;
     if (!photoData) {
-      alert('Please upload a photo');
+      alert(t('charityPhoto') + ' required');
       return;
     }
     // Upload photo first
@@ -128,11 +128,11 @@
         body: JSON.stringify(data),
       });
       if (res.projectId) {
-        alert('Application submitted successfully!');
+        alert('Submitted!');
         showView('lottery');
         renderCharitySection();
       } else {
-        alert(res.message || 'Failed to submit');
+        alert(res.message || 'Failed');
       }
     } catch (e) {
       alert('Error: ' + e.message);
@@ -158,14 +158,14 @@
 
   // ---- Render detail ----
   function renderDetail(p) {
-    const coinUnit = t('coinUnitLottery') || 'coins';
+    const coinUnit = t('coinUnitLottery') || t('coinUnitLottery') || 'coins';
     const progress = Math.min(100, Math.round(Number(p.raised) / Number(p.goalAmount) * 100));
     $('charityDetailContent').innerHTML = `
       <img src="${p.photo}" class="charity-detail-img" alt="${p.name}" />
       <h2 style="color:var(--gold);text-align:center;margin:10px 0;">${p.name}</h2>
       <div style="text-align:center;color:var(--muted);margin-bottom:10px;">${p.country} ${p.city ? '· ' + p.city : ''} · ${p.gender}</div>
       <div class="charity-desc-box">
-        <div class="charity-desc-title">${t('howToPlay') || 'Help Needed'}</div>
+        <div class="charity-desc-title">${t('howToPlay') || t('charityHowToPlay')}</div>
         <p>${p.helpType}</p>
         <p>${p.reason}</p>
         ${p.proof ? `<p><strong>Proof:</strong> ${p.proof}</p>` : ''}
@@ -175,25 +175,25 @@
           <div class="charity-progress-fill" style="width:${progress}%"></div>
         </div>
         <div class="charity-stats-row">
-          <span>Raised: <strong>${Number(p.raised).toFixed(0)}</strong> ${coinUnit}</span>
-          <span>Goal: <strong>${Number(p.goalAmount).toFixed(0)}</strong> ${coinUnit}</span>
-          <span>Requested: ${Number(p.targetAmount).toFixed(0)} ${coinUnit}</span>
+          <span>${t('charityRaised')}: <strong>${Number(p.raised).toFixed(0)}</strong> ${coinUnit}</span>
+          <span>${t('charityGoal')}: <strong>${Number(p.goalAmount).toFixed(0)}</strong> ${coinUnit}</span>
+          <span>${t('charityRequested')}: ${Number(p.targetAmount).toFixed(0)} ${coinUnit}</span>
         </div>
         <div class="charity-stats-row">
-          <span>👍 Support: ${p.supportVotes}</span>
-          <span>👎 Oppose: ${p.opposeVotes}</span>
-          <span>💬 Comments: ${p.commentCount}</span>
+          <span>👍 ${t('charitySupport')}: ${p.supportVotes}</span>
+          <span>👎 ${t('charityOppose')}: ${p.opposeVotes}</span>
+          <span>💬 ${t('charityComments')}: ${p.commentCount}</span>
         </div>
       </div>
       ${p.status === 'active' ? `
       <div class="charity-donate-section">
-        <div class="lottery-section-title">${t('lotteryBuyNow') || 'Donate'}</div>
+        <div class="lottery-section-title">${t('lotteryBuyNow') || t('charityDonate')}</div>
         <div class="lottery-buy-row">
-          <label>${t('lotteryAmount') || 'Amount'}:</label>
+          <label>${t('lotteryAmount') || t('lotteryAmount')}:</label>
           <input type="number" id="charityDonateAmount" min="1" value="10" />
           <span style="font-size:12px;color:var(--muted);">${coinUnit}</span>
         </div>
-        <button onclick="Charity.donate()" class="btn-primary" style="width:100%;">${t('lotteryConfirmBuy') || 'Donate Now'}</button>
+        <button onclick="Charity.donate()" class="btn-primary" style="width:100%;">${t('lotteryConfirmBuy') || t('charityDonateNow')}</button>
         <div id="charityDonateResult" style="margin-top:10px;"></div>
       </div>
       <div class="charity-vote-section">
@@ -206,10 +206,10 @@
       </div>
       ` : `<div style="text-align:center;padding:15px;color:var(--gold);font-weight:600;">Status: ${p.status}</div>`}
       <div class="charity-comments-section">
-        <div class="lottery-section-title">${t('lotteryComments') || 'Comments'}</div>
+        <div class="lottery-section-title">${t('lotteryComments') || t('charityComments')}</div>
         <div class="charity-comment-input">
-          <input type="text" id="charityCommentInput" placeholder="${t('bbsPlaceholder') || 'Write a comment...'}" maxlength="1024" />
-          <button onclick="Charity.postComment()" class="btn-primary" style="padding:8px 16px;">${t('send') || 'Send'}</button>
+          <input type="text" id="charityCommentInput" placeholder="${t('bbsPlaceholder') || t('charityCommentPh')}" maxlength="1024" />
+          <button onclick="Charity.postComment()" class="btn-primary" style="padding:8px 16px;">${t('send') || t('charitySend')}</button>
         </div>
         <div id="charityCommentsList"></div>
       </div>
@@ -220,9 +220,9 @@
   async function donate() {
     if (!currentProject) return;
     const amount = parseInt($('charityDonateAmount').value);
-    if (!amount || amount < 1) { alert('Please enter a valid amount'); return; }
+    if (!amount || amount < 1) { alert(t('lotteryNeedAmount')); return; }
     const resultEl = $('charityDonateResult');
-    resultEl.innerHTML = 'Processing...';
+    resultEl.innerHTML = t('lotteryProcessing');
     resultEl.style.color = 'var(--muted)';
     try {
       const res = await api('/charity/donate', {
@@ -237,7 +237,7 @@
         currentProject = p;
         renderDetail(p);
       } else {
-        resultEl.innerHTML = `<span style="color:#ef4444;">${res.message || 'Donation failed'}</span>`;
+        resultEl.innerHTML = `<span style="color:#ef4444;">${res.message || t('lotteryBuyFail')}</span>`;
       }
     } catch (e) {
       resultEl.innerHTML = `<span style="color:#ef4444;">Error: ${e.message}</span>`;
@@ -247,7 +247,7 @@
   // ---- Vote ----
   async function vote(support) {
     if (!currentProject) return;
-    if (!confirm(support ? 'Vote SUPPORT? This cannot be changed.' : 'Vote OPPOSE? This cannot be changed.')) return;
+    if (!confirm(support ? t('charitySupport') + '?' : t('charityOppose') + '?')) return;
     try {
       const res = await api('/charity/vote', {
         method: 'POST',
@@ -255,12 +255,12 @@
         body: JSON.stringify({ uid: state.uid, projectId: currentProject.projectId, support }),
       });
       if (res.projectId) {
-        alert('Vote recorded!');
+        alert('OK');
         const p = await api('/charity/project/' + currentProject.projectId);
         currentProject = p;
         renderDetail(p);
       } else {
-        alert(res.message || 'Vote failed');
+        alert(res.message || 'Failed');
       }
     } catch (e) {
       alert('Error: ' + e.message);
@@ -272,7 +272,7 @@
     try {
       const data = await api('/charity/comments/' + projectId);
       const list = data.list || [];
-      const coinUnit = t('coinUnitLottery') || 'coins';
+      const coinUnit = t('coinUnitLottery') || t('coinUnitLottery') || 'coins';
       $('charityCommentsList').innerHTML = list.map(c => `
         <div class="charity-comment">
           <div class="charity-comment-meta">
@@ -281,7 +281,7 @@
           </div>
           <div class="charity-comment-text">${c.content}</div>
         </div>
-      `).join('') || '<div style="color:var(--muted);text-align:center;padding:10px;">No comments yet</div>';
+      `).join('') || '<div style="color:var(--muted);text-align:center;padding:10px;">${t('lotteryNoComments')}</div>';
     } catch {}
   }
 
@@ -307,9 +307,16 @@
   }
 
   function showView(viewId) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(v => v.classList.add('hide'));
     const el = $(viewId);
-    if (el) el.classList.add('active');
+    if (el) el.classList.remove('hide');
+  }
+
+  function backToList() {
+    document.querySelectorAll('.panel').forEach(v => v.classList.add('hide'));
+    const el = $('tab-lottery');
+    if (el) el.classList.remove('hide');
+    if (typeof Lottery !== 'undefined' && Lottery.refresh) Lottery.refresh();
   }
 
   window.Charity = {
@@ -321,5 +328,6 @@
     donate,
     vote,
     postComment,
+    backToList,
   };
 })();

@@ -179,7 +179,7 @@
         <h3 class="lottery-main-title" data-i18n="lotteryMainTitle">幸运抽奖池</h3>
         <p class="lottery-subtitle" data-i18n="lotterySubtitle">一枚最多得5000枚</p>
       </div>
-      <button id="charityApplyBtn" class="charity-apply-btn" onclick="Charity.openApply()">困难慈善救助申请</button>
+      <button id="charityApplyBtn" class="charity-apply-btn" onclick="Charity.openApply()" data-i18n="charityApplyBtn">困难慈善救助申请</button>
       <div id="charitySection" class="charity-section"></div>
       <div id="lotteryListWrap">
         <div id="lotteryList" class="lottery-grid"></div>
@@ -218,16 +218,16 @@
     <!-- Charity Apply View -->
     <section id="charityApply" class="panel hide">
       <div class="lottery-detail-topbar">
-        <button onclick="document.getElementById('tab-lottery').classList.add('active');document.getElementById('charityApply').classList.remove('active')" class="lottery-back-btn">← Back</button>
+        <button onclick="Charity.backToList()" class="lottery-back-btn" data-i18n="charityBack">← Back</button>
       </div>
-      <h3 style="color:var(--gold);text-align:center;margin:10px 0;">困难慈善救助申请</h3>
+      <h3 style="color:var(--gold);text-align:center;margin:10px 0;" data-i18n="charityApplyBtn">困难慈善救助申请</h3>
       <form id="charityApplyForm" class="charity-form" onsubmit="event.preventDefault();Charity.submitApply();">
         <div class="form-group">
-          <label>姓名 Name *</label>
+          <label data-i18n="charityName">姓名 Name</label> *
           <input type="text" name="charityName" required maxlength="100" />
         </div>
         <div class="form-group">
-          <label>性别 Gender</label>
+          <label data-i18n="charityGender">性别 Gender</label>
           <select name="charityGender">
             <option value="male">Male</option>
             <option value="female">Female</option>
@@ -235,44 +235,44 @@
           </select>
         </div>
         <div class="form-group">
-          <label>照片 Photo *</label>
+          <label data-i18n="charityPhoto">照片 Photo</label> *
           <input type="file" id="charityPhotoInput" accept="image/*" onchange="Charity.handlePhotoUpload(this)" required />
           <img id="charityPhotoPreview" style="display:none;max-width:200px;margin-top:10px;border-radius:8px;" />
           <input type="hidden" id="charityPhotoData" />
         </div>
         <div class="form-group">
-          <label>国家 Country *</label>
+          <label data-i18n="charityCountry">国家 Country</label> *
           <input type="text" name="charityCountry" required maxlength="100" />
         </div>
         <div class="form-group">
-          <label>城市 City</label>
+          <label data-i18n="charityCity">城市 City</label>
           <input type="text" name="charityCity" maxlength="100" />
         </div>
         <div class="form-group">
-          <label>需要什么帮助 Help Needed *</label>
+          <label data-i18n="charityHelpType">需要什么帮助 Help Needed</label> *
           <input type="text" name="charityHelpType" required maxlength="200" />
         </div>
         <div class="form-group">
-          <label>申请理由 Reason *</label>
+          <label data-i18n="charityReason">申请理由 Reason</label> *
           <textarea name="charityReason" required maxlength="2000" rows="4"></textarea>
         </div>
         <div class="form-group">
-          <label>申请金额(枚) Requested Amount *</label>
+          <label data-i18n="charityAmount">申请金额 Requested Amount</label> *
           <input type="number" name="charityAmount" required min="1" value="100" />
-          <small style="color:var(--muted);">目标筹款额 = 申请金额 × 5</small>
+          <small style="color:var(--muted);" data-i18n="charityGoalNote">目标筹款额 = 申请金额 × 5</small>
         </div>
         <div class="form-group">
-          <label>证明材料 Proof</label>
-          <textarea name="charityProof" maxlength="2000" rows="3" placeholder="Any proof or verification information..."></textarea>
+          <label data-i18n="charityProof">证明材料 Proof</label>
+          <textarea name="charityProof" maxlength="2000" rows="3" data-i18n-placeholder="charityProof" placeholder="Any proof or verification information..."></textarea>
         </div>
-        <button type="submit" class="btn-primary" style="width:100%;padding:12px;">提交申请 Submit</button>
+        <button type="submit" class="btn-primary" style="width:100%;padding:12px;" data-i18n="charitySubmit">提交申请 Submit</button>
       </form>
     </section>
 
     <!-- Charity Detail View -->
     <section id="charityDetail" class="panel hide">
       <div class="lottery-detail-topbar">
-        <button onclick="document.getElementById('tab-lottery').classList.add('active');document.getElementById('charityDetail').classList.remove('active')" class="lottery-back-btn">← Back</button>
+        <button onclick="Charity.backToList()" class="lottery-back-btn" data-i18n="charityBack">← Back</button>
       </div>
       <div id="charityDetailContent"></div>
     </section>
@@ -436,10 +436,10 @@
     <button id="disclaimerConfirm" class="btn-primary big" data-i18n="disclaimerAgree">I have read and agree</button>
   </div>
 </div>
-<script src="/qrcode.min.js?v=2140"></script>
-<script src="/app.js?v=2140"></script>
-<script src="/lottery.js?v=2140"></script>
-<script src="/charity.js?v=2140"></script>
-<script src="/voice.js?v=2140"></script>
+<script src="/qrcode.min.js?v=2141"></script>
+<script src="/app.js?v=2141"></script>
+<script src="/lottery.js?v=2141"></script>
+<script src="/charity.js?v=2141"></script>
+<script src="/voice.js?v=2141"></script>
 </body>
 </html>

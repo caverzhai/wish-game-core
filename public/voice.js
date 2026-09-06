@@ -211,7 +211,11 @@
     const time = new Date(m.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let body = '';
     if (m.type === 'text') body = `<span class="msg-text">${escapeHtml(m.content)}</span>`;
-    else if (m.type === 'voice') body = `<button class="voice-msg" data-file="${m.file}">▶ ${m.duration || 0}s</button>`;
+    else if (m.type === 'voice') {
+      const dur = m.duration || 0;
+      const sizeClass = dur < 3 ? 'voice-msg-short' : (dur <= 15 ? 'voice-msg-medium' : 'voice-msg-long');
+      body = `<button class="voice-msg ${sizeClass}" data-file="${m.file}">▶ ${dur}s</button>`;
+    }
     else if (m.type === 'image') body = `<img class="msg-img" src="/voice/media/${m.file}" alt="img" />`;
     const div = document.createElement('div');
     div.className = 'room-msg' + (m.uid === state.uid ? ' mine' : '');

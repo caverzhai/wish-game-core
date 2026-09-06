@@ -18,7 +18,16 @@ body { display: flex; justify-content: center; }
 .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; }
 .brand .logo { color: var(--gold); }
 .top-right { display: flex; align-items: center; gap: 8px; }
-.lang-sel { background: var(--card2); color: var(--txt); border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; font-size: 12px; }
+.lang-sel {
+  background: var(--card2); color: var(--txt); border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 12px; font-size: 14px;
+  min-width: 70px; min-height: 36px; cursor: pointer;
+  position: relative; z-index: 100;
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+  padding-right: 28px;
+}
 .who { font-size: 12px; color: var(--muted); }
 
 .mask { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 20; }

@@ -39,6 +39,9 @@ body { display: flex; justify-content: center; }
 .lang-option:last-child { border-bottom: none; }
 .lang-option:active { background: var(--card2); }
 .lang-option.active { color: var(--gold); font-weight: 700; }
+.ins-notice { margin-top: 24px; text-align: center; }
+.ins-notice-title { font-size: 18px; font-weight: 700; color: #fbbf24; margin-bottom: 12px; text-align: center; }
+.ins-notice-img { max-width: 100%; border-radius: 10px; border: 1px solid var(--line); }
 .who { font-size: 12px; color: var(--muted); }
 
 .mask { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 20; }

@@ -626,32 +626,28 @@ function renderRound() {
     if (rows.length >= 3) break;
   }
   if (currentRow.length > 0 && rows.length < 3) rows.push(currentRow);
-  // Last row: fixed 4-8 dots per round (determined once at round start)
-  if (rows.length > 0) {
-    // Determine last row count once per round, keep stable during the round
-    const curRoundId = state.round ? state.round.roundId : null;
-    if (state.lastRowRoundId !== curRoundId) {
-      state.lastRowRoundId = curRoundId;
-      state.lastRowCount = 4 + Math.floor(Math.random() * 5); // 4-8, fixed for this round
-    }
-    const lastRowMax = state.lastRowCount || 6;
-    let lastRow = rows[rows.length - 1];
-    // Trim last row to lastRowMax (from the end, keep newest)
-    if (lastRow.length > lastRowMax) {
-      lastRow = lastRow.slice(lastRow.length - lastRowMax);
-      rows[rows.length - 1] = lastRow;
-    }
-    // Insert active round as 'ing' at the end of the last row (always, replace last if needed)
-    if (state.round && state.round.state === 'active') {
-      const ingItem = { roundId: state.round.roundId, active: true };
-      if (lastRow.length < lastRowMax) {
-        lastRow.push(ingItem);
-      } else {
-        // Replace last item with ing
-        lastRow[lastRow.length - 1] = ingItem;
-      }
+  // Show exactly 24 most recent rounds: 3 rows x 8 columns, no random trimming
+  const PER_ROW = 8;
+  const TOTAL = 24;
+  // Flatten all rows, take most recent TOTAL items
+  const allItems = rows.flat();
+  const recentItems = allItems.slice(-TOTAL);
+  // Insert active round as 'ing' at the end (if there's an active round)
+  if (state.round && state.round.state === 'active') {
+    const ingItem = { roundId: state.round.roundId, active: true };
+    if (recentItems.length < TOTAL) {
+      recentItems.push(ingItem);
+    } else {
+      recentItems[recentItems.length - 1] = ingItem;
     }
   }
+  // Rebuild rows with PER_ROW items each
+  rows = [];
+  for (let i = 0; i < recentItems.length; i += PER_ROW) {
+    rows.push(recentItems.slice(i, i + PER_ROW));
+  }
+  // Pad to 3 rows if needed
+  while (rows.length < 3) rows.push([]);
   const dotsHtml = rows.slice(0, 3).map((row) => {
     return '<div class="dot-row">' + row.map((x) => {
       if (x.active) {
@@ -1501,7 +1497,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.14.4';
+const FE_BUILD = '2.14.5';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

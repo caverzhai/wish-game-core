@@ -15,6 +15,7 @@
       body: JSON.stringify(body || {})
     }).then(r => r.json());
   }
+  function getUid() { return localStorage.getItem('uid'); }
 
   // ---- Render charity project list (integrated into lottery page) ----
   async function renderCharitySection() {
@@ -138,7 +139,7 @@
     // Upload photo first
     let photoUrl = '';
     try {
-      const up = await api('/charity/upload', { uid: state.uid, photo: photoData });
+      const up = await api('/charity/upload', { uid: getUid(), photo: photoData });
       photoUrl = up.url;
     } catch (e) {
       alert(t('charityPhotoUploadFail') || 'Photo upload failed');
@@ -150,7 +151,7 @@
     const proofData = $('charityProofData').value;
     if (proofData) {
       try {
-        const up2 = await api('/charity/upload', { uid: state.uid, photo: proofData });
+        const up2 = await api('/charity/upload', { uid: getUid(), photo: proofData });
         proofUrl = up2.url;
       } catch (e) {
         alert(t('charityProofUploadFail') || 'Proof upload failed');
@@ -159,7 +160,7 @@
     }
 
     const data = {
-      uid: state.uid,
+      uid: getUid(),
       name: form.charityName.value,
       gender: form.charityGender.value,
       photo: photoUrl,
@@ -274,7 +275,7 @@
       const res = await api('/charity/donate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: state.uid, projectId: currentProject.projectId, amount }),
+        body: JSON.stringify({ uid: getUid(), projectId: currentProject.projectId, amount }),
       });
       if (res.donated) {
         resultEl.innerHTML = `<span style="color:var(--gold);font-weight:600;">Donated ${Number(res.donated).toFixed(0)} coins successfully!</span>`;
@@ -298,7 +299,7 @@
       const res = await api('/charity/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: state.uid, projectId: currentProject.projectId, support }),
+        body: JSON.stringify({ uid: getUid(), projectId: currentProject.projectId, support }),
       });
       if (res.projectId) {
         alert('OK');
@@ -340,7 +341,7 @@
       await api('/charity/comment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: state.uid, projectId: currentProject.projectId, content }),
+        body: JSON.stringify({ uid: getUid(), projectId: currentProject.projectId, content }),
       });
       input.value = '';
       loadComments(currentProject.projectId);

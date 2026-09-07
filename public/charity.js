@@ -143,6 +143,7 @@
 
   // ---- Submit application ----
   async function submitApply() {
+    console.log('submitApply called, editMode=', window._charityEditMode);
     try {
       const form = $('charityApplyForm');
       if (!form) { alert('Form not found'); return; }

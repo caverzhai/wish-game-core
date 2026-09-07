@@ -259,6 +259,56 @@ class CharityService {
     return await this.store.listCharityComments(projectId, limit);
   }
 
+  // ---- Update project (creator or admin) ----
+  async updateProject(uid, projectId, data, isAdmin = false) {
+    const p = await this.getProject(projectId);
+    if (!p) throw new GameError(Codes.NOT_FOUND, 'Project not found');
+    if (p.uid !== uid && !isAdmin) {
+      throw new GameError(Codes.FORBIDDEN, 'Only the creator or admin can edit this project');
+    }
+    if (p.status !== 'active') {
+      throw new GameError(Codes.BAD_INPUT, 'Only active projects can be edited');
+    }
+    const updates = {};
+    const allowed = ['name', 'gender', 'photo', 'country', 'city', 'helpType', 'reason', 'proof'];
+    for (const key of allowed) {
+      if (data[key] !== undefined) updates[key] = String(data[key]);
+    }
+    if (Object.keys(updates).length === 0) {
+      throw new GameError(Codes.BAD_INPUT, 'No valid fields to update');
+    }
+    await this.store.updateCharityProject(projectId, updates);
+    return await this.getProject(projectId);
+  }
+
+  // ---- Delete project (creator or admin, refund if needed) ----
+  async deleteProject(uid, projectId, isAdmin = false) {
+    const p = await this.getProject(projectId);
+    if (!p) throw new GameError(Codes.NOT_FOUND, 'Project not found');
+    if (p.uid !== uid && !isAdmin) {
+      throw new GameError(Codes.FORBIDDEN, 'Only the creator or admin can delete this project');
+    }
+    return await this.store.transaction(async () => {
+      // Refund all frozen donations
+      const donations = await this.store.listCharityDonations(projectId);
+      let refunded = 0;
+      for (const d of donations) {
+        if (d.status === 'frozen') {
+          await this.store.applyAccount(d.uid, { frozen: -d.amount, avail: d.amount });
+          await this.store.addFlow(d.uid, 'CHARITY_REFUND', d.amount, { projectId, reason: 'project deleted' });
+          await this.store.updateCharityDonation(d.donationId, { status: 'refunded' });
+          refunded++;
+        }
+      }
+      // Delete votes and comments
+      await this.store.deleteCharityVotes(projectId);
+      await this.store.deleteCharityComments(projectId);
+      // Delete project
+      await this.store.deleteCharityProject(projectId);
+      return { projectId, deleted: true, refunded };
+    }, 'charity-delete');
+  }
+
   // ---- Admin dissolve project (refund all) ----
   async dissolve(projectId, reason) {
     const p = await this.getProject(projectId);

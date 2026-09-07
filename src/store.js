@@ -304,6 +304,15 @@ export class MemoryStore {
       }
     }
   }
+  async deleteCharityVotes(projectId) {
+    this.charityVotes = this.charityVotes.filter(v => v.projectId !== projectId);
+  }
+  async deleteCharityComments(projectId) {
+    this.charityComments = this.charityComments.filter(c => c.projectId !== projectId);
+  }
+  async deleteCharityProject(projectId) {
+    this.charityProjects = this.charityProjects.filter(p => p.projectId !== projectId);
+  }
   async addCharityDonation(d) { this.charityDonations.push({ ...d }); }
   async listCharityDonations(projectId) { return this.charityDonations.filter(d => d.projectId === projectId); }
   async hasCharityDonation(uid, projectId) { return this.charityDonations.some(d => d.uid === uid && d.projectId === projectId); }

@@ -166,14 +166,18 @@
     };
 
     try {
-      const res = await api('/charity/create', data);
-      if (res.projectId) {
-        alert(t('charitySubmitted') || 'Submitted successfully!');
-        showView('lottery');
-        renderCharitySection();
+      let res;
+      if (window._charityEditMode) {
+        data.projectId = window._charityEditMode;
+        res = await api('/charity/update', data);
+        alert('Project updated successfully!');
+        window._charityEditMode = null;
       } else {
-        alert(res.message || res.error || (t('charitySubmitFail') || 'Failed'));
+        res = await api('/charity/create', data);
+        alert(t('charitySubmitted') || 'Submitted successfully!');
       }
+      showView('lottery');
+      renderCharitySection();
     } catch (e) {
       alert((t('charityError') || 'Error') + ': ' + e.message);
     }
@@ -187,12 +191,65 @@
       showView('charityDetail');
       renderDetail(p);
       loadComments(projectId);
-      // Check if user voted
-      try {
-        const votes = await api('/charity/comments/' + projectId); // just to check
-      } catch {}
+      // Show manage buttons if creator or admin
+      const myUid = getUid();
+      const isCreator = myUid === p.uid;
+      const isAdmin = localStorage.getItem('isAdmin') === 'true';
+      const btnContainer = $('charityManageButtons');
+      if (btnContainer && (isCreator || isAdmin) && p.status === 'active') {
+        btnContainer.innerHTML = `
+          <button onclick="Charity.editProject()" class="btn-primary" style="flex:1;background:#3b82f6;">Edit</button>
+          <button onclick="Charity.deleteProject()" class="btn-primary" style="flex:1;background:#ef4444;">Delete</button>
+        `;
+      } else if (btnContainer) {
+        btnContainer.innerHTML = '';
+      }
     } catch (e) {
       alert(t('charityLoadFail') || 'Failed to load project');
+    }
+  }
+
+  // ---- Edit project (open apply form with prefilled data) ----
+  function editProject() {
+    if (!currentProject) return;
+    const p = currentProject;
+    const form = $('charityApplyForm');
+    form.charityName.value = p.name;
+    form.charityGender.value = p.gender;
+    form.charityCountry.value = p.country;
+    form.charityCity.value = p.city || '';
+    form.charityHelpType.value = p.helpType;
+    form.charityReason.value = p.reason;
+    form.charityAmount.value = p.targetAmount;
+    $('charityPhotoData').value = p.photo || '';
+    $('charityProofData').value = p.proof || '';
+    // Show photo preview if exists
+    const photoPreview = $('charityPhotoPreview');
+    if (photoPreview && p.photo) {
+      photoPreview.src = p.photo;
+      photoPreview.style.display = 'block';
+    }
+    const proofPreview = $('charityProofPreview');
+    if (proofPreview && p.proof) {
+      proofPreview.src = p.proof;
+      proofPreview.style.display = 'block';
+    }
+    // Set edit mode flag
+    window._charityEditMode = p.projectId;
+    showView('charityApply');
+  }
+
+  // ---- Delete project ----
+  async function deleteProject() {
+    if (!currentProject) return;
+    if (!confirm('Are you sure you want to delete this project? All donations will be refunded.')) return;
+    try {
+      await api('/charity/delete', { uid: getUid(), projectId: currentProject.projectId });
+      alert('Project deleted successfully');
+      showView('lottery');
+      renderCharitySection();
+    } catch (e) {
+      alert('Delete failed: ' + e.message);
     }
   }
 
@@ -208,7 +265,7 @@
         <div class="charity-desc-title">${t('howToPlay') || t('charityHowToPlay')}</div>
         <p>${p.helpType}</p>
         <p>${p.reason}</p>
-        ${p.proof ? `<div style="margin-top:10px;"><strong style="color:var(--gold);">Proof:</strong><br/><img src="${p.proof}" style="max-width:100%;margin-top:8px;border-radius:8px;border:1px solid var(--border);" alt="Proof" /></div>` : ''}
+        ${p.proof ? `<div style="margin-top:15px;padding:12px;background:var(--card2);border-radius:10px;border:1px solid var(--line);"><div style="color:var(--gold);font-weight:700;font-size:14px;margin-bottom:8px;">Proof of Need</div><img src="${p.proof}" style="max-width:100%;border-radius:8px;border:1px solid var(--border);display:block;margin:0 auto;" alt="Proof" /></div>` : ''}
       </div>
       <div class="charity-progress-section">
         <div class="charity-progress-bar large">
@@ -225,6 +282,7 @@
           <span>💬 ${t('charityComments')}: ${p.commentCount}</span>
         </div>
       </div>
+      <div id="charityManageButtons" style="display:flex;gap:10px;margin:15px 0;"></div>
       ${p.status === 'active' ? `
       <div class="charity-donate-section">
         <div class="lottery-section-title">${t('lotteryBuyNow') || t('charityDonate')}</div>
@@ -366,6 +424,8 @@
     handleProofUpload,
     submitApply,
     openDetail,
+    editProject,
+    deleteProject,
     donate,
     vote,
     postComment,

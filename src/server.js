@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.16.2'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.17.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -448,6 +448,16 @@ route('POST', '/charity/comment', async (b) => {
 });
 route('GET', /^\/charity\/comments\/(.+)$/, async (_, m) => {
   return { list: await charity.getComments(m[1]) };
+});
+route('POST', '/charity/update', async (b) => {
+  await assertNotBanned(b.uid);
+  const isAdmin = await isAdminWallet(b.uid);
+  return await charity.updateProject(b.uid, b.projectId, b, isAdmin);
+});
+route('POST', '/charity/delete', async (b) => {
+  await assertNotBanned(b.uid);
+  const isAdmin = await isAdminWallet(b.uid);
+  return await charity.deleteProject(b.uid, b.projectId, isAdmin);
 });
 route('POST', '/charity/dissolve', async (b) => {
   await requireAdmin(b.uid);

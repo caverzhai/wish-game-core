@@ -543,7 +543,7 @@ export class MysqlStore {
     return this._charityRow(r[0]);
   }
   async updateCharityProject(projectId, p = {}) {
-    const col = { raised: 'raised', status: 'status', settledAt: 'settled_at', supportVotes: 'support_votes', opposeVotes: 'oppose_votes', commentCount: 'comment_count', donorCount: 'donor_count' };
+    const col = { raised: 'raised', status: 'status', settledAt: 'settled_at', supportVotes: 'support_votes', opposeVotes: 'oppose_votes', commentCount: 'comment_count', donorCount: 'donor_count', name: 'name', gender: 'gender', photo: 'photo', country: 'country', city: 'city', helpType: 'help_type', reason: 'reason', proof: 'proof' };
     const sets = [], vals = [];
     for (const k of Object.keys(p)) {
       if (col[k]) {
@@ -560,6 +560,15 @@ export class MysqlStore {
       }
     }
     if (sets.length) await this.exec(`UPDATE charity_projects SET ${sets.join(',')} WHERE project_id=?`, [...vals, projectId]);
+  }
+  async deleteCharityVotes(projectId) {
+    await this.exec('DELETE FROM charity_votes WHERE project_id=?', [projectId]);
+  }
+  async deleteCharityComments(projectId) {
+    await this.exec('DELETE FROM charity_comments WHERE project_id=?', [projectId]);
+  }
+  async deleteCharityProject(projectId) {
+    await this.exec('DELETE FROM charity_projects WHERE project_id=?', [projectId]);
   }
   async addCharityDonation(d) {
     await this.exec('INSERT INTO charity_donations(donation_id,project_id,uid,amount,status,created_at) VALUES(?,?,?,?,?,?)',

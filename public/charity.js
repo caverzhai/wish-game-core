@@ -88,6 +88,38 @@
     reader.readAsDataURL(file);
   }
 
+  // ---- Proof upload ----
+  function handleProofUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image too large, max 2MB');
+      return;
+    }
+    const nameEl = $('charityProofName');
+    if (nameEl) nameEl.textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const dataUrl = e.target.result;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxW = 600;
+        const scale = Math.min(1, maxW / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.8);
+        $('charityProofPreview').src = compressed;
+        $('charityProofPreview').style.display = 'block';
+        $('charityProofData').value = compressed;
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
   // ---- Submit application ----
   async function submitApply() {
     const form = $('charityApplyForm');
@@ -110,6 +142,23 @@
       return;
     }
 
+    // Upload proof image if provided
+    let proofUrl = '';
+    const proofData = $('charityProofData').value;
+    if (proofData) {
+      try {
+        const up2 = await api('/charity/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: state.uid, photo: proofData }),
+        });
+        proofUrl = up2.url;
+      } catch (e) {
+        alert('Proof upload failed');
+        return;
+      }
+    }
+
     const data = {
       uid: state.uid,
       name: form.charityName.value,
@@ -120,7 +169,7 @@
       helpType: form.charityHelpType.value,
       reason: form.charityReason.value,
       targetAmount: parseInt(form.charityAmount.value),
-      proof: form.charityProof.value,
+      proof: proofUrl,
     };
 
     try {
@@ -170,7 +219,7 @@
         <div class="charity-desc-title">${t('howToPlay') || t('charityHowToPlay')}</div>
         <p>${p.helpType}</p>
         <p>${p.reason}</p>
-        ${p.proof ? `<p><strong>Proof:</strong> ${p.proof}</p>` : ''}
+        ${p.proof ? `<div style="margin-top:10px;"><strong style="color:var(--gold);">Proof:</strong><br/><img src="${p.proof}" style="max-width:100%;margin-top:8px;border-radius:8px;border:1px solid var(--border);" alt="Proof" /></div>` : ''}
       </div>
       <div class="charity-progress-section">
         <div class="charity-progress-bar large">
@@ -325,6 +374,7 @@
     renderCharitySection,
     openApply,
     handlePhotoUpload,
+    handleProofUpload,
     submitApply,
     openDetail,
     donate,

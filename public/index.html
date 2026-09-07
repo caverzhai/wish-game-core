@@ -267,7 +267,13 @@
         </div>
         <div class="form-group">
           <label data-i18n="charityProof">证明材料 Proof</label>
-          <textarea name="charityProof" maxlength="2000" rows="3" data-i18n-placeholder="charityProof" placeholder="Any proof or verification information..."></textarea>
+          <div class="charity-photo-upload">
+            <input type="file" id="charityProofInput" accept="image/*" onchange="Charity.handleProofUpload(this)" style="display:none;" />
+            <button type="button" class="btn-primary charity-photo-btn" onclick="document.getElementById('charityProofInput').click()" data-i18n="charityProofUpload">上传证明 Upload Proof</button>
+            <span id="charityProofName" style="font-size:12px;color:var(--muted);margin-left:8px;"></span>
+          </div>
+          <img id="charityProofPreview" style="display:none;max-width:200px;margin-top:10px;border-radius:8px;" />
+          <input type="hidden" id="charityProofData" />
         </div>
         <button type="submit" class="btn-primary" style="width:100%;padding:12px;" data-i18n="charitySubmit">提交申请 Submit</button>
       </form>

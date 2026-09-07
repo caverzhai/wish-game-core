@@ -151,6 +151,7 @@
     }
     // Use base64 directly - stored in DB, no filesystem dependency
     const proofData = $('charityProofData').value || '';
+    const isEdit = !!window._charityEditMode;
 
     const data = {
       uid: getUid(),
@@ -161,17 +162,33 @@
       city: form.charityCity.value,
       helpType: form.charityHelpType.value,
       reason: form.charityReason.value,
-      targetAmount: parseInt(form.charityAmount.value),
+      targetAmount: parseInt(form.charityAmount.value) || 100,
       proof: proofData,
     };
 
     try {
       let res;
-      if (window._charityEditMode) {
+      if (isEdit) {
         data.projectId = window._charityEditMode;
-        res = await api('/charity/update', data);
+        // Only send updatable fields
+        const updateData = {
+          uid: data.uid,
+          projectId: data.projectId,
+          name: data.name,
+          gender: data.gender,
+          photo: data.photo,
+          country: data.country,
+          city: data.city,
+          helpType: data.helpType,
+          reason: data.reason,
+          proof: data.proof,
+        };
+        res = await api('/charity/update', updateData);
         alert('Project updated successfully!');
         window._charityEditMode = null;
+        // Reset amount field
+        form.charityAmount.readOnly = false;
+        form.charityAmount.style.opacity = '1';
       } else {
         res = await api('/charity/create', data);
         alert(t('charitySubmitted') || 'Submitted successfully!');
@@ -179,7 +196,8 @@
       showView('lottery');
       renderCharitySection();
     } catch (e) {
-      alert((t('charityError') || 'Error') + ': ' + e.message);
+      console.error('Charity submit error:', e);
+      alert('Submit failed: ' + (e.message || 'Unknown error'));
     }
   }
 
@@ -214,13 +232,15 @@
     if (!currentProject) return;
     const p = currentProject;
     const form = $('charityApplyForm');
-    form.charityName.value = p.name;
-    form.charityGender.value = p.gender;
-    form.charityCountry.value = p.country;
+    form.charityName.value = p.name || '';
+    form.charityGender.value = p.gender || 'unknown';
+    form.charityCountry.value = p.country || '';
     form.charityCity.value = p.city || '';
-    form.charityHelpType.value = p.helpType;
-    form.charityReason.value = p.reason;
-    form.charityAmount.value = p.targetAmount;
+    form.charityHelpType.value = p.helpType || '';
+    form.charityReason.value = p.reason || '';
+    form.charityAmount.value = p.targetAmount || 100;
+    form.charityAmount.readOnly = true;
+    form.charityAmount.style.opacity = '0.6';
     $('charityPhotoData').value = p.photo || '';
     $('charityProofData').value = p.proof || '';
     // Show photo preview if exists

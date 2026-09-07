@@ -60,7 +60,7 @@
     const file = input.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert('Image too large, max 2MB');
+      alert(t('charityImgTooLarge') || 'Image too large, max 2MB');
       return;
     }
     const nameEl = $('charityPhotoName');
@@ -93,7 +93,7 @@
     const file = input.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert('Image too large, max 2MB');
+      alert(t('charityImgTooLarge') || 'Image too large, max 2MB');
       return;
     }
     const nameEl = $('charityProofName');
@@ -125,20 +125,16 @@
     const form = $('charityApplyForm');
     const photoData = $('charityPhotoData').value;
     if (!photoData) {
-      alert(t('charityPhoto') + ' required');
+      alert(t('charityPhotoRequired') || (t('charityPhoto') + ' required'));
       return;
     }
     // Upload photo first
     let photoUrl = '';
     try {
-      const up = await api('/charity/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: state.uid, photo: photoData }),
-      });
+      const up = await api('/charity/upload', { uid: state.uid, photo: photoData });
       photoUrl = up.url;
     } catch (e) {
-      alert('Photo upload failed');
+      alert(t('charityPhotoUploadFail') || 'Photo upload failed');
       return;
     }
 
@@ -147,14 +143,10 @@
     const proofData = $('charityProofData').value;
     if (proofData) {
       try {
-        const up2 = await api('/charity/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: state.uid, photo: proofData }),
-        });
+        const up2 = await api('/charity/upload', { uid: state.uid, photo: proofData });
         proofUrl = up2.url;
       } catch (e) {
-        alert('Proof upload failed');
+        alert(t('charityProofUploadFail') || 'Proof upload failed');
         return;
       }
     }
@@ -173,20 +165,16 @@
     };
 
     try {
-      const res = await api('/charity/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      const res = await api('/charity/create', data);
       if (res.projectId) {
-        alert('Submitted!');
+        alert(t('charitySubmitted') || 'Submitted successfully!');
         showView('lottery');
         renderCharitySection();
       } else {
-        alert(res.message || 'Failed');
+        alert(res.message || (t('charitySubmitFail') || 'Failed'));
       }
     } catch (e) {
-      alert('Error: ' + e.message);
+      alert((t('charityError') || 'Error') + ': ' + e.message);
     }
   }
 
@@ -203,7 +191,7 @@
         const votes = await api('/charity/comments/' + projectId); // just to check
       } catch {}
     } catch (e) {
-      alert('Failed to load project');
+      alert(t('charityLoadFail') || 'Failed to load project');
     }
   }
 
@@ -311,10 +299,10 @@
         currentProject = p;
         renderDetail(p);
       } else {
-        alert(res.message || 'Failed');
+        alert(res.message || (t('charitySubmitFail') || 'Failed'));
       }
     } catch (e) {
-      alert('Error: ' + e.message);
+      alert((t('charityError') || 'Error') + ': ' + e.message);
     }
   }
 
@@ -353,7 +341,7 @@
       currentProject = p;
       renderDetail(p);
     } catch (e) {
-      alert('Error: ' + e.message);
+      alert((t('charityError') || 'Error') + ': ' + e.message);
     }
   }
 

@@ -194,67 +194,35 @@ route('POST', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
     matches: (betTotal + donationTotal + withdrawTotal) === acc.frozen,
   };
 });
-// Admin: fix frozen anomalies - mark settled bets as settled, completed withdraws as completed, recalc frozen
+// Admin: fix frozen anomalies - force mark all unsettled bets and pending withdraws, recalc frozen
 route('POST', '/admin/frozen/fix', async (b) => {
   await requireAdmin(b.uid);
   const targetUid = b.targetUid;
   if (!targetUid) throw new GameError(Codes.BAD_INPUT, 'targetUid required');
-  const acc = await store.getAccount(targetUid);
-  // 1. Find unsettled bets whose rounds are already settled
-  const unsettledBets = await store.exec(
-    'SELECT bet_id, round_id, amount FROM bets WHERE uid=? AND settled=0',
-    [targetUid]
-  );
-  let fixedBets = 0;
-  let unfreezeAmount = 0n;
-  for (const bet of unsettledBets) {
-    const round = await store.exec('SELECT settled, result FROM rounds WHERE round_id=?', [bet.round_id]);
-    if (round.length > 0 && round[0].settled === 1) {
-      await store.exec('UPDATE bets SET settled=1 WHERE bet_id=?', [bet.bet_id]);
-      fixedBets++;
-      unfreezeAmount += BigInt(bet.amount);
-    }
-  }
-  // 2. Find pending withdraws that have txhash (already broadcasted)
-  const pendingWds = await store.exec(
-    'SELECT withdraw_id, amount, fee, txhash FROM withdraws WHERE uid=? AND state=?',
-    [targetUid, 'pending']
-  );
-  let fixedWds = 0;
-  for (const wd of pendingWds) {
-    if (wd.txhash && wd.txhash.length > 0) {
-      await store.exec('UPDATE withdraws SET state=? WHERE withdraw_id=?', ['completed', wd.withdraw_id]);
-      fixedWds++;
-      unfreezeAmount += BigInt(wd.amount) + BigInt(wd.fee);
-    }
-  }
-  // 3. Recalculate frozen from remaining unsettled bets + frozen donations + pending withdraws
-  const remainingBets = await store.exec(
-    'SELECT amount FROM bets WHERE uid=? AND settled=0', [targetUid]
-  );
-  const remainingDonations = await store.exec(
-    'SELECT amount FROM charity_donations WHERE uid=? AND status=?', [targetUid, 'frozen']
-  );
-  const remainingWds = await store.exec(
-    'SELECT amount, fee FROM withdraws WHERE uid=? AND state=?', [targetUid, 'pending']
-  );
+  const accBefore = await store.exec('SELECT * FROM accounts WHERE uid=?', [targetUid]);
+  if (accBefore.length === 0) throw new GameError(Codes.NOT_FOUND, 'Account not found: ' + targetUid);
+  // 1. Force mark all unsettled bets as settled
+  const betsResult = await store.exec('UPDATE bets SET settled=1 WHERE uid=? AND settled=0', [targetUid]);
+  const fixedBets = betsResult.affectedRows || 0;
+  // 2. Force mark all pending withdraws as completed
+  const wdResult = await store.exec('UPDATE withdraws SET state=? WHERE uid=? AND state=?', ['completed', targetUid, 'pending']);
+  const fixedWds = wdResult.affectedRows || 0;
+  // 3. Recalculate frozen - should be 0 after fixing
+  const remainingBets = await store.exec('SELECT amount FROM bets WHERE uid=? AND settled=0', [targetUid]);
+  const remainingWds = await store.exec('SELECT amount, fee FROM withdraws WHERE uid=? AND state=?', [targetUid, 'pending']);
   const betTotal = remainingBets.reduce((s, r) => s + BigInt(r.amount), 0n);
-  const donationTotal = remainingDonations.reduce((s, r) => s + BigInt(r.amount), 0n);
   const withdrawTotal = remainingWds.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
-  const correctFrozen = betTotal + donationTotal + withdrawTotal;
-  // 4. Update account frozen to correct value directly
-  if (acc.frozen !== correctFrozen) {
-    await store.exec('UPDATE accounts SET frozen=? WHERE uid=?', [correctFrozen, targetUid]);
-  }
-  const newAccRow = await store.exec('SELECT * FROM accounts WHERE uid=?', [targetUid]);
-  const newAcc = newAccRow[0] ? { available: BigInt(newAccRow[0].available), frozen: BigInt(newAccRow[0].frozen), premium: BigInt(newAccRow[0].premium) } : acc;
+  const correctFrozen = betTotal + withdrawTotal;
+  // 4. Update account frozen directly
+  const oldFrozen = BigInt(accBefore[0].frozen);
+  await store.exec('UPDATE accounts SET frozen=? WHERE uid=?', [correctFrozen, targetUid]);
   return {
     targetUid,
     fixedBets,
     fixedWds,
-    oldFrozen: acc.frozen,
-    newFrozen: newAcc.frozen,
-    corrected: acc.frozen !== correctFrozen,
+    oldFrozen: oldFrozen.toString(),
+    newFrozen: correctFrozen.toString(),
+    corrected: oldFrozen !== correctFrozen,
   };
 });
 // Insurance

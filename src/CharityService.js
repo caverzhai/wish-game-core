@@ -50,7 +50,7 @@ class CharityService {
       targetAmount: BigInt(Math.floor(target)) * this.COIN, // requested amount
       goalAmount, // target * 5
       raised: 0n,
-      proof: proof ? String(proof).slice(0, 2000) : '',
+      proof: proof ? String(proof) : '',
       status: 'active', // active, success, failed, dissolved
       supportVotes: 0,
       opposeVotes: 0,

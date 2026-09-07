@@ -18,8 +18,15 @@ class CharityService {
   // ---- Create relief application ----
   async createProject(uid, data) {
     const { name, gender, photo, country, city, helpType, reason, targetAmount, proof } = data;
-    if (!name || !photo || !country || !helpType || !reason || !targetAmount) {
-      throw new GameError(Codes.BAD_INPUT, 'Name, photo, country, help type, reason, and target amount are required');
+    const missing = [];
+    if (!name) missing.push('Name');
+    if (!photo) missing.push('Photo');
+    if (!country) missing.push('Country');
+    if (!helpType) missing.push('Help type');
+    if (!reason) missing.push('Reason');
+    if (!targetAmount) missing.push('Target amount');
+    if (missing.length > 0) {
+      throw new GameError(Codes.BAD_INPUT, 'Missing required fields: ' + missing.join(', '));
     }
     const target = Number(targetAmount);
     if (!Number.isFinite(target) || target <= 0) {

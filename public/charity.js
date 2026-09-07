@@ -171,7 +171,7 @@
         showView('lottery');
         renderCharitySection();
       } else {
-        alert(res.message || (t('charitySubmitFail') || 'Failed'));
+        alert((t('charitySubmitFail') || 'Failed') + ': ' + JSON.stringify(res));
       }
     } catch (e) {
       alert((t('charityError') || 'Error') + ': ' + e.message);

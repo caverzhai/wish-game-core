@@ -16,10 +16,13 @@
     if (body && (body.method || body.headers)) {
       return doFetch(body);
     }
+    if (body === undefined || body === null) {
+      return doFetch({});
+    }
     return doFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body || {})
+      body: JSON.stringify(body)
     });
   }
   function getUid() { return localStorage.getItem('uid'); }

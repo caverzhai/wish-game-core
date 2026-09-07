@@ -198,7 +198,7 @@ route('POST', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
 route('POST', '/admin/frozen/fix', async (b) => {
   await requireAdmin(b.uid);
   const targetUid = b.targetUid;
-  if (!targetUid) throw new GameError(Codes.BAD_INPUT, 'targetUid required');
+  if (!targetUid) throw new GameError(Codes.BAD_INPUT, 'targetUid required. got: ' + JSON.stringify(b));
   const accBefore = await store.exec('SELECT * FROM accounts WHERE uid=?', [targetUid]);
   if (accBefore.length === 0) throw new GameError(Codes.NOT_FOUND, 'Account not found: ' + targetUid);
   // 1. Force mark all unsettled bets as settled

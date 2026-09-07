@@ -161,6 +161,37 @@ route('GET', '/frozen/detail', async (b) => {
     matches: (betTotal + donationTotal + withdrawTotal) === acc.frozen,
   };
 });
+// Admin: fix frozen anomalies - force mark all unsettled bets and pending withdraws, recalc frozen
+route('POST', '/admin/frozen/fix', async (b) => {
+  await requireAdmin(b.uid);
+  const targetUid = b.targetUid;
+  if (!targetUid) throw new GameError(Codes.BAD_INPUT, 'targetUid required');
+  const accBefore = await store.exec('SELECT * FROM accounts WHERE uid=?', [targetUid]);
+  if (accBefore.length === 0) throw new GameError(Codes.NOT_FOUND, 'Account not found: ' + targetUid);
+  // 1. Force mark all unsettled bets as settled
+  const betsResult = await store.exec('UPDATE bets SET settled=1 WHERE uid=? AND settled=0', [targetUid]);
+  const fixedBets = betsResult.affectedRows || 0;
+  // 2. Force mark all pending withdraws as completed
+  const wdResult = await store.exec('UPDATE withdraws SET state=? WHERE uid=? AND state=?', ['completed', targetUid, 'pending']);
+  const fixedWds = wdResult.affectedRows || 0;
+  // 3. Recalculate frozen - should be 0 after fixing
+  const remainingBets = await store.exec('SELECT amount FROM bets WHERE uid=? AND settled=0', [targetUid]);
+  const remainingWds = await store.exec('SELECT amount, fee FROM withdraws WHERE uid=? AND state=?', [targetUid, 'pending']);
+  const betTotal = remainingBets.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const withdrawTotal = remainingWds.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
+  const correctFrozen = betTotal + withdrawTotal;
+  // 4. Update account frozen directly
+  const oldFrozen = BigInt(accBefore[0].frozen);
+  await store.exec('UPDATE accounts SET frozen=? WHERE uid=?', [correctFrozen, targetUid]);
+  return {
+    targetUid,
+    fixedBets,
+    fixedWds,
+    oldFrozen: oldFrozen.toString(),
+    newFrozen: correctFrozen.toString(),
+    corrected: oldFrozen !== correctFrozen,
+  };
+});
 // Admin: query any user's frozen detail by uid
 route('POST', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
   await requireAdmin(b.uid);
@@ -192,37 +223,6 @@ route('POST', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
     },
     calculatedTotal: betTotal + donationTotal + withdrawTotal,
     matches: (betTotal + donationTotal + withdrawTotal) === acc.frozen,
-  };
-});
-// Admin: fix frozen anomalies - force mark all unsettled bets and pending withdraws, recalc frozen
-route('POST', '/admin/frozen/fix', async (b) => {
-  await requireAdmin(b.uid);
-  const targetUid = b.targetUid;
-  if (!targetUid) throw new GameError(Codes.BAD_INPUT, 'targetUid required. got: ' + JSON.stringify(b));
-  const accBefore = await store.exec('SELECT * FROM accounts WHERE uid=?', [targetUid]);
-  if (accBefore.length === 0) throw new GameError(Codes.NOT_FOUND, 'Account not found: ' + targetUid);
-  // 1. Force mark all unsettled bets as settled
-  const betsResult = await store.exec('UPDATE bets SET settled=1 WHERE uid=? AND settled=0', [targetUid]);
-  const fixedBets = betsResult.affectedRows || 0;
-  // 2. Force mark all pending withdraws as completed
-  const wdResult = await store.exec('UPDATE withdraws SET state=? WHERE uid=? AND state=?', ['completed', targetUid, 'pending']);
-  const fixedWds = wdResult.affectedRows || 0;
-  // 3. Recalculate frozen - should be 0 after fixing
-  const remainingBets = await store.exec('SELECT amount FROM bets WHERE uid=? AND settled=0', [targetUid]);
-  const remainingWds = await store.exec('SELECT amount, fee FROM withdraws WHERE uid=? AND state=?', [targetUid, 'pending']);
-  const betTotal = remainingBets.reduce((s, r) => s + BigInt(r.amount), 0n);
-  const withdrawTotal = remainingWds.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
-  const correctFrozen = betTotal + withdrawTotal;
-  // 4. Update account frozen directly
-  const oldFrozen = BigInt(accBefore[0].frozen);
-  await store.exec('UPDATE accounts SET frozen=? WHERE uid=?', [correctFrozen, targetUid]);
-  return {
-    targetUid,
-    fixedBets,
-    fixedWds,
-    oldFrozen: oldFrozen.toString(),
-    newFrozen: correctFrozen.toString(),
-    corrected: oldFrozen !== correctFrozen,
   };
 });
 // Insurance

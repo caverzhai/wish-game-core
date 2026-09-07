@@ -847,8 +847,33 @@ function renderMe() {
   $('premiumBal').textContent = fmt(a.premium) + t('coinUnit'); $('premiumBal2').textContent = fmt(a.premium) + t('coinUnit');
   $('lossAccum').textContent = fmt(a.lossAccum) + t('coinUnit');
   $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
+  $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
+  // Insurance status bar: switch on AND premium>=20 units -> green active, else gray off
+  const insActive = !!me.user.insSwitch && Number(a.premium) >= 20;
+  const insBar = $('insStatusBar');
+  if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
+  const invRate = (me.invite.perMille / 10).toFixed(1) + '%';
+  $('invCount').textContent = me.invite.rewardedInvitees || 0;
+  $('invRate').textContent = invRate;
+  $('invTotal').textContent = fmt(me.invite.rewardTotal) + t('coinUnit');
+  const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = `${t('meInvite')}（${invRate}）`;
+  renderInvTiers(me.invite);
+  $('nodeList').innerHTML = me.nodes.length ? me.nodes.map((n) => {
+    const pct = Math.round((n.periodN / 100) * 100);
+    return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
+  }).join('') : '<p class="muted">—</p>';
+  $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} ${t('coinUnit')}</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
+  const tip = $('chainModeTip');
+  tip.classList.remove('hide');
+  if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
+    tip.style.color = '#ff6b6b';
+    tip.textContent = '⚠ Platform payout private key not configured correctly (PAYOUT_PRIVATE_KEY is placeholder or malformed). Withdrawals cannot be sent. Admin must set the real platform wallet private key in environment variables and redeploy.';
+  } else {
+    tip.style.color = '';
+    tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
+  }
+  syncAdmin(me.isAdmin);
 }
-// Show frozen balance detail - what is frozen and why
 async function showFrozenDetail() {
   try {
     const data = await api('/frozen/detail', {});
@@ -910,33 +935,8 @@ async function showFrozenDetail() {
   } catch (e) {
     alert(t('frozenError') + ': ' + e.message);
   }
-  $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
-  // Insurance status bar: switch on AND premium>=20 units -> green active, else gray off
-  const insActive = !!me.user.insSwitch && Number(a.premium) >= 20;
-  const insBar = $('insStatusBar');
-  if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
-  const invRate = (me.invite.perMille / 10).toFixed(1) + '%';
-  $('invCount').textContent = me.invite.rewardedInvitees || 0;
-  $('invRate').textContent = invRate;
-  $('invTotal').textContent = fmt(me.invite.rewardTotal) + t('coinUnit');
-  const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = `${t('meInvite')}（${invRate}）`;
-  renderInvTiers(me.invite);
-  $('nodeList').innerHTML = me.nodes.length ? me.nodes.map((n) => {
-    const pct = Math.round((n.periodN / 100) * 100);
-    return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
-  }).join('') : '<p class="muted">—</p>';
-  $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} ${t('coinUnit')}</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
-  const tip = $('chainModeTip');
-  tip.classList.remove('hide');
-  if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
-    tip.style.color = '#ff6b6b';
-    tip.textContent = '⚠ Platform payout private key not configured correctly (PAYOUT_PRIVATE_KEY is placeholder or malformed). Withdrawals cannot be sent. Admin must set the real platform wallet private key in environment variables and redeploy.';
-  } else {
-    tip.style.color = '';
-    tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
-  }
-  syncAdmin(me.isAdmin);
 }
+
 function renderInviteLink() {
   const link = `${location.origin}${location.pathname}?ref=${state.uid}`;
   $('inviteLink').value = link;
@@ -1540,7 +1540,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.14.7';
+const FE_BUILD = '2.14.8';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

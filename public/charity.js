@@ -5,8 +5,15 @@
   let myVote = null;
 
   function t(k) { return (typeof window.t === 'function') ? window.t(k) : k; }
-  function api(path, opts) {
-    return fetch(path, opts || {}).then(r => r.json());
+  function api(path, body) {
+    if (body && (body.method || body.headers)) {
+      return fetch(path, body).then(r => r.json());
+    }
+    return fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {})
+    }).then(r => r.json());
   }
 
   // ---- Render charity project list (integrated into lottery page) ----
@@ -171,7 +178,7 @@
         showView('lottery');
         renderCharitySection();
       } else {
-        alert((t('charitySubmitFail') || 'Failed') + ': ' + JSON.stringify(res));
+        alert(res.message || res.error || (t('charitySubmitFail') || 'Failed'));
       }
     } catch (e) {
       alert((t('charityError') || 'Error') + ': ' + e.message);

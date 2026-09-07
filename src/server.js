@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.14.6'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.14.7'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -125,6 +125,40 @@ route('GET', /^\/user\/(.+)$/, async (b, m) => {
       downlineTotal,
     },
     flows,
+  };
+});
+// Frozen balance detail: show exactly what is frozen and why
+route('GET', '/frozen/detail', async (b) => {
+  const uid = b.uid;
+  const acc = await store.getAccount(uid);
+  // 1. Unsettled bets (money frozen during active round)
+  const unsettledBets = await store.exec(
+    'SELECT bet_id, round_id, side, amount, pick, at FROM bets WHERE uid=? AND settled=0 ORDER BY at DESC',
+    [uid]
+  );
+  // 2. Frozen charity donations (project not settled yet)
+  const frozenDonations = await store.exec(
+    'SELECT donation_id, project_id, amount, status, created_at FROM charity_donations WHERE uid=? AND status=?',
+    [uid, 'frozen']
+  );
+  // 3. Pending withdrawals (money frozen during on-chain payout)
+  const pendingWithdraws = await store.exec(
+    'SELECT withdraw_id, amount, fee, arrive, state, created_at FROM withdraws WHERE uid=? AND state=?',
+    [uid, 'pending']
+  );
+  // Calculate totals
+  const betTotal = unsettledBets.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const donationTotal = frozenDonations.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const withdrawTotal = pendingWithdraws.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
+  return {
+    frozenTotal: acc.frozen,
+    breakdown: {
+      unsettledBets: { count: unsettledBets.length, total: betTotal, items: unsettledBets },
+      frozenDonations: { count: frozenDonations.length, total: donationTotal, items: frozenDonations },
+      pendingWithdraws: { count: pendingWithdraws.length, total: withdrawTotal, items: pendingWithdraws },
+    },
+    calculatedTotal: betTotal + donationTotal + withdrawTotal,
+    matches: (betTotal + donationTotal + withdrawTotal) === acc.frozen,
   };
 });
 // Insurance

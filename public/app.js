@@ -44,6 +44,7 @@ const I18N = {
     bbsTitle: 'Board (plain text, up to 1024 bytes)', bbsPlaceholder: 'Say something (max 1024 bytes)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
     adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words', npcAdded: 'NPC added successfully', npcAddFail: 'Failed to add NPC', npcNamePh: 'Name (optional)', npcWalletPh: '0x wallet (optional)', npcAddBtn: 'Add',
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', flows: 'Transactions',
+    frozenDetail: 'Frozen Detail', frozenTotal: 'Total Frozen', frozenBets: 'Unsettled Bets', frozenDonations: 'Frozen Donations', frozenWithdraws: 'Pending Withdrawals', frozenMatch: 'Breakdown matches total', frozenMismatch: 'Breakdown does NOT match total', frozenError: 'Failed to load frozen detail',
     wdOk: 'Withdrawal sent.', wdCheckReceive: 'Please check your wallet for the funds.', wdPending: 'Submitted, pending platform processing.',
     premiumWithdraw: 'Premium → balance (insurance OFF)', premiumOutPh: 'Blank = withdraw all', premiumNeed: 'Enter a positive integer amount',
    
@@ -85,6 +86,7 @@ const I18N = {
     bbsTitle: '廣場（1024位元組以內純文字）', bbsPlaceholder: '說點什麼吧（最多1024位元組）', bbsSend: '發佈', bbsEmpty: '還沒有留言，來說第一句',
     adminModeration: '管理員治理', npcAdded: 'NPC添加成功', npcAddFail: 'NPC添加失敗', npcNamePh: '名稱（選填）', npcWalletPh: '0x錢包地址（選填）', npcAddBtn: '添加', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', flows: '收支流水',
+    frozenDetail: '凍結明細', frozenTotal: '凍結總額', frozenBets: '未結算許願', frozenDonations: '凍結捐款', frozenWithdraws: '提現處理中', frozenMatch: '明細與總額一致', frozenMismatch: '明細與總額不一致', frozenError: '載入凍結明細失敗',
     wdOk: '提現已發送', wdCheckReceive: '請注意查收。', wdPending: '已提交，待平台處理。',
     premiumWithdraw: '保費提回餘額（需先關閉保險）', premiumOutPh: '留空＝全部提回', premiumNeed: '請輸入正整數金額',
    
@@ -126,6 +128,7 @@ const I18N = {
     bbsTitle: '広場（1024バイト以内のテキスト）', bbsPlaceholder: 'ひとこと（最大1024バイト）', bbsSend: '投稿', bbsEmpty: 'まだ投稿はありません',
     adminModeration: 'モデレーション', npcAdded: 'NPC追加成功', npcAddFail: 'NPC追加失敗', npcNamePh: '名前（任意）', npcWalletPh: '0xウォレット（任意）', npcAddBtn: '追加', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', flows: '取引履歴',
+    frozenDetail: '保留明細', frozenTotal: '保留合計', frozenBets: '未決済ベット', frozenDonations: '保留寄付', frozenWithdraws: '出金処理中', frozenMatch: '明細と合計が一致', frozenMismatch: '明細と合計が不一致', frozenError: '保留明細の読み込みに失敗',
     wdOk: '送金しました。', wdCheckReceive: 'ウォレットへの着金をご確認ください。', wdPending: '送信済み。プラットフォーム処理待ち。',
     premiumWithdraw: '保険料を残高へ戻す（保険OFF時）', premiumOutPh: '空欄＝全額戻す', premiumNeed: '正の整数を入力してください',
    
@@ -166,6 +169,7 @@ const I18N = {
     bbsTitle: 'المنتدى (نص عادي، حتى 1024 بايت)', bbsPlaceholder: 'قل شيئاً (حد أقصى 1024 بايت)', bbsSend: 'نشر', bbsEmpty: 'لا توجد مشاركات بعد. كن الأول.',
     adminModeration: 'الإشراف', addBlockedWord: 'حظر كلمة', wordPh: 'أدخل كلمة للحظر', deletePost: 'حذف', banUser: 'حظر', unbanUser: 'رفع الحظر', bannedTag: 'محظور', noBlocked: 'لا توجد كلمات محظورة', npcAdded: 'تمت إضافة NPC بنجاح', npcAddFail: 'فشل إضافة NPC', npcNamePh: 'الاسم (اختياري)', npcWalletPh: '0x المحفظة (اختياري)', npcAddBtn: 'إضافة',
     avail: 'متاح', frozen: 'محتجز', withdraw: 'سحب (2-500، رسوم 1)', withdrawing: 'جارٍ المعالجة…', flows: 'المعاملات',
+    frozenDetail: 'تفاصيل المحتجز', frozenTotal: 'إجمالي المحتجز', frozenBets: 'رهانات غير مسوّاة', frozenDonations: 'تبرعات محتجزة', frozenWithdraws: 'سحوبات قيد المعالجة', frozenMatch: 'التفاصيل تطابق الإجمالي', frozenMismatch: 'التفاصيل لا تطابق الإجمالي', frozenError: 'فشل تحميل تفاصيل المحتجز',
     wdOk: 'تم إرسال السحب.', wdCheckReceive: 'يرجى التحقق من محفظتك للحصول على الأموال.', wdPending: 'تم الإرسال، بانتظار معالجة المنصة.',
     premiumWithdraw: 'رسم التأمين → الرصيد (التأمين متوقف)', premiumOutPh: 'اتركه فارغاً = سحب الكل', premiumNeed: 'أدخل مبلغاً صحيحاً موجباً',
     chainOn: 'على السلسلة: الرصيد أولاً، والجزء الناقص يُدفع من محفظتك.', chainOff: 'وضع الرصيد خارج السلسلة (لم يتم تكوين رمز مميز).', chainPending: 'تم الإرسال، بانتظار التأكيد…', pendingLock: 'المعاملة السابقة لا تزال قيد التأكيد على السلسلة. انتظر ثوانٍ — لا تُرسل مرة أخرى؛ سيُضاف تلقائياً.', walletChanged: 'المحفظة النشطة تختلف عن الحساب المسجل. اخرج وأعد الاتصال بنفس المحفظة.',
@@ -205,6 +209,7 @@ const I18N = {
     bbsTitle: 'Forum (teks biasa, hingga 1024 byte)', bbsPlaceholder: 'Katakan sesuatu (maks 1024 byte)', bbsSend: 'Kirim', bbsEmpty: 'Belum ada kiriman. Jadilah yang pertama.',
     adminModeration: 'Moderasi', addBlockedWord: 'Blokir kata', wordPh: 'Masukkan kata yang diblokir', deletePost: 'Hapus', banUser: 'Blokir', unbanUser: 'Buka blokir', bannedTag: 'DIBLOKIR', noBlocked: 'Tidak ada kata diblokir', npcAdded: 'NPC berhasil ditambahkan', npcAddFail: 'Gagal menambahkan NPC', npcNamePh: 'Nama (opsional)', npcWalletPh: '0x dompet (opsional)', npcAddBtn: 'Tambah',
     avail: 'Tersedia', frozen: 'Ditahan', withdraw: 'Tarik (2-500, biaya 1)', withdrawing: 'Memproses…', flows: 'Transaksi',
+    frozenDetail: 'Detail Ditahan', frozenTotal: 'Total Ditahan', frozenBets: 'Taruhan Belum Selesai', frozenDonations: 'Donasi Ditahan', frozenWithdraws: 'Penarikan Diproses', frozenMatch: 'Rincian cocok dengan total', frozenMismatch: 'Rincian TIDAK cocok dengan total', frozenError: 'Gagal memuat detail ditahan',
     wdOk: 'Penarikan dikirim.', wdCheckReceive: 'Silakan cek dompet Anda untuk dana.', wdPending: 'Terkirim, menunggu pemrosesan platform.',
     premiumWithdraw: 'Premi → saldo (asuransi NONAKTIF)', premiumOutPh: 'Kosong = tarik semua', premiumNeed: 'Masukkan jumlah bilangan bulat positif',
     chainOn: 'On-chain: utamakan saldo, kekurangan dibayar dari dompet Anda.', chainOff: 'Mode saldo off-chain (token belum dikonfigurasi).', chainPending: 'Terkirim, menunggu konfirmasi…', pendingLock: 'Transaksi sebelumnya masih dikonfirmasi di on-chain. Tunggu beberapa detik — JANGAN kirim lagi; akan dikreditkan otomatis.', walletChanged: 'Dompet aktif berbeda dengan akun yang masuk. Keluar dan sambungkan kembali dompet yang sama.',
@@ -244,6 +249,7 @@ const I18N = {
     bbsTitle: '게시판 (순수 텍스트, 최대 1024바이트)', bbsPlaceholder: '하고 싶은 말 (최대 1024바이트)', bbsSend: '게시', bbsEmpty: '아직 게시글이 없습니다. 첫 글을 남겨보세요.',
     adminModeration: '관리', addBlockedWord: '단어 차단', wordPh: '차단할 단어 입력', deletePost: '삭제', banUser: '차단', unbanUser: '차단 해제', bannedTag: '차단됨', noBlocked: '차단된 단어 없음', npcAdded: 'NPC 추가 성공', npcAddFail: 'NPC 추가 실패', npcNamePh: '이름 (선택)', npcWalletPh: '0x 지갑 (선택)', npcAddBtn: '추가',
     avail: '사용 가능', frozen: '보류', withdraw: '출금 (2-500, 수수료 1)', withdrawing: '처리 중…', flows: '거래 내역',
+    frozenDetail: '보류 상세', frozenTotal: '보류 총액', frozenBets: '미정산 베팅', frozenDonations: '보류 기부', frozenWithdraws: '출금 처리 중', frozenMatch: '상세 내역이 총액과 일치', frozenMismatch: '상세 내역이 총액과 불일치', frozenError: '보류 상세 로드 실패',
     wdOk: '출금이 전송되었습니다.', wdCheckReceive: '지갑에서 입금을 확인해 주세요.', wdPending: '접수되었습니다. 플랫폼 처리 대기 중.',
     premiumWithdraw: '보험료 → 잔액 (보험 OFF 시)', premiumOutPh: '비우면 전액 출금', premiumNeed: '양의 정수 금액을 입력하세요',
     chainOn: '온체인: 잔액 우선, 부족분은 지갑에서 지불.', chainOff: '오프체인 잔액 모드 (토큰 미설정).', chainPending: '전송됨, 확인 대기 중…', pendingLock: '직전 거래가 아직 온체인 확인 중입니다. 몇 초 기다리세요 — 다시 제출하지 마세요. 자동 입금됩니다.', walletChanged: '활성 지갑이 로그인 계정과 다릅니다. 로그아웃 후 같은 지갑을 다시 연결하세요.',
@@ -283,6 +289,7 @@ const I18N = {
     bbsTitle: 'Форум (простой текст, до 1024 байт)', bbsPlaceholder: 'Напишите что-нибудь (макс. 1024 байт)', bbsSend: 'Опубликовать', bbsEmpty: 'Пока нет сообщений. Будьте первым.',
     adminModeration: 'Модерация', addBlockedWord: 'Заблокировать слово', wordPh: 'Введите слово для блокировки', deletePost: 'Удалить', banUser: 'Забанить', unbanUser: 'Разбанить', bannedTag: 'ЗАБАНЕН', noBlocked: 'Нет заблокированных слов', npcAdded: 'NPC успешно добавлен', npcAddFail: 'Ошибка добавления NPC', npcNamePh: 'Имя (необязательно)', npcWalletPh: '0x кошелек (необязательно)', npcAddBtn: 'Добавить',
     avail: 'Доступно', frozen: 'Заморожено', withdraw: 'Вывод (2-500, комиссия 1)', withdrawing: 'Обработка…', flows: 'Транзакции',
+    frozenDetail: 'Детали заморозки', frozenTotal: 'Всего заморожено', frozenBets: 'Незавершённые ставки', frozenDonations: 'Замороженные пожертвования', frozenWithdraws: 'Выводы в обработке', frozenMatch: 'Детали совпадают с итогом', frozenMismatch: 'Детали НЕ совпадают с итогом', frozenError: 'Не удалось загрузить детали',
     wdOk: 'Вывод отправлен.', wdCheckReceive: 'Проверьте кошелёк — средства должны поступить.', wdPending: 'Отправлено, ожидает обработки платформой.',
     premiumWithdraw: 'Премия → баланс (страховка ВЫКЛ)', premiumOutPh: 'Пусто = вывести всё', premiumNeed: 'Введите положительное целое число',
     chainOn: 'В сети: сначала баланс, недостаток оплачивается из кошелька.', chainOff: 'Режим внутрисетевого баланса (токен не настроен).', chainPending: 'Отправлено, ожидание подтверждения…', pendingLock: 'Предыдущая транзакция ещё подтверждается в сети. Подождите несколько секунд — НЕ отправляйте снова; зачислится автоматически.', walletChanged: 'Активный кошелёк отличается от вошедшего аккаунта. Выйдите и подключите тот же кошелёк заново.',
@@ -322,6 +329,7 @@ const I18N = {
     bbsTitle: 'बोर्ड (सादा पाठ, 1024 बाइट तक)', bbsPlaceholder: 'कुछ लिखें (अधिकतम 1024 बाइट)', bbsSend: 'पोस्ट', bbsEmpty: 'अभी कोई पोस्ट नहीं. पहले बनें.',
     adminModeration: 'मॉडरेशन', addBlockedWord: 'शब्द ब्लॉक करें', wordPh: 'ब्लॉक करने के लिए शब्द दर्ज करें', deletePost: 'हटाएँ', banUser: 'बैन', unbanUser: 'अनबैन', bannedTag: 'बैन्ड', noBlocked: 'कोई ब्लॉक शब्द नहीं', npcAdded: 'NPC सफलतापूर्वक जोड़ा गया', npcAddFail: 'NPC जोड़ने में विफल', npcNamePh: 'नाम (वैकल्पिक)', npcWalletPh: '0x वॉलेट (वैकल्पिक)', npcAddBtn: 'जोड़ें',
     avail: 'उपलब्ध', frozen: 'रोका गया', withdraw: 'निकासी (2-500, शुल्क 1)', withdrawing: 'प्रोसेसिंग…', flows: 'लेनदेन',
+    frozenDetail: 'रोका गया विवरण', frozenTotal: 'कुल रोका गया', frozenBets: 'अनसमाप्त बेट', frozenDonations: 'रोके गए दान', frozenWithdraws: 'निकासी प्रोसेसिंग में', frozenMatch: 'विवरण कुल से मेल खाता है', frozenMismatch: 'विवरण कुल से मेल नहीं खाता', frozenError: 'विवरण लोड करने में विफल',
     wdOk: 'निकासी भेजी गई.', wdCheckReceive: 'कृपया धन के लिए अपना वॉलेट देखें.', wdPending: 'सबमिट हुआ, प्लेटफ़ॉर्म प्रोसेसिंग की प्रतीक्षा में.',
     premiumWithdraw: 'प्रीमियम → बैलेंस (बीमा बंद)', premiumOutPh: 'खाली = सब निकालें', premiumNeed: 'धनात्मक पूर्णांक राशि दर्ज करें',
     chainOn: 'ऑन-चेन: पहले बैलेंस, कमी वॉलेट से भुगतान.', chainOff: 'ऑफ-चेन बैलेंस मोड (टोकन कॉन्फ़िगर नहीं).', chainPending: 'भेजा गया, पुष्टि की प्रतीक्षा में…', pendingLock: 'पिछला ट्रांज़ैक्शन अभी ऑन-चेन पुष्टि हो रहा है. कुछ सेकंड प्रतीक्षा करें — फिर से सबमिट न करें; स्वचालित जमा होगा.', walletChanged: 'सक्रिय वॉलेट लॉगिन खाते से भिन्न है. लॉग आउट करें और उसी वॉलेट को फिर कनेक्ट करें.',
@@ -361,6 +369,7 @@ const I18N = {
     bbsTitle: 'بورڈ (سادہ متن، 1024 بائٹ تک)', bbsPlaceholder: 'کچھ لکھیں (زیادہ سے زیادہ 1024 بائٹ)', bbsSend: 'پوسٹ', bbsEmpty: 'ابھی کوئی پوسٹ نہیں. پہلے بنیں.',
     adminModeration: 'ماڈریشن', npcAdded: 'NPC کامیابی سے شامل ہو گیا', npcAddFail: 'NPC شامل کرنے میں ناکامی', npcNamePh: 'نام (اختیاری)', npcWalletPh: '0x والیٹ (اختیاری)', npcAddBtn: 'شامل کریں', addBlockedWord: 'لفظ بلاک کریں', wordPh: 'بلاک کرنے کے لیے لفظ درج کریں', deletePost: 'حذف کریں', banUser: 'بین', unbanUser: 'ان بین', bannedTag: 'بین شدہ', noBlocked: 'کوئی بلاک شدہ لفظ نہیں',
     avail: 'دستیاب', frozen: 'روکا گیا', withdraw: 'نکاسی (2-500، فیس 1)', withdrawing: 'پروسیسنگ…', flows: 'لین دین',
+    frozenDetail: 'روکا گیا تفصیل', frozenTotal: 'کل روکا گیا', frozenBets: 'غیر تصفیہ شدہ شرطیں', frozenDonations: 'روکے گئے عطیات', frozenWithdraws: 'نکاسی زیر التواء', frozenMatch: 'تفصیل کل سے مطابقت رکھتی ہے', frozenMismatch: 'تفصیل کل سے مطابقت نہیں رکھتی', frozenError: 'تفصیل لوڈ کرنے میں ناکامی',
     wdOk: 'نکاسی بھیج دی گئی.', wdCheckReceive: 'رقم کے لیے اپنا والیٹ چیک کریں.', wdPending: 'جمع ہو گیا، پلیٹ فارم پروسیسنگ کا انتظار.',
     premiumWithdraw: 'پریمیم → بیلنس (انشورنس آف)', premiumOutPh: 'خالی = سب نکالیں', premiumNeed: 'مثبت عدد صحیح رقم درج کریں',
     chainOn: 'آن چین: پہلے بیلنس، کمی والیٹ سے ادا.', chainOff: 'آف چین بیلنس موڈ (ٹوکن کنفیگر نہیں).', chainPending: 'بھیجا گیا، تصدیق کا انتظار…', pendingLock: 'پچھلا ٹرانزیکشن ابھی آن چین پر تصدیق ہو رہا ہے. چند سیکنڈ انتظار کریں — دوبارہ جمع نہ کریں; خود بخود جمع ہو جائے گا.', walletChanged: 'فعال والیٹ لاگ اکاؤنٹ سے مختلف ہے. لاگ آؤٹ کر کے اسی والیٹ کو دوبارہ منسلک کریں.',
@@ -838,6 +847,69 @@ function renderMe() {
   $('premiumBal').textContent = fmt(a.premium) + t('coinUnit'); $('premiumBal2').textContent = fmt(a.premium) + t('coinUnit');
   $('lossAccum').textContent = fmt(a.lossAccum) + t('coinUnit');
   $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
+}
+// Show frozen balance detail - what is frozen and why
+async function showFrozenDetail() {
+  try {
+    const data = await api('/frozen/detail', {});
+    const modal = $('frozenModal');
+    const c = $('frozenDetailContent');
+    const fmt2 = (v) => (Number(v) / 1000000).toFixed(6);
+    let html = '<div style="margin-bottom:12px;padding:10px;background:var(--bg);border-radius:8px;">';
+    html += '<div style="color:var(--muted);">' + t('frozenTotal') + '</div>';
+    html += '<div style="font-size:20px;font-weight:700;color:var(--gold);">' + fmt2(data.frozenTotal) + ' ' + t('coinUnit') + '</div>';
+    html += '</div>';
+    // Unsettled bets
+    const b = data.breakdown.unsettledBets;
+    html += '<div style="margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;">';
+    html += '<div style="font-weight:600;color:var(--red);margin-bottom:6px;">' + t('frozenBets') + ' (' + b.count + ')</div>';
+    if (b.count > 0) {
+      b.items.forEach(item => {
+        html += '<div style="font-size:12px;color:var(--muted);">';
+        html += item.round_id + ' | ' + (item.side === 'red' ? t('redPool') : t('greenPool')) + ' | ' + fmt2(item.amount) + ' ' + t('coinUnit');
+        html += '</div>';
+      });
+    } else {
+      html += '<div style="font-size:12px;color:var(--muted);">—</div>';
+    }
+    html += '</div>';
+    // Frozen donations
+    const d = data.breakdown.frozenDonations;
+    html += '<div style="margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;">';
+    html += '<div style="font-weight:600;color:#a78bfa;margin-bottom:6px;">' + t('frozenDonations') + ' (' + d.count + ')</div>';
+    if (d.count > 0) {
+      d.items.forEach(item => {
+        html += '<div style="font-size:12px;color:var(--muted);">';
+        html += item.project_id + ' | ' + fmt2(item.amount) + ' ' + t('coinUnit');
+        html += '</div>';
+      });
+    } else {
+      html += '<div style="font-size:12px;color:var(--muted);">—</div>';
+    }
+    html += '</div>';
+    // Pending withdrawals
+    const w = data.breakdown.pendingWithdraws;
+    html += '<div style="margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;">';
+    html += '<div style="font-weight:600;color:var(--green);margin-bottom:6px;">' + t('frozenWithdraws') + ' (' + w.count + ')</div>';
+    if (w.count > 0) {
+      w.items.forEach(item => {
+        html += '<div style="font-size:12px;color:var(--muted);">';
+        html += item.withdraw_id + ' | ' + fmt2(item.amount) + ' ' + t('coinUnit') + ' (fee ' + fmt2(item.fee) + ')';
+        html += '</div>';
+      });
+    } else {
+      html += '<div style="font-size:12px;color:var(--muted);">—</div>';
+    }
+    html += '</div>';
+    // Match status
+    html += '<div style="text-align:center;font-size:11px;color:' + (data.matches ? 'var(--green)' : 'var(--red)') + ';margin-top:10px;">';
+    html += data.matches ? t('frozenMatch') : t('frozenMismatch');
+    html += '</div>';
+    c.innerHTML = html;
+    modal.style.display = 'flex';
+  } catch (e) {
+    alert(t('frozenError') + ': ' + e.message);
+  }
   $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
   // Insurance status bar: switch on AND premium>=20 units -> green active, else gray off
   const insActive = !!me.user.insSwitch && Number(a.premium) >= 20;
@@ -1468,7 +1540,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.14.6';
+const FE_BUILD = '2.14.7';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

@@ -530,7 +530,7 @@ export class MysqlStore {
        p.status, p.supportVotes, p.opposeVotes, p.commentCount, p.donorCount, p.createdAt]);
   }
   async listCharityProjects(limit = 50, offset = 0) {
-    const rows = await this.exec('SELECT * FROM charity_projects ORDER BY raised DESC, support_votes DESC, comment_count DESC LIMIT ? OFFSET ?', [limit, offset]);
+    const rows = await this.exec('SELECT * FROM charity_projects WHERE status=\'active\' ORDER BY raised DESC, support_votes DESC, comment_count DESC LIMIT ? OFFSET ?', [limit, offset]);
     return rows.map(r => this._charityRow(r));
   }
   async getCharityProject(projectId) {

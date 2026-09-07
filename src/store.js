@@ -287,6 +287,7 @@ export class MemoryStore {
   async insertCharityProject(p) { this.charityProjects.push({ ...p }); }
   async listCharityProjects(limit = 50, offset = 0) {
     return [...this.charityProjects]
+      .filter(p => p.status === 'active')
       .sort((a, b) => (b.raised - a.raised) || (b.supportVotes - a.supportVotes) || (b.commentCount - a.commentCount))
       .slice(offset, offset + limit);
   }

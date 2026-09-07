@@ -242,11 +242,12 @@ route('POST', '/admin/frozen/fix', async (b) => {
   const donationTotal = remainingDonations.reduce((s, r) => s + BigInt(r.amount), 0n);
   const withdrawTotal = remainingWds.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
   const correctFrozen = betTotal + donationTotal + withdrawTotal;
-  // 4. Update account frozen to correct value
+  // 4. Update account frozen to correct value directly
   if (acc.frozen !== correctFrozen) {
-    await store.applyAccount(targetUid, { frozen: correctFrozen - acc.frozen });
+    await store.exec('UPDATE accounts SET frozen=? WHERE uid=?', [correctFrozen, targetUid]);
   }
-  const newAcc = await store.getAccount(targetUid);
+  const newAccRow = await store.exec('SELECT * FROM accounts WHERE uid=?', [targetUid]);
+  const newAcc = newAccRow[0] ? { available: BigInt(newAccRow[0].available), frozen: BigInt(newAccRow[0].frozen), premium: BigInt(newAccRow[0].premium) } : acc;
   return {
     targetUid,
     fixedBets,

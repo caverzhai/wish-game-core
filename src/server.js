@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.14.8'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.14.9'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -152,6 +152,39 @@ route('GET', '/frozen/detail', async (b) => {
   const withdrawTotal = pendingWithdraws.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
   return {
     frozenTotal: acc.frozen,
+    breakdown: {
+      unsettledBets: { count: unsettledBets.length, total: betTotal, items: unsettledBets },
+      frozenDonations: { count: frozenDonations.length, total: donationTotal, items: frozenDonations },
+      pendingWithdraws: { count: pendingWithdraws.length, total: withdrawTotal, items: pendingWithdraws },
+    },
+    calculatedTotal: betTotal + donationTotal + withdrawTotal,
+    matches: (betTotal + donationTotal + withdrawTotal) === acc.frozen,
+  };
+});
+// Admin: query any user's frozen detail by uid
+route('GET', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
+  await requireAdmin(b.uid);
+  const targetUid = m[1];
+  const acc = await store.getAccount(targetUid);
+  const user = await store.getUser(targetUid);
+  const unsettledBets = await store.exec(
+    'SELECT bet_id, round_id, side, amount, pick, at FROM bets WHERE uid=? AND settled=0 ORDER BY at DESC',
+    [targetUid]
+  );
+  const frozenDonations = await store.exec(
+    'SELECT donation_id, project_id, amount, status, created_at FROM charity_donations WHERE uid=? AND status=?',
+    [targetUid, 'frozen']
+  );
+  const pendingWithdraws = await store.exec(
+    'SELECT withdraw_id, amount, fee, arrive, state, created_at FROM withdraws WHERE uid=? AND state=?',
+    [targetUid, 'pending']
+  );
+  const betTotal = unsettledBets.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const donationTotal = frozenDonations.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const withdrawTotal = pendingWithdraws.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
+  return {
+    targetUid, wallet: user ? user.wallet : null,
+    frozenTotal: acc.frozen, available: acc.available, premium: acc.premium,
     breakdown: {
       unsettledBets: { count: unsettledBets.length, total: betTotal, items: unsettledBets },
       frozenDonations: { count: frozenDonations.length, total: donationTotal, items: frozenDonations },

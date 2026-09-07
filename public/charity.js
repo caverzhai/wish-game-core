@@ -6,14 +6,21 @@
 
   function t(k) { return (typeof window.t === 'function') ? window.t(k) : k; }
   function api(path, body) {
+    const doFetch = (opts) => fetch(path, opts).then(async r => {
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok || data.error) {
+        throw new Error(data.error || data.message || ('HTTP ' + r.status));
+      }
+      return data;
+    });
     if (body && (body.method || body.headers)) {
-      return fetch(path, body).then(r => r.json());
+      return doFetch(body);
     }
-    return fetch(path, {
+    return doFetch({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body || {})
-    }).then(r => r.json());
+    });
   }
   function getUid() { return localStorage.getItem('uid'); }
 

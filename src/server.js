@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.15.8'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.15.9'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -463,9 +463,6 @@ route('POST', '/charity/upload', async (b, _, req) => {
   const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
   const buf = Buffer.from(matches[2], 'base64');
   const filename = 'charity_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + ext;
-  const fs = require('fs');
-  const path = require('path');
-  const PUBLIC_DIR = path.resolve(__dirname, '../public');
   fs.writeFileSync(path.join(PUBLIC_DIR, filename), buf);
   return { url: '/' + filename };
 });

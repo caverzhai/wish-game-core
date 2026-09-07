@@ -162,7 +162,7 @@ route('GET', '/frozen/detail', async (b) => {
   };
 });
 // Admin: query any user's frozen detail by uid
-route('GET', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
+route('POST', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
   await requireAdmin(b.uid);
   const targetUid = m[1];
   const acc = await store.getAccount(targetUid);

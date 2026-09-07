@@ -143,53 +143,50 @@
 
   // ---- Submit application ----
   async function submitApply() {
-    const form = $('charityApplyForm');
-    const photoData = $('charityPhotoData').value;
-    if (!photoData) {
-      alert(t('charityPhotoRequired') || (t('charityPhoto') + ' required'));
-      return;
-    }
-    // Use base64 directly - stored in DB, no filesystem dependency
-    const proofData = $('charityProofData').value || '';
-    const isEdit = !!window._charityEditMode;
-
-    const data = {
-      uid: getUid(),
-      name: form.charityName.value,
-      gender: form.charityGender.value,
-      photo: photoData,
-      country: form.charityCountry.value,
-      city: form.charityCity.value,
-      helpType: form.charityHelpType.value,
-      reason: form.charityReason.value,
-      targetAmount: parseInt(form.charityAmount.value) || 100,
-      proof: proofData,
-    };
-
     try {
+      const form = $('charityApplyForm');
+      if (!form) { alert('Form not found'); return; }
+      const photoData = $('charityPhotoData').value;
+      if (!photoData) {
+        alert(t('charityPhotoRequired') || (t('charityPhoto') + ' required'));
+        return;
+      }
+      // Use base64 directly - stored in DB, no filesystem dependency
+      const proofData = $('charityProofData').value || '';
+      const isEdit = !!window._charityEditMode;
+
+      const name = form.charityName ? form.charityName.value : '';
+      const gender = form.charityGender ? form.charityGender.value : 'unknown';
+      const country = form.charityCountry ? form.charityCountry.value : '';
+      const city = form.charityCity ? form.charityCity.value : '';
+      const helpType = form.charityHelpType ? form.charityHelpType.value : '';
+      const reason = form.charityReason ? form.charityReason.value : '';
+      const amount = form.charityAmount ? (parseInt(form.charityAmount.value) || 100) : 100;
+
+      if (!name) { alert('Name is required'); return; }
+      if (!country) { alert('Country is required'); return; }
+      if (!helpType) { alert('Help type is required'); return; }
+      if (!reason) { alert('Reason is required'); return; }
+
       let res;
       if (isEdit) {
-        data.projectId = window._charityEditMode;
-        // Only send updatable fields
         const updateData = {
-          uid: data.uid,
-          projectId: data.projectId,
-          name: data.name,
-          gender: data.gender,
-          photo: data.photo,
-          country: data.country,
-          city: data.city,
-          helpType: data.helpType,
-          reason: data.reason,
-          proof: data.proof,
+          uid: getUid(),
+          projectId: window._charityEditMode,
+          name, gender, photo: photoData, country, city, helpType, reason, proof: proofData,
         };
         res = await api('/charity/update', updateData);
         alert('Project updated successfully!');
         window._charityEditMode = null;
-        // Reset amount field
-        form.charityAmount.readOnly = false;
-        form.charityAmount.style.opacity = '1';
+        if (form.charityAmount) {
+          form.charityAmount.readOnly = false;
+          form.charityAmount.style.opacity = '1';
+        }
       } else {
+        const data = {
+          uid: getUid(), name, gender, photo: photoData, country, city, helpType, reason,
+          targetAmount: amount, proof: proofData,
+        };
         res = await api('/charity/create', data);
         alert(t('charitySubmitted') || 'Submitted successfully!');
       }
@@ -197,7 +194,7 @@
       renderCharitySection();
     } catch (e) {
       console.error('Charity submit error:', e);
-      alert('Submit failed: ' + (e.message || 'Unknown error'));
+      alert('Submit failed: ' + (e.message || 'Unknown error') + '\nPlease check console for details.');
     }
   }
 

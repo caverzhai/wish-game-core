@@ -115,15 +115,16 @@ CREATE TABLE IF NOT EXISTS lottery_comments (
 );
 CREATE TABLE IF NOT EXISTS charity_projects (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, project_id VARCHAR(16) UNIQUE,
-  uid VARCHAR(16), name VARCHAR(100), gender VARCHAR(16), photo TEXT,
+  uid VARCHAR(16), name VARCHAR(100), gender VARCHAR(16), photo MEDIUMTEXT,
   country VARCHAR(100), city VARCHAR(100), help_type VARCHAR(200),
   reason TEXT, target_amount BIGINT, goal_amount BIGINT, raised BIGINT DEFAULT 0,
-  proof TEXT, status VARCHAR(16) DEFAULT 'active',
+  proof MEDIUMTEXT, status VARCHAR(16) DEFAULT 'active',
   support_votes INT DEFAULT 0, oppose_votes INT DEFAULT 0,
   comment_count INT DEFAULT 0, donor_count INT DEFAULT 0,
   created_at BIGINT, settled_at BIGINT NULL,
   KEY idx_status(status), KEY idx_raised(raised), KEY idx_support(support_votes)
 );
+ALTER TABLE charity_projects MODIFY COLUMN photo MEDIUMTEXT, MODIFY COLUMN proof MEDIUMTEXT;
 CREATE TABLE IF NOT EXISTS charity_donations (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, donation_id VARCHAR(16) UNIQUE,
   project_id VARCHAR(16), uid VARCHAR(16), amount BIGINT,

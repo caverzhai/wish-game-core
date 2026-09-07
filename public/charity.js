@@ -45,7 +45,10 @@
             const progress = Math.min(100, Math.round(Number(p.raised) / Number(p.goalAmount) * 100));
             return `
             <div class="charity-card" onclick="Charity.openDetail('${p.projectId}')">
-              <img src="${p.photo}" class="charity-img" alt="${p.name}" />
+              <div class="charity-img-wrap">
+                <span class="charity-round-badge">${p.projectId}</span>
+                <img src="${p.photo}" class="charity-img" alt="${p.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22><rect fill=%22%23333%22 width=%22200%22 height=%22200%22/><text x=%22100%22 y=%22100%22 fill=%22%23666%22 font-size=%2216%22 text-anchor=%22middle%22>No Image</text></svg>'" />
+              </div>
               <div class="charity-info">
                 <div class="charity-name">${p.name}</div>
                 <div class="charity-country">${p.country}</div>
@@ -146,40 +149,20 @@
       alert(t('charityPhotoRequired') || (t('charityPhoto') + ' required'));
       return;
     }
-    // Upload photo first
-    let photoUrl = '';
-    try {
-      const up = await api('/charity/upload', { uid: getUid(), photo: photoData });
-      photoUrl = up.url;
-    } catch (e) {
-      alert(t('charityPhotoUploadFail') || 'Photo upload failed');
-      return;
-    }
-
-    // Upload proof image if provided
-    let proofUrl = '';
-    const proofData = $('charityProofData').value;
-    if (proofData) {
-      try {
-        const up2 = await api('/charity/upload', { uid: getUid(), photo: proofData });
-        proofUrl = up2.url;
-      } catch (e) {
-        alert(t('charityProofUploadFail') || 'Proof upload failed');
-        return;
-      }
-    }
+    // Use base64 directly - stored in DB, no filesystem dependency
+    const proofData = $('charityProofData').value || '';
 
     const data = {
       uid: getUid(),
       name: form.charityName.value,
       gender: form.charityGender.value,
-      photo: photoUrl,
+      photo: photoData,
       country: form.charityCountry.value,
       city: form.charityCity.value,
       helpType: form.charityHelpType.value,
       reason: form.charityReason.value,
       targetAmount: parseInt(form.charityAmount.value),
-      proof: proofUrl,
+      proof: proofData,
     };
 
     try {

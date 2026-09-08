@@ -135,9 +135,9 @@ class CharityService {
     const total = p.raised;
     if (total <= 0n) return;
 
-    // Distribution: recipient 20%, lottery 60% (30+20+10), platform 10%
+    // Distribution: recipient 20%, lottery 70% (1st 30% + 2nd 2x10% + 3rd 10x2%), platform 10%
     const recipientShare = total * 20n / 100n;
-    const lotteryPool = total * 60n / 100n;
+    const lotteryPool = total * 70n / 100n;
     const platformShare = total * 10n / 100n;
     const dust = total - recipientShare - lotteryPool - platformShare;
 
@@ -171,28 +171,33 @@ class CharityService {
       { level: 3, count: 10, percent: 2 },
     ];
 
+    // First, deduct ALL donations from frozen (donations are consumed, not refunded)
+    for (const d of donations) {
+      await this.store.applyAccount(d.uid, { frozen: -d.amount });
+    }
+
+    // Then distribute prizes to winners (avail increases)
     let ticketIdx = 0;
     const winners = [];
+    const winnerUids = new Set();
     for (const prize of prizes) {
       const prizeAmount = lotteryPool * BigInt(prize.percent) / 100n;
       const perWinner = prizeAmount / BigInt(prize.count);
       for (let i = 0; i < prize.count && ticketIdx < tickets.length; i++) {
         const winnerUid = tickets[ticketIdx++];
-        await this.store.applyAccount(winnerUid, { frozen: -perWinner, avail: perWinner });
+        await this.store.applyAccount(winnerUid, { avail: perWinner });
         await this.store.addFlow(winnerUid, 'CHARITY_WIN', perWinner, { projectId, level: prize.level });
         winners.push({ uid: winnerUid, level: prize.level, amount: perWinner });
+        winnerUids.add(winnerUid);
       }
     }
 
-    // Unfreeze remaining donations (non-winners get their donation back as settled)
-    const settledUids = new Set(winners.map(w => w.uid));
-    settledUids.add(p.uid);
+    // Mark donation status
     for (const d of donations) {
-      if (!settledUids.has(d.uid)) {
-        await this.store.applyAccount(d.uid, { frozen: -d.amount });
-        await this.store.updateCharityDonation(d.donationId, { status: 'settled' });
-      } else {
+      if (winnerUids.has(d.uid)) {
         await this.store.updateCharityDonation(d.donationId, { status: 'won' });
+      } else {
+        await this.store.updateCharityDonation(d.donationId, { status: 'settled' });
       }
     }
 

@@ -287,14 +287,14 @@
       </div>
       <div class="charity-desc-box" style="margin-top:12px;">
         <div class="charity-desc-title">${t('charityPrizeTitle') || 'Prize Distribution'}</div>
-        <div style="font-size:13px;line-height:1.8;color:var(--text);">
-          <div style="margin-bottom:6px;"><strong>${t('charityPrizeGoal') || 'Goal = Requested x 5'}</strong></div>
-          <div style="margin-bottom:4px;">${t('charityPrizeRecipient') || 'Recipient: 20%'}</div>
-          <div style="margin-bottom:4px;">${t('charityPrize1st') || '1st Prize: 30% (1 winner)'}</div>
-          <div style="margin-bottom:4px;">${t('charityPrize2nd') || '2nd Prize: 10% each (2 winners)'}</div>
-          <div style="margin-bottom:4px;">${t('charityPrize3rd') || '3rd Prize: 2% each (10 winners)'}</div>
-          <div style="margin-bottom:4px;">${t('charityPrizePlatform') || 'Platform: 10%'}</div>
-          <div style="margin-top:8px;color:var(--muted);font-size:12px;">${t('charityPrizeNote') || 'Each 1 coin donated = 1 lottery ticket. Winners drawn randomly when goal reached. Donations not refunded if not won.'}</div>
+        <div style="font-size:13px;line-height:1.9;color:var(--text);">
+          <div style="margin-bottom:8px;padding:8px 10px;background:rgba(255,215,0,0.08);border-radius:6px;"><strong>${t('charityPrizeTotal') || 'Total Pool'}: ${Number(p.goalAmount).toFixed(0)} ${coinUnit}</strong> (${t('charityPrizeGoal') || 'Requested x 5'})</div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>${t('charityPrizeRecipient') || 'Recipient (20%)'}:</span><strong style="color:var(--gold);">${(Number(p.goalAmount)*0.2).toFixed(0)} ${coinUnit}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>${t('charityPrize1st') || '1st Prize (30%, 1 winner)'}:</span><strong style="color:#22c55e;">${(Number(p.goalAmount)*0.3).toFixed(0)} ${coinUnit}</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>${t('charityPrize2nd') || '2nd Prize (10% each, 2 winners)'}:</span><strong style="color:#3b82f6;">${(Number(p.goalAmount)*0.1).toFixed(0)} ${coinUnit} ×2</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>${t('charityPrize3rd') || '3rd Prize (2% each, 10 winners)'}:</span><strong style="color:#a855f7;">${(Number(p.goalAmount)*0.02).toFixed(0)} ${coinUnit} ×10</strong></div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>${t('charityPrizePlatform') || 'Platform (10%)'}:</span><strong style="color:var(--muted);">${(Number(p.goalAmount)*0.1).toFixed(0)} ${coinUnit}</strong></div>
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.6;">${t('charityPrizeNote') || 'Each 1 coin donated = 1 lottery ticket. Winners drawn randomly when goal reached. Donations not refunded if not won.'}</div>
         </div>
       </div>
       <div class="charity-progress-section">

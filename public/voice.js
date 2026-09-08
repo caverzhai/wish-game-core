@@ -3,6 +3,7 @@
 // Depends on app.js globals: $, api, t, state, fmt, escapeHtml, I18N, alignWallet
 // =============================================================
 (function () {
+  const S6 = 1_000_000; // 1 coin = 1,000,000 min units (must match backend SCALE)
   // Supplement i18n (en/zh-TW/ja, others fall back to English)
   const V = {
     en: {

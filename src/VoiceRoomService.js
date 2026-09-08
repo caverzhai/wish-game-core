@@ -71,10 +71,12 @@ export class VoiceRoomService {
     if (!cfg) throw new GameError(Codes.BAD_INPUT, 'Invalid room type');
     const title = String(name ?? '').trim().slice(0, 30) || cfg.label;
     const desc = String(description ?? '').trim().slice(0, 200);
+    const pwd = String(password ?? '').trim();
+    if (pwd && !/^\d{4}$/.test(pwd)) throw new GameError(Codes.BAD_INPUT, 'Password must be exactly 4 digits');
     const recharge = BigInt(rechargeInner ?? 0);
     if (recharge < cfg.minOpen) throw new GameError(Codes.BAD_INPUT, `Minimum room open recharge ${Number(cfg.minOpen) / Number(SCALE)} units`);
     const acc = await this.store.getAccount(uid);
-    if (acc.available < recharge) throw new GameError(Codes.BAD_INPUT, 'Insufficient balance, please recharge first');
+    if (acc.available < recharge) throw new GameError(Codes.INSUFFICIENT_BALANCE, 'Insufficient balance, please recharge first');
     const roomId = this._newId();
     await this.store.applyAccount(uid, { avail: -recharge });
     await this.store.applyLedger({ plat: recharge }); // prepaid goes to platform, maintains ledger balance
@@ -85,7 +87,7 @@ export class VoiceRoomService {
       createdAt: Date.now(), lastActiveAt: Date.now(), emptySince: null,
       members: new Map(), messages: [], destroyed: false,
       guestUid: null, description: desc, msgBytes: 0,
-      password: String(password || '').trim().slice(0, 32),
+      password: pwd,
     };
     room.members.set(uid, { uid, name: shortName(u.wallet), role: 'host', micOn: true });
     this.rooms.set(roomId, room);

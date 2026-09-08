@@ -114,7 +114,13 @@
       const btn = $('confirmCreateRoom'); btn.disabled = true;
       const roomName = $('roomNameInput').value;
       const roomDesc = $('roomDescInput').value;
-      const roomPwd = $('roomPasswordInput').value;
+      let roomPwd = $('roomPasswordInput').value.trim();
+      // Validate password: if provided, must be exactly 4 digits
+      if (roomPwd && !/^\d{4}$/.test(roomPwd)) {
+        alert('Password must be exactly 4 digits');
+        btn.disabled = false;
+        return;
+      }
       try {
         await alignWallet();
         // Try direct create first (uses in-site balance)

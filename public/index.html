@@ -386,7 +386,7 @@
       </div>
       <input id="roomNameInput" maxlength="30" class="room-name-input" data-i18n-placeholder="roomNamePh" placeholder="Room name (optional)" />
       <textarea id="roomDescInput" maxlength="200" class="room-desc-input" data-i18n-placeholder="roomDescPh" placeholder="Room description (optional, 200 chars, topic/rules)"></textarea>
-      <input id="roomPasswordInput" maxlength="32" type="password" class="room-name-input" data-i18n-placeholder="roomPasswordPh" placeholder="Room password (optional, for private chat)" />
+      <input id="roomPasswordInput" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="Optional 4-digit PIN" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;letter-spacing:4px;text-align:center">
       <button id="confirmCreateRoom" class="btn-primary big" data-i18n="confirmCreate">Create</button>
       <button id="cancelCreateRoom" class="btn-ghost" data-i18n="cancel">Cancel</button>
     </div>
@@ -447,11 +447,11 @@
     <button id="disclaimerConfirm" class="btn-primary big" data-i18n="disclaimerAgree">I have read and agree</button>
   </div>
 </div>
-<script src="/qrcode.min.js?v=2181"></script>
-<script src="/app.js?v=2181"></script>
-<script src="/lottery.js?v=2181"></script>
-<script src="/charity.js?v=2181"></script>
-<script src="/voice.js?v=2181"></script>
+<script src="/qrcode.min.js?v=2182"></script>
+<script src="/app.js?v=2182"></script>
+<script src="/lottery.js?v=2182"></script>
+<script src="/charity.js?v=2182"></script>
+<script src="/voice.js?v=2182"></script>
 
 <!-- Frozen detail modal -->
 <div id="frozenModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:20px;">

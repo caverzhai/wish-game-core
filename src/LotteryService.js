@@ -84,11 +84,17 @@ export class LotteryService {
     if (!round) return [];
     const product = LOTTERY_PRODUCTS.find(p => p.id === productId);
     const entries = await this.store.lotteryListMyNumbers(round.roundId, uid);
-    return entries.map(e => ({
-      startNum: String(e.startNum).padStart(product.numDigits, '0'),
-      endNum: String(e.endNum).padStart(product.numDigits, '0'),
-      amount: e.amount,
-    }));
+    const numbers = [];
+    for (const e of entries) {
+      if (e.startNum === e.endNum) {
+        numbers.push(String(e.startNum).padStart(product.numDigits, '0')); // discrete (new format)
+      } else {
+        for (let n = e.startNum; n <= e.endNum; n++) {
+          numbers.push(String(n).padStart(product.numDigits, '0')); // legacy range
+        }
+      }
+    }
+    return numbers.sort();
   }
 
   async getHistory(productId, limit = 10) {
@@ -127,9 +133,31 @@ export class LotteryService {
     await this.store.applyLedger({ plat: cost });
     await this.store.addFlow(uid, 'LOTTERY_BUY', cost, { roundId: round.roundId, productId });
 
-    const startNum = round.totalSold;
-    const endNum = round.totalSold + amount - 1;
-    await this.store.lotteryAddEntry(round.roundId, uid, startNum, endNum, amount);
+    // Get all already-assigned numbers from existing entries
+    const allEntries = await this.store.lotteryListEntries(round.roundId);
+    const usedNumbers = new Set();
+    for (const e of allEntries) {
+      if (e.startNum === e.endNum) {
+        usedNumbers.add(e.startNum); // discrete number (new format)
+      } else {
+        for (let n = e.startNum; n <= e.endNum; n++) usedNumbers.add(n); // legacy continuous range
+      }
+    }
+    // Build remaining available numbers and randomly pick `amount` of them
+    const remainingNums = [];
+    for (let n = 0; n < product.totalAmount; n++) {
+      if (!usedNumbers.has(n)) remainingNums.push(n);
+    }
+    // Fisher-Yates shuffle then take first `amount`
+    for (let i = remainingNums.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [remainingNums[i], remainingNums[j]] = [remainingNums[j], remainingNums[i]];
+    }
+    const picked = remainingNums.slice(0, amount).sort((a, b) => a - b);
+    // Create one entry per discrete number (startNum=endNum)
+    for (const num of picked) {
+      await this.store.lotteryAddEntry(round.roundId, uid, num, num, 1);
+    }
     const newTotal = round.totalSold + amount;
     await this.store.lotteryUpdateRound(round.roundId, { totalSold: newTotal });
 
@@ -140,8 +168,7 @@ export class LotteryService {
     const updated = await this.store.lotteryGetActiveRound(productId);
     return {
       success: true,
-      startNum: String(startNum).padStart(product.numDigits, '0'),
-      endNum: String(endNum).padStart(product.numDigits, '0'),
+      numbers: picked.map(n => String(n).padStart(product.numDigits, '0')),
       amount,
       round: updated ? {
         roundId: updated.roundId,
@@ -159,8 +186,12 @@ export class LotteryService {
     const entries = await this.store.lotteryListEntries(roundId);
     const numberOwners = [];
     for (const entry of entries) {
-      for (let n = entry.startNum; n <= entry.endNum; n++) {
-        numberOwners.push({ number: n, uid: entry.uid });
+      if (entry.startNum === entry.endNum) {
+        numberOwners.push({ number: entry.startNum, uid: entry.uid }); // discrete (new format)
+      } else {
+        for (let n = entry.startNum; n <= entry.endNum; n++) {
+          numberOwners.push({ number: n, uid: entry.uid }); // legacy continuous range
+        }
       }
     }
 

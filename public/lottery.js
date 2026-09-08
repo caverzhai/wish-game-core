@@ -189,7 +189,8 @@ const Lottery = (() => {
     try {
       const data = await tryBuy(amount);
       if (data.success) {
-        resultEl.innerHTML = `<span style="color:var(--gold);font-weight:700;">${t('lotteryBuySuccess') || 'Purchase successful!'} Numbers: ${data.startNum} - ${data.endNum}</span>`;
+        const numsStr = data.numbers ? data.numbers.join(', ') : (data.startNum + ' - ' + data.endNum);
+        resultEl.innerHTML = `<span style="color:var(--gold);font-weight:700;">${t('lotteryBuySuccess') || 'Purchase successful!'} Numbers: ${numsStr}</span>`;
         setTimeout(() => {
           openDetail(currentProduct.product.id);
         }, 1500);
@@ -201,7 +202,8 @@ const Lottery = (() => {
         if (ok) {
           const data2 = await tryBuy(amount);
           if (data2.success) {
-            resultEl.innerHTML = `<span style="color:var(--gold);font-weight:700;">${t('lotteryBuySuccess') || 'Purchase successful!'} Numbers: ${data2.startNum} - ${data2.endNum}</span>`;
+            const numsStr2 = data2.numbers ? data2.numbers.join(', ') : (data2.startNum + ' - ' + data2.endNum);
+            resultEl.innerHTML = `<span style="color:var(--gold);font-weight:700;">${t('lotteryBuySuccess') || 'Purchase successful!'} Numbers: ${numsStr2}</span>`;
             setTimeout(() => openDetail(currentProduct.product.id), 1500);
           } else {
             resultEl.innerHTML = `<span style="color:#ef4444;">${t('lotteryBuyFail') || 'Purchase failed'}</span>`;
@@ -288,7 +290,7 @@ const Lottery = (() => {
         list.innerHTML = t('lotteryNoNumbers') || 'No purchases yet';
       } else {
         list.innerHTML = numbers.map(n =>
-          `<div style="padding:4px 0;">${t('lotteryNumberRange') || 'Numbers'}: <strong>${n.startNum} - ${n.endNum}</strong> (${n.amount} coins)</div>`
+          `<div style="padding:4px 0;display:inline-block;margin:2px 4px;padding:2px 8px;background:rgba(255,215,0,0.1);border-radius:4px;"><strong>${n}</strong></div>`
         ).join('');
       }
     } catch (e) {

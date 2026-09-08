@@ -91,7 +91,6 @@ CREATE TABLE IF NOT EXISTS voice_rooms (
   password VARCHAR(64) DEFAULT '',
   destroyed TINYINT DEFAULT 0
 );
-ALTER TABLE voice_rooms ADD COLUMN IF NOT EXISTS password VARCHAR(64) DEFAULT '';
 CREATE TABLE IF NOT EXISTS npcs (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, npc_id VARCHAR(16) UNIQUE,
   uid VARCHAR(16), wallet VARCHAR(128), name VARCHAR(64),
@@ -188,6 +187,7 @@ export class MysqlStore {
       'ALTER TABLE npcs ADD COLUMN last_chat_at BIGINT DEFAULT 0',
       'ALTER TABLE npcs ADD COLUMN next_chat_at BIGINT DEFAULT 0',
       'ALTER TABLE npcs ADD COLUMN enabled TINYINT DEFAULT 1',
+      'ALTER TABLE voice_rooms ADD COLUMN password VARCHAR(64) DEFAULT \'\'',
     ]) {
       try { await this.pool.query(alter); } catch { /* column already exists */ }
     }

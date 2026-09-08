@@ -112,11 +112,57 @@
     $('confirmCreateRoom').onclick = async () => {
       const amount = createType === 'chat' ? 1 : 5; // chat room default 1 unit, meeting room default 5 units
       const btn = $('confirmCreateRoom'); btn.disabled = true;
+      const roomName = $('roomNameInput').value;
+      const roomDesc = $('roomDescInput').value;
+      const roomPwd = $('roomPasswordInput').value;
       try {
         await alignWallet();
-        const r = await api('/voice/create', { uid: state.uid, type: createType, name: $('roomNameInput').value, amount, description: $('roomDescInput').value, password: $('roomPasswordInput').value });
-        closeCreateRoom();
-        enterRoom(r.roomId);
+        // Try direct create first (uses in-site balance)
+        try {
+          const r = await api('/voice/create', { uid: state.uid, type: createType, name: roomName, amount, description: roomDesc, password: roomPwd });
+          closeCreateRoom();
+          enterRoom(r.roomId);
+          return;
+        } catch (e) {
+          if (e.code !== 'INSUFFICIENT_BALANCE') { alert(e.message || vt('balanceShort')); return; }
+        }
+        // Balance insufficient: top up from wallet
+        const fresh = await api('/user/' + state.uid);
+        const availInner = Math.round(Number(fresh.account.available) * S6);
+        const totalInner = amount * S6;
+        const chainInner = totalInner - Math.min(availInner, totalInner);
+        await ensureWalletReady();
+        const dec = state.chainCfg.decimals, diff = dec - 6;
+        if (diff < 0) { alert('Token decimals < 6, unsupported'); return; }
+        const needWei = BigInt(chainInner) * (10n ** BigInt(diff));
+        const wbal = await walletTokenWei();
+        if (wbal < needWei) {
+          const shortInner = Number(needWei - wbal) / (10 ** diff);
+          alert(vt('balanceShort') + ': wallet short ' + (shortInner / S6).toFixed(2));
+          return;
+        }
+        const data = erc20TransferData(state.chainCfg.platformAddress, chainInner, dec);
+        let txHash;
+        try { txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: state.wallet, to: state.chainCfg.tokenContract, data }] }); }
+        catch (e) { alert(e.message || String(e)); return; }
+        addPending({ txHash, ts: Date.now(), biz: 'voice_create', totalAmount: amount, type: createType, name: roomName, description: roomDesc, password: roomPwd, chainInner });
+        // Wait for on-chain confirmation and call onchain endpoint
+        let lastErr = '';
+        for (let i = 0; i < 15; i++) {
+          await sleep(4000);
+          try {
+            const r = await api('/voice/create/onchain', { uid: state.uid, type: createType, name: roomName, totalAmount: amount, description: roomDesc, password: roomPwd, chainInner, txHash });
+            removePending(txHash);
+            closeCreateRoom();
+            enterRoom(r.roomId);
+            return;
+          } catch (e) {
+            lastErr = e.message || String(e);
+            if (!CHAIN_RETRY.test(lastErr)) break;
+          }
+        }
+        await creditPending();
+        alert(lastErr ? lastErr + ' · ' : '' + 'Payment pending, will credit automatically.');
       } catch (e) { alert(e.message || vt('balanceShort')); }
       finally { btn.disabled = false; }
     };

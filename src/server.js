@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.18.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.18.1'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -313,6 +313,26 @@ route('GET', /^\/voice\/room\/(.+)$/, (b, m) => voice.getRoomDetail(m[1]));
 route('POST', '/voice/create', async (b) => {
   await assertNotBanned(b.uid);
   return voice.createRoom(b.uid, b.type, b.name, coin(Number(b.amount)), b.description, b.password);
+});
+
+// Create room with on-chain wallet top-up (balance first, wallet covers shortfall)
+route('POST', '/voice/create/onchain', async (b) => {
+  await assertNotBanned(b.uid);
+  const total = Number(b.totalAmount ?? b.amount);
+  if (!Number.isInteger(total) || total < 1) throw new GameError(Codes.BAD_INPUT, 'Room open amount must be a positive integer');
+  const totalInner = coin(total);
+  const acc = await store.getAccount(b.uid);
+  const needInner = needTopUp(acc.available, totalInner);
+  const txKey = String(b.txHash || '').toLowerCase();
+  if (needInner > 0n) {
+    if (!txKey) throw new GameError(Codes.BAD_INPUT, 'In-site balance insufficient, on-chain wallet top-up required, but tx hash missing');
+    if (await store.isChainTxUsed(txKey)) return { dup: true, msg: 'This on-chain tx already used' };
+    const u = await store.getUser(b.uid);
+    await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner });
+    await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT');
+    await store.markChainTxUsed(txKey, b.uid, needInner);
+  }
+  return voice.createRoom(b.uid, b.type, b.name, totalInner, b.description, b.password);
 });
 
 // Verify room password before entering

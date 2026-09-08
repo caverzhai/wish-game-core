@@ -15,6 +15,7 @@
       minRecharge: 'Min recharge', balanceShort: 'Balance short', roomClosedTip: 'This room has been closed.',
       share: 'Share', dissolveRoom: 'Dissolve', dissolveConfirm: 'Dissolve this room?', shareCopied: 'Share link copied!', addTime: 'Add Time', addTimeTip: 'Enter amount to extend room time',
       host: 'Host:', roomDescPh: 'Share wish pool strategies, celebrate winning rounds, invite friends for referral commission, or just hang out. Everyone can send text, voice (≤30s), and images.', editDescTip: 'Edit room description (200 chars):', hostNotice: 'Host Notice',
+      roomPasswordPh: 'Room password (optional, for private chat)', roomPasswordPrompt: 'This room is private. Enter password:', roomPasswordWrong: 'Wrong password',
     },
     'zh-TW': {
       voiceTitle: '語音房', createRoom: '開房', chatRoom: '聊天室', meetingRoom: '會議室',
@@ -26,6 +27,7 @@
       minRecharge: '最低充值', balanceShort: '餘額不足', roomClosedTip: '該房間已關閉。',
       share: '分享', dissolveRoom: '解散', dissolveConfirm: '確定解散房間？', shareCopied: '分享連結已複製！', addTime: '增加時間', addTimeTip: '輸入枚數延長房間時間',
       host: '房主：', roomDescPh: '分享願望池策略、慶祝中獎回合、邀請好友賺取返傭，或隨意聊天。所有人可發文字、語音(≤30秒)和圖片。', editDescTip: '編輯房間說明（200字）：', hostNotice: '房主聲明',
+      roomPasswordPh: '房間密碼（選填，用於私密聊天）', roomPasswordPrompt: '此房間為私密房間，請輸入密碼：', roomPasswordWrong: '密碼錯誤',
     },
     ja: {
       voiceTitle: 'ボイスルーム', createRoom: 'ルーム作成', chatRoom: 'チャットルーム', meetingRoom: '会議室',
@@ -37,6 +39,7 @@
       minRecharge: '最低チャージ', balanceShort: '残高不足', roomClosedTip: 'この部屋は終了しました。',
       share: '共有', dissolveRoom: '解散', dissolveConfirm: '部屋を解散しますか？', shareCopied: '共有リンクをコピーしました！', addTime: '時間追加', addTimeTip: '時間延長のため枚数を入力',
       host: '主：', roomDescPh: '願望池の攻略を共有、当選ラウンドを祝う、友達を招待して紹介報酬を得る、または自由におしゃべり。全員がテキスト・音声(≤30秒)・画像を送信できます。', editDescTip: '部屋説明を編集（200文字）：', hostNotice: '主の宣言',
+      roomPasswordPh: 'ルームパスワード（任意、プライベートチャット用）', roomPasswordPrompt: 'この部屋はプライベートです。パスワードを入力してください：', roomPasswordWrong: 'パスワードが間違っています',
     },
   };
   for (const lang of Object.keys(V)) {
@@ -72,7 +75,7 @@
       $('roomList').innerHTML = rooms.length ? rooms.map((r) => `
         <div class="room-card" data-rid="${r.roomId}">
           <div class="room-card-head">
-            <b>${escapeHtml(r.name)}</b>
+            <b>${escapeHtml(r.name)} ${r.hasPassword ? '🔒' : ''}</b>
             <span class="room-type-tag ${r.type}">${r.type === 'chat' ? vt('chatRoom') : vt('meetingRoom')}</span>
           </div>
           <div class="room-card-meta">
@@ -95,7 +98,7 @@
   function openCreateRoom() {
     createType = 'chat';
     document.querySelectorAll('.room-type').forEach((b) => b.classList.toggle('active', b.dataset.type === 'chat'));
-    $('roomNameInput').value = ''; $('roomDescInput').value = '';
+    $('roomNameInput').value = ''; $('roomDescInput').value = ''; $('roomPasswordInput').value = '';
     $('createRoomMask').classList.remove('hide');
   }
   function closeCreateRoom() { $('createRoomMask').classList.add('hide'); }
@@ -111,7 +114,7 @@
       const btn = $('confirmCreateRoom'); btn.disabled = true;
       try {
         await alignWallet();
-        const r = await api('/voice/create', { uid: state.uid, type: createType, name: $('roomNameInput').value, amount, description: $('roomDescInput').value });
+        const r = await api('/voice/create', { uid: state.uid, type: createType, name: $('roomNameInput').value, amount, description: $('roomDescInput').value, password: $('roomPasswordInput').value });
         closeCreateRoom();
         enterRoom(r.roomId);
       } catch (e) { alert(e.message || vt('balanceShort')); }
@@ -120,11 +123,33 @@
   }
 
   // Enter room
-  async function enterRoom(roomId) {
+  async function enterRoom(roomId, password) {
+    // Switch to voice view first so room overlay is visible
+    if (typeof switchDock === 'function') switchDock('bbs'); // voice is under bbs tab
+    if ($('subTabVoice')) {
+      $('subTabVoice').classList.add('active');
+      if ($('subTabBbs')) $('subTabBbs').classList.remove('active');
+    }
+    if ($('voiceView')) $('voiceView').classList.remove('hide');
+    if ($('bbsView')) $('bbsView').classList.add('hide');
+
+    let detail;
     try {
-      const detail = await api('/voice/room/' + roomId);
-      curRoom = detail.room; curMembers = detail.members; curMsgs = detail.messages;
+      detail = await api('/voice/room/' + roomId);
     } catch (e) { alert(vt('roomClosedTip')); return; }
+
+    // Check password protection
+    if (detail.room.hasPassword && password === undefined) {
+      const pwd = prompt(vt('roomPasswordPrompt') || 'This room is private. Enter password:');
+      if (pwd === null) return; // user cancelled
+      try {
+        const v = await api('/voice/verify-password', { roomId, password: pwd });
+        if (!v.ok) { alert(vt('roomPasswordWrong') || 'Wrong password'); return; }
+      } catch (e) { alert(e.message); return; }
+      password = pwd;
+    }
+
+    curRoom = detail.room; curMembers = detail.members; curMsgs = detail.messages;
     $('roomMask').classList.remove('hide');
     $('roomName').textContent = curRoom.name;
     renderRoomInfo(); renderMembers(); renderMsgs();

@@ -64,7 +64,7 @@ export class VoiceRoomService {
   _newId() { this._seq++; return 'R' + Date.now().toString(36) + this._seq.toString(36); }
 
   // ---------- Create room ----------
-  async createRoom(uid, type, name, rechargeInner, description) {
+  async createRoom(uid, type, name, rechargeInner, description, password) {
     const u = await this.store.getUser(uid);
     if (u.banned) throw new GameError(Codes.BANNED, 'Account banned, cannot create room');
     const cfg = ROOM_CFG[type];
@@ -85,6 +85,7 @@ export class VoiceRoomService {
       createdAt: Date.now(), lastActiveAt: Date.now(), emptySince: null,
       members: new Map(), messages: [], destroyed: false,
       guestUid: null, description: desc, msgBytes: 0,
+      password: String(password || '').trim().slice(0, 32),
     };
     room.members.set(uid, { uid, name: shortName(u.wallet), role: 'host', micOn: true });
     this.rooms.set(roomId, room);
@@ -353,6 +354,15 @@ export class VoiceRoomService {
       balance: r.balance, perMinute: r.perMinute, remainSec: this._remainSec(r),
       memberCount: r.members.size, guestUid: r.guestUid, createdAt: r.createdAt, emptySince: r.emptySince,
       description: r.description || '',
+      hasPassword: !!(r.password && r.password.length > 0),
     };
+  }
+
+  // Verify room password
+  verifyPassword(roomId, password) {
+    const r = this._get(roomId);
+    if (!r || r.destroyed) return false;
+    if (!r.password || r.password.length === 0) return true; // no password, always allow
+    return String(password || '') === r.password;
   }
 }

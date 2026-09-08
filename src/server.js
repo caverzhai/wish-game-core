@@ -14,7 +14,7 @@ import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 
-const BUILD = '2.17.4'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.18.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -312,7 +312,13 @@ route('GET', '/voice/rooms', () => voice.listRooms());
 route('GET', /^\/voice\/room\/(.+)$/, (b, m) => voice.getRoomDetail(m[1]));
 route('POST', '/voice/create', async (b) => {
   await assertNotBanned(b.uid);
-  return voice.createRoom(b.uid, b.type, b.name, coin(Number(b.amount)), b.description);
+  return voice.createRoom(b.uid, b.type, b.name, coin(Number(b.amount)), b.description, b.password);
+});
+
+// Verify room password before entering
+route('POST', '/voice/verify-password', async (b) => {
+  const ok = voice.verifyPassword(b.roomId, b.password);
+  return { ok };
 });
 route('POST', '/voice/edit-description', async (b) => {
   await assertNotBanned(b.uid);

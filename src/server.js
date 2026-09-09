@@ -448,6 +448,51 @@ route('POST', '/admin/word/remove', async (b) => { await requireAdmin(b.uid); re
 route('POST', '/admin/post/delete', async (b) => { await requireAdmin(b.uid); return social.deletePost(b.uid, b.postId); });
 route('POST', '/admin/user/ban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, b.banned !== false) }; });
 route('POST', '/admin/user/unban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, false) }; });
+// Admin: lookup user details (balance, deposits, withdrawals, betting profit)
+route('GET', '/admin/user/lookup', async (b, _, req) => {
+  await requireAdmin(b.uid);
+  const wallet = (b.wallet || '').trim().toLowerCase();
+  const targetUid = (b.uid || '').trim();
+  if (!wallet && !targetUid) throw new Error('Provide wallet or uid');
+  const user = wallet ? await store.getUserByWallet(wallet) : await store.getUser(targetUid);
+  if (!user) throw new Error('User not found');
+  const account = await store.getAccount(user.uid);
+  const allFlows = await store.listFlows(user.uid, 500);
+  const deposits = allFlows.filter(f => ['DEPOSIT','ADMIN_RECHARGE'].includes(f.bizType));
+  const totalDeposited = deposits.reduce((s,f) => s + f.amount, 0n);
+  const withdrawals = await store.exec('SELECT * FROM withdraws WHERE uid=? ORDER BY id DESC LIMIT 100', [user.uid]);
+  const totalWithdrawn = withdrawals.reduce((s,r) => s + BigInt(r.arrive || 0), 0n);
+  const totalWithdrawFees = withdrawals.reduce((s,r) => s + BigInt(r.fee || 0), 0n);
+  const bets = await store.exec('SELECT * FROM bets WHERE uid=? ORDER BY id DESC LIMIT 500', [user.uid]);
+  const totalBetAmount = bets.reduce((s,r) => s + BigInt(r.amount || 0), 0n);
+  const totalWinCredit = bets.reduce((s,r) => s + BigInt(r.win_credit || 0), 0n);
+  const totalInsCut = bets.reduce((s,r) => s + BigInt(r.ins_cut || 0), 0n);
+  const settledBets = bets.filter(b => b.settled === 1);
+  const winCount = settledBets.filter(b => BigInt(b.win_credit || 0) > 0n).length;
+  const settledBetAmount = settledBets.reduce((s,r) => s + BigInt(r.amount || 0), 0n);
+  const settledWinCredit = settledBets.reduce((s,r) => s + BigInt(r.win_credit || 0), 0n);
+  const netProfit = settledWinCredit - settledBetAmount;
+  return {
+    user: { uid: user.uid, wallet: user.wallet, createdAt: user.createdAt, banned: user.banned },
+    account: { avail: account.avail.toString(), frozen: account.frozen.toString(), insurance: account.insurance ? account.insurance.toString() : '0', insuranceEnabled: account.insuranceEnabled },
+    deposits: { count: deposits.length, total: totalDeposited.toString(), records: deposits.slice(0,20) },
+    withdrawals: { count: withdrawals.length, totalArrived: totalWithdrawn.toString(), totalFees: totalWithdrawFees.toString(), records: withdrawals.slice(0,20).map(r => ({ id: r.withdraw_id, amount: r.amount, fee: r.fee, arrive: r.arrive, state: r.state, txhash: r.txhash, at: r.created_at })) },
+    betting: {
+      totalBets: bets.length,
+      settledBets: settledBets.length,
+      winCount: winCount,
+      totalBetAmount: totalBetAmount.toString(),
+      totalWinCredit: totalWinCredit.toString(),
+      totalInsuranceCut: totalInsCut.toString(),
+      netProfit: netProfit.toString(),
+      recentBets: bets.slice(0,20).map(r => ({ id: r.bet_id, round: r.round_id, side: r.side, amount: r.amount, pick: r.pick, winCredit: r.win_credit, settled: r.settled === 1, at: r.at }))
+    },
+    recentFlows: allFlows.slice(0,20)
+  };
+});
+
+// Admin: lookup user details (balance, deposits, withdrawals, betting profit)
+
 // Whitelist (invite commission) management
 route('GET', '/admin/whitelist', async (b) => { await requireAdmin(b.uid); return { list: await store.listWhitelist() }; });
 route('POST', '/admin/whitelist/add', async (b) => { await requireAdmin(b.uid); return { list: await store.addWhitelist(b.wallet, b.perMille) }; });

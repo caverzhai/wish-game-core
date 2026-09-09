@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.19.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.19.1'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -110,30 +110,13 @@ route('POST', '/login', async (b) => {
   }
   const ex = await store.getUserByWallet(wallet);
   const u = ex || await game.register(wallet, b.inviterUid ?? null, now());
-  // Auto-promote first registered user to admin
-  if (!ex) {
-    try {
-      const count = await store.userCount();
-      if (count <= 1) {
-        await store.addAdmin(u.wallet);
-        _adminCache.updatedAt = 0; // force cache refresh
-        console.log('[admin] first user auto-promoted:', u.wallet);
-      }
-    } catch (e) { console.error('[admin] auto-promote failed:', e.message); }
-  }
+  // Admin only via ADMIN_WALLETS env or DB admin table (no auto-promote)
   const token = signJwt({ uid: u.uid, wallet: u.wallet });
   return { ...u, isAdmin: await isAdminWallet(u.wallet), token };
 });
 route('POST', '/register', async (b) => {
   const u = await game.register(b.wallet, b.inviterUid ?? null, now());
-  try {
-    const count = await store.userCount();
-    if (count <= 1) {
-      await store.addAdmin(u.wallet);
-      _adminCache.updatedAt = 0;
-      console.log('[admin] first user auto-promoted:', u.wallet);
-    }
-  } catch (e) { console.error('[admin] auto-promote failed:', e.message); }
+  // Admin only via ADMIN_WALLETS env or DB admin table
   return u;
 });
 route('GET', /^\/user\/(.+)$/, async (b, m) => {
@@ -426,10 +409,16 @@ route('POST', '/admin/npc/insurance', async (b) => { await requireAdmin(b.uid); 
 // Admin recharge user balance (for testing and manual top-up)
 route('POST', '/admin/recharge', async (b) => {
   await requireAdmin(b.uid);
-  const amount = BigInt(Math.floor(Number(b.amount))) * 1000000n;
+  const RECHARGE_LIMIT = 10000n; // max 10000 coins per recharge
+  const amt = Math.floor(Number(b.amount));
+  if (!Number.isInteger(amt) || amt <= 0) throw new Error('Invalid amount');
+  if (BigInt(amt) > RECHARGE_LIMIT) throw new Error('Recharge exceeds limit of ' + RECHARGE_LIMIT + ' coins');
+  const amount = BigInt(amt) * 1000000n;
+  const adminUser = await store.getUser(b.uid);
   await store.applyAccount(b.targetUid, { avail: amount });
   await store.applyLedger({ issued: amount });
-  await store.addFlow(b.targetUid, 'ADMIN_RECHARGE', amount, { by: b.uid });
+  await store.addFlow(b.targetUid, 'ADMIN_RECHARGE', amount, { by: b.uid, adminWallet: adminUser.wallet, ts: Date.now() });
+  console.log('[admin-recharge] admin=' + b.uid + ' target=' + b.targetUid + ' amount=' + amt);
   const a = await store.getAccount(b.targetUid);
   return { targetUid: b.targetUid, available: a.available };
 });
@@ -527,15 +516,23 @@ route('POST', '/charity/dissolve', async (b) => {
   return await charity.dissolve(b.projectId, b.reason);
 });
 route('POST', '/charity/upload', async (b, _, req) => {
-  // Simple photo upload - accept base64 data URL
-  await assertNotBanned(b.uid);
+  const uid = authUid(b, req);
+  await assertNotBanned(uid);
   const dataUrl = b.photo || '';
   if (!dataUrl.startsWith('data:image/')) throw new Error('Invalid image');
   const matches = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
   if (!matches) throw new Error('Invalid image format');
-  const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+  const ext = matches[1].toLowerCase();
+  if (['svg', 'svgz', 'webp', 'avif', 'bmp', 'ico'].includes(ext)) throw new Error('Image format not allowed');
+  if (!['jpeg', 'jpg', 'png', 'gif'].includes(ext)) throw new Error('Only JPG/PNG/GIF allowed');
   const buf = Buffer.from(matches[2], 'base64');
-  const filename = 'charity_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  if (buf.length > 2 * 1024 * 1024) throw new Error('Image too large (max 2MB)');
+  const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
+  const isPng = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  const isGif = buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46;
+  if (!isJpeg && !isPng && !isGif) throw new Error('File content does not match image format');
+  const safeExt = ext === 'jpeg' ? 'jpg' : ext;
+  const filename = 'charity_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + safeExt;
   fs.writeFileSync(path.join(PUBLIC_DIR, filename), buf);
   return { url: '/' + filename };
 });

@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GameError, Codes } from './errors.js';
+import crypto from 'node:crypto';
 import { coin, toInner, SCALE } from './money.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +20,18 @@ const MSG_MAX_BYTES = 50 * 1024 * 1024; // 50MB per room, auto-purge oldest when
 const MSG_TTL_MS = 30 * 60 * 1000; // messages auto-purge after 30 minutes
 const EMPTY_GRACE_MS = 5 * 60 * 1000; // empty room kept 5 min
 const TEXT_MAX_BYTES = 1024;
+
+
+// Password hashing: SHA-256 with fixed salt (4-digit PINs, hash prevents plaintext DB leak)
+const PWD_SALT = 'wishroom_v1_';
+function hashPwd(pwd) {
+  return 'h1:' + crypto.createHash('sha256').update(PWD_SALT + pwd).digest('hex');
+}
+function verifyPwd(input, stored) {
+  if (!stored || stored.length === 0) return true;
+  if (stored.startsWith('h1:')) return stored === hashPwd(input);
+  return String(input) === stored;
+}
 
 export const ROOM_CFG = {
   chat:    { minOpen: coin(1),  perMinute: toInner('0.0001'), label: 'Chat Room' },
@@ -71,8 +84,9 @@ export class VoiceRoomService {
     if (!cfg) throw new GameError(Codes.BAD_INPUT, 'Invalid room type');
     const title = String(name ?? '').trim().slice(0, 30) || cfg.label;
     const desc = String(description ?? '').trim().slice(0, 200);
-    const pwd = String(password ?? '').trim();
-    if (pwd && !/^\d{4}$/.test(pwd)) throw new GameError(Codes.BAD_INPUT, 'Password must be exactly 4 digits');
+    const pwdRaw = String(password ?? '').trim();
+    if (pwdRaw && !/^\d{4}$/.test(pwdRaw)) throw new GameError(Codes.BAD_INPUT, 'Password must be exactly 4 digits');
+    const pwd = pwdRaw ? hashPwd(pwdRaw) : '';
     const recharge = BigInt(rechargeInner ?? 0);
     if (recharge < cfg.minOpen) throw new GameError(Codes.BAD_INPUT, `Minimum room open recharge ${Number(cfg.minOpen) / Number(SCALE)} units`);
     const acc = await this.store.getAccount(uid);
@@ -364,7 +378,6 @@ export class VoiceRoomService {
   verifyPassword(roomId, password) {
     const r = this._get(roomId);
     if (!r || r.destroyed) return false;
-    if (!r.password || r.password.length === 0) return true; // no password, always allow
-    return String(password || '') === r.password;
+    return verifyPwd(password, r.password);
   }
 }

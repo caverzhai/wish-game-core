@@ -40,7 +40,7 @@ export function consumeNonce(nonce, wallet) {
 }
 
 // Build EIP-4361 style message for signing
-export function buildSignMessage(wallet, nonce, domain = 'wishtree.app') {
+export function buildSignMessage(wallet, nonce, domain = 'wishtree.up.railway.app') {
   const issuedAt = new Date().toISOString();
   return `${domain} wants you to sign in with your Ethereum account:
 ${wallet}

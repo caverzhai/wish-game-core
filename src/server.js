@@ -131,22 +131,24 @@ const routes = [];
 const route = (method, p, h) => routes.push({ method, p, h });
 
 // Auth: nonce endpoint for wallet signature login
-route('GET', '/auth/nonce', async (b) => {
+route('GET', '/auth/nonce', async (b, _, req) => {
   const wallet = (b.wallet || '').trim();
   if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) throw new Error('Invalid wallet address');
   const nonce = generateNonce(wallet);
-  const message = buildSignMessage(wallet, nonce);
+  const domain = (req.headers.host || 'wishtree.up.railway.app').split(':')[0];
+  const message = buildSignMessage(wallet, nonce, domain);
   return { nonce, message };
 });
 
 // Account
-route('POST', '/login', async (b) => {
+route('POST', '/login', async (b, _, req) => {
   const wallet = (b.wallet || '').trim();
   if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) throw new Error('Invalid wallet address');
   // Signature verification (required when signature provided)
   if (b.signature && b.nonce) {
     if (!consumeNonce(b.nonce, wallet)) throw new Error('Invalid or expired nonce');
-    const message = b.message || buildSignMessage(wallet, b.nonce);
+    const domain = (req.headers.host || 'wishtree.up.railway.app').split(':')[0];
+    const message = b.message || buildSignMessage(wallet, b.nonce, domain);
     const recovered = verifySignature(message, b.signature);
     if (!recovered || recovered !== wallet.toLowerCase()) {
       throw new GameError(Codes.FORBIDDEN, 'Signature verification failed');

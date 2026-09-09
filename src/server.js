@@ -13,8 +13,9 @@ import { Scheduler } from './Scheduler.js';
 import { GameError, Codes } from './errors.js';
 import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
+import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.18.7'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.19.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -66,6 +67,17 @@ async function assertNotBanned(uid) {
   if (u.banned) throw new GameError(Codes.BANNED, 'Account banned');
   return u;
 }
+
+// Auth: JWT verification middleware - extracts uid from token, falls back to body.uid for legacy compat
+function authUid(b, req) {
+  const token = extractToken(req);
+  if (token) {
+    const payload = verifyJwt(token);
+    if (payload && payload.uid) return payload.uid;
+  }
+  return b.uid || null;
+}
+
 // BBS_BLOCKED_WORDS env (comma-separated) loaded idempotently, admins can add/remove dynamically in-site
 if (typeof store.seedBlockedWords === 'function') {
   store.seedBlockedWords((process.env.BBS_BLOCKED_WORDS || '').split(',').map((s) => s.trim()).filter(Boolean)).catch((e) => console.error('[seedWords]', e.message));
@@ -74,10 +86,30 @@ if (typeof store.seedBlockedWords === 'function') {
 const routes = [];
 const route = (method, p, h) => routes.push({ method, p, h });
 
+// Auth: nonce endpoint for wallet signature login
+route('GET', '/auth/nonce', async (b) => {
+  const wallet = (b.wallet || '').trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) throw new Error('Invalid wallet address');
+  const nonce = generateNonce(wallet);
+  const message = buildSignMessage(wallet, nonce);
+  return { nonce, message };
+});
+
 // Account
 route('POST', '/login', async (b) => {
-  const ex = await store.getUserByWallet(b.wallet);
-  const u = ex || await game.register(b.wallet, b.inviterUid ?? null, now());
+  const wallet = (b.wallet || '').trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) throw new Error('Invalid wallet address');
+  // Signature verification (required when signature provided)
+  if (b.signature && b.nonce) {
+    if (!consumeNonce(b.nonce, wallet)) throw new Error('Invalid or expired nonce');
+    const message = b.message || buildSignMessage(wallet, b.nonce);
+    const recovered = verifySignature(message, b.signature);
+    if (!recovered || recovered !== wallet.toLowerCase()) {
+      throw new GameError(Codes.FORBIDDEN, 'Signature verification failed');
+    }
+  }
+  const ex = await store.getUserByWallet(wallet);
+  const u = ex || await game.register(wallet, b.inviterUid ?? null, now());
   // Auto-promote first registered user to admin
   if (!ex) {
     try {
@@ -89,7 +121,8 @@ route('POST', '/login', async (b) => {
       }
     } catch (e) { console.error('[admin] auto-promote failed:', e.message); }
   }
-  return { ...u, isAdmin: await isAdminWallet(u.wallet) };
+  const token = signJwt({ uid: u.uid, wallet: u.wallet });
+  return { ...u, isAdmin: await isAdminWallet(u.wallet), token };
 });
 route('POST', '/register', async (b) => {
   const u = await game.register(b.wallet, b.inviterUid ?? null, now());
@@ -435,14 +468,18 @@ route('POST', '/withdraw', async (b) => {
 route('POST', '/withdraw/confirm', (b) => wallet.confirmWithdraw(b.withdrawId, b.txhash));
 route('POST', '/withdraw/fail', (b) => wallet.failWithdraw(b.withdrawId));
 // Admin overview (operational status, no sensitive info)
-route('GET', '/admin/overview', async () => {
+route('GET', '/admin/overview', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await requireAdmin(uid);
   const users = await store.listUsers();
   const rounds = await store.listRecentRounds(100000);
   const posts = await store.listPosts(100000);
   return { chain: chain.publicConfig(), ledger: await store.getLedger(), counts: { users: users.length, rounds: rounds.length, posts: posts.length } };
 });
 // System
-route('GET', '/ledger', async () => {
+route('GET', '/ledger', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await requireAdmin(uid);
   const inside = (await store.totalInside()) + voice.totalRoomBalance();
   const source = await store.totalSource();
   return { ...(await store.getLedger()), roomBalance: voice.totalRoomBalance(), storeKind: store.kind, balanced: inside === source, diff: inside - source };
@@ -519,7 +556,9 @@ route('POST', '/lottery/comment', async (b) => {
 });
 route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now() }));
 // Debug: NPC activity status
-route('GET', '/debug/npc', async () => {
+route('GET', '/debug/npc', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await requireAdmin(uid);
   const npcs = await npc.listNpcs();
   const nowTs = now();
   return {

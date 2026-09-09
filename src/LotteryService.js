@@ -150,7 +150,7 @@ export class LotteryService {
     }
     // Fisher-Yates shuffle then take first `amount`
     for (let i = remainingNums.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = crypto.randomInt(0, i + 1);
       [remainingNums[i], remainingNums[j]] = [remainingNums[j], remainingNums[i]];
     }
     const picked = remainingNums.slice(0, amount).sort((a, b) => a - b);
@@ -202,7 +202,11 @@ export class LotteryService {
       uidWallet[u.uid] = u.wallet;
     }
 
-    const shuffled = [...numberOwners].sort(() => Math.random() - 0.5);
+    const shuffled = [...numberOwners];
+    for (let si = shuffled.length - 1; si > 0; si--) {
+      const sj = crypto.randomInt(0, si + 1);
+      [shuffled[si], shuffled[sj]] = [shuffled[sj], shuffled[si]];
+    }
     const winners = [];
     let idx = 0;
     const usedNumbers = new Set();

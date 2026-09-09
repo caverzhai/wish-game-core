@@ -216,7 +216,8 @@
   function connectWs(roomId) {
     if (ws) { try { ws.close(); } catch {} }
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    ws = new WebSocket(`${proto}://${location.host}/ws`);
+    const token = localStorage.getItem('token') || '';
+    ws = new WebSocket(`${proto}://${location.host}/ws${token ? '?token=' + encodeURIComponent(token) : ''}`);
     ws.onopen = () => ws.send(JSON.stringify({ type: 'join', roomId, uid: state.uid }));
     ws.onmessage = (ev) => {
       let m; try { m = JSON.parse(ev.data); } catch { return; }

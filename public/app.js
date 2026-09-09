@@ -405,7 +405,10 @@ function applyI18n() {
   $('premiumOutInput').placeholder = t('premiumOutPh');
 }
 async function api(url, body) {
-  const opt = body ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) } : {};
+  const headers = body ? { 'content-type': 'application/json' } : {};
+  const token = localStorage.getItem('token');
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const opt = body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers };
   const r = await fetch(url, opt); const j = await r.json();
   if (!r.ok) { const err = new Error(j.message || j.error || 'error'); err.code = j.code; throw err; }
   return j;
@@ -443,9 +446,26 @@ async function alignWallet() {
 }
 async function doLogin(addr) {
   const ref = new URLSearchParams(location.search).get('ref');
-  const u = await api('/login', { wallet: addr, inviterUid: ref || undefined });
+  let u;
+  if (window.ethereum) {
+    try {
+      const nonceRes = await api('/auth/nonce?wallet=' + encodeURIComponent(addr));
+      const message = nonceRes.message;
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, addr]
+      });
+      u = await api('/login', { wallet: addr, signature, nonce: nonceRes.nonce, message, inviterUid: ref || undefined });
+    } catch (e) {
+      console.warn('[auth] signature login failed, fallback:', e.message);
+      u = await api('/login', { wallet: addr, inviterUid: ref || undefined });
+    }
+  } else {
+    u = await api('/login', { wallet: addr, inviterUid: ref || undefined });
+  }
   state.uid = u.uid; state.wallet = u.wallet; state.isAdmin = !!u.isAdmin;
   localStorage.setItem('uid', u.uid); localStorage.setItem('wallet', u.wallet);
+  if (u.token) localStorage.setItem('token', u.token);
   state.chainCfg = await api('/chain/config');
   enterMain();
 }

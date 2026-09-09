@@ -4,16 +4,34 @@
 // Broadcast: msg/members/room/rtc/closed
 // =============================================================
 import { WebSocketServer } from 'ws';
+import { verifyJwt } from './auth.js';
 
 export function createWSServer(server, voice) {
   const wss = new WebSocketServer({ server, path: '/ws' });
 
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, req) => {
     ws.isAlive = true;
+    // Extract JWT from query string: ws://host/ws?token=xxx
+    let authenticated = false;
+    try {
+      const url = new URL(req.url, 'http://localhost');
+      const token = url.searchParams.get('token');
+      if (token) {
+        const payload = verifyJwt(token);
+        if (payload && payload.uid) {
+          ws.uid = payload.uid;
+          authenticated = true;
+        }
+      }
+    } catch { /* parse error, will require auth on join */ }
     ws.on('pong', () => { ws.isAlive = true; });
     ws.on('message', async (data) => {
       let msg;
       try { msg = JSON.parse(data); } catch { return; }
+      // First message must be join with valid uid; if JWT authenticated, trust ws.uid
+      if (msg.type === 'join' && authenticated && !msg.uid) {
+        msg.uid = ws.uid;
+      }
       try {
         await handleMessage(ws, msg, voice, wss);
       } catch (e) {

@@ -1190,35 +1190,46 @@ function renderLookupResult(r) {
   const u = r.user, a = r.account, d = r.deposits, w = r.withdrawals, b = r.betting;
   const fmt = (n) => { try { return (BigInt(n) / 1000000n).toString(); } catch { return String(n); } };
   const date = (ts) => { if (!ts) return '-'; const dt = new Date(Number(ts)); return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString().slice(0,5); };
-  let html = '<div class="lookup-section">';
-  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupUid') + ':</span><b>' + escapeHtml(u.uid) + '</b>';
+  const netPL = BigInt(b.netProfit || 0);
+  const plClass = netPL > 0n ? 'lookup-profit' : (netPL < 0n ? 'lookup-loss' : '');
+  let html = '';
+  // User info
+  html += '<div class="lookup-section">';
+  html += '<div class="lookup-title">' + t('lookupUid') + ': <b>' + escapeHtml(u.uid) + '</b>';
   if (u.banned) html += ' <span class="lookup-banned">' + t('lookupBanned') + '</span>';
   html += '</div>';
   html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWallet') + ':</span><span class="lookup-wallet">' + escapeHtml(u.wallet) + '</span></div>';
   html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupCreated') + ':</span>' + date(u.createdAt) + '</div>';
   html += '</div>';
+  // Account balance
   html += '<div class="lookup-section">';
-  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupAvail') + ':</span><b>' + fmt(a.avail) + '</b></div>';
-  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupFrozen') + ':</span>' + fmt(a.frozen) + '</div>';
-  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupInsurance') + ':</span>' + fmt(a.insurance) + ' (' + (a.insuranceEnabled ? t('lookupInsOn') : t('lookupInsOff')) + ')</div>';
+  html += '<div class="lookup-title">' + t('lookupAvail') + ': <b>' + fmt(a.avail) + ' 枚</b></div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupFrozen') + ':</span>' + fmt(a.frozen) + ' 枚</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupInsurance') + ':</span>' + fmt(a.insurance) + ' 枚 (' + (a.insuranceEnabled ? t('lookupInsOn') : t('lookupInsOff')) + ')</div>';
   html += '</div>';
+  // Deposits
   html += '<div class="lookup-section">';
-  html += '<div class="lookup-title">' + t('lookupDeposits') + ': ' + d.count + ' ' + t('lookupCount') + ', ' + fmt(d.total) + ' ' + t('lookupTotal') + '</div>';
+  html += '<div class="lookup-title">' + t('lookupDeposits') + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupCount') + ':</span>' + d.count + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupTotal') + ':</span><b>' + fmt(d.total) + ' 枚</b></div>';
   html += '</div>';
+  // Withdrawals
   html += '<div class="lookup-section">';
-  html += '<div class="lookup-title">' + t('lookupWithdrawals') + ': ' + w.count + ' ' + t('lookupCount') + ', ' + fmt(w.totalArrived) + ' ' + t('lookupArrived') + ', ' + fmt(w.totalFees) + ' ' + t('lookupFees') + '</div>';
+  html += '<div class="lookup-title">' + t('lookupWithdrawals') + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupCount') + ':</span>' + w.count + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupArrived') + ':</span><b>' + fmt(w.totalArrived) + ' 枚</b></div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupFees') + ':</span>' + fmt(w.totalFees) + ' 枚</div>';
   html += '</div>';
-  const netPL = BigInt(b.netProfit || 0);
-  const plClass = netPL > 0n ? 'lookup-profit' : (netPL < 0n ? 'lookup-loss' : '');
+  // Betting P&L
   html += '<div class="lookup-section">';
   html += '<div class="lookup-title">' + t('lookupBetting') + '</div>';
   html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupTotalBets') + ':</span>' + b.totalBets + '</div>';
   html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupSettled') + ':</span>' + b.settledBets + '</div>';
   html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWins') + ':</span>' + b.winCount + '</div>';
-  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWagered') + ':</span>' + fmt(b.totalBetAmount) + '</div>';
-  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWon') + ':</span>' + fmt(b.totalWinCredit) + '</div>';
-  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupInsCut') + ':</span>' + fmt(b.totalInsuranceCut) + '</div>';
-  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupNetPL') + ':</span><b class="' + plClass + '">' + (netPL > 0n ? '+' : '') + fmt(b.netProfit) + '</b></div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWagered') + ':</span>' + fmt(b.totalBetAmount) + ' 枚</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWon') + ':</span>' + fmt(b.totalWinCredit) + ' 枚</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupInsCut') + ':</span>' + fmt(b.totalInsuranceCut) + ' 枚</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupNetPL') + ':</span><b class="' + plClass + '">' + (netPL > 0n ? '+' : '') + fmt(b.netProfit) + ' 枚</b></div>';
   html += '</div>';
   box.innerHTML = html;
 }

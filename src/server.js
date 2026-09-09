@@ -509,7 +509,7 @@ route('POST', '/admin/user/lookup', async (b) => {
   return {
     user: { uid: user.uid, wallet: user.wallet, createdAt: user.createdAt, banned: user.banned },
     account: { avail: account.available.toString(), frozen: account.frozen.toString(), insurance: account.premium.toString(), insuranceEnabled: !!user.insSwitch },
-    deposits: { count: deposits.length, total: totalDeposited.toString(), records: deposits.slice(0,20) },
+    deposits: { count: deposits.length, total: totalDeposited.toString(), records: deposits.slice(0,20).map(f => ({ ...f, amount: f.amount.toString() })) },
     withdrawals: { count: withdrawals.length, totalArrived: totalWithdrawn.toString(), totalFees: totalWithdrawFees.toString(), records: withdrawals.slice(0,20).map(r => ({ id: r.withdraw_id, amount: r.amount, fee: r.fee, arrive: r.arrive, state: r.state, txhash: r.txhash, at: r.created_at })) },
     betting: {
       totalBets: bets.length,
@@ -521,11 +521,9 @@ route('POST', '/admin/user/lookup', async (b) => {
       netProfit: netProfit.toString(),
       recentBets: bets.slice(0,20).map(r => ({ id: r.bet_id, round: r.round_id, side: r.side, amount: r.amount, pick: r.pick, winCredit: r.win_credit, settled: r.settled === 1, at: r.at }))
     },
-    recentFlows: allFlows.slice(0,20)
+    recentFlows: allFlows.slice(0,20).map(f => ({ ...f, amount: f.amount.toString() }))
   };
 });
-
-// Admin: lookup user details (balance, deposits, withdrawals, betting profit)
 
 // Whitelist (invite commission) management
 route('GET', '/admin/whitelist', async (b) => { await requireAdmin(b.uid); return { list: await store.listWhitelist() }; });

@@ -18,7 +18,6 @@ body { display: flex; justify-content: center; }
 .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; }
 .brand .logo { color: var(--gold); }
 .brand .logo-img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
-.brand .logo-text { display: flex; align-items: center; gap: 6px; }
 .top-right { display: flex; align-items: center; gap: 8px; }
 .lang-dropdown { position: relative; z-index: 1000; }
 .lang-trigger {

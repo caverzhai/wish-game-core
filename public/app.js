@@ -1177,8 +1177,7 @@ function bindUserLookup() {
     box.innerHTML = '<div class="lookup-loading">...</div>';
     try {
       const isUid = /^U\d+$/.test(q);
-      const url = '/admin/user/lookup?' + (isUid ? 'uid=' : 'wallet=') + encodeURIComponent(q);
-      const r = await api(url, { uid: state.uid });
+      const r = await api('/admin/user/lookup', { uid: state.uid, [isUid ? 'targetUid' : 'targetWallet']: q });
       renderLookupResult(r);
     } catch (e) {
       box.innerHTML = '<div class="lookup-error">' + escapeHtml(e.message || t('lookupError')) + '</div>';

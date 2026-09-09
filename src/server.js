@@ -449,11 +449,11 @@ route('POST', '/admin/post/delete', async (b) => { await requireAdmin(b.uid); re
 route('POST', '/admin/user/ban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, b.banned !== false) }; });
 route('POST', '/admin/user/unban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, false) }; });
 // Admin: lookup user details (balance, deposits, withdrawals, betting profit)
-route('GET', '/admin/user/lookup', async (b, _, req) => {
+route('POST', '/admin/user/lookup', async (b) => {
   await requireAdmin(b.uid);
-  const wallet = (b.wallet || '').trim().toLowerCase();
-  const targetUid = (b.uid || '').trim();
-  if (!wallet && !targetUid) throw new Error('Provide wallet or uid');
+  const wallet = (b.targetWallet || b.wallet || '').trim().toLowerCase();
+  const targetUid = (b.targetUid || '').trim();
+  if (!wallet && !targetUid) throw new Error('Provide targetWallet or targetUid');
   const user = wallet ? await store.getUserByWallet(wallet) : await store.getUser(targetUid);
   if (!user) throw new Error('User not found');
   const account = await store.getAccount(user.uid);

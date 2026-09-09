@@ -497,12 +497,18 @@ route('POST', '/admin/user/lookup', async (b) => {
   const withdrawals = await store.exec('SELECT * FROM withdraws WHERE uid=? ORDER BY id DESC LIMIT 100', [user.uid]);
   const totalWithdrawn = withdrawals.reduce((s,r) => s + BigInt(r.arrive || 0), 0n);
   const totalWithdrawFees = withdrawals.reduce((s,r) => s + BigInt(r.fee || 0), 0n);
-  const bets = await store.exec('SELECT * FROM bets WHERE uid=? ORDER BY id DESC LIMIT 500', [user.uid]);
+  const bets = await store.exec('SELECT * FROM bets WHERE uid=? ORDER BY id DESC', [user.uid]);
+  console.error('[admin-lookup] total bets found:', bets.length);
+  if (bets.length > 0) {
+    console.error('[admin-lookup] sample bet:', JSON.stringify({settled: bets[0].settled, settledType: typeof bets[0].settled, amount: bets[0].amount, win_credit: bets[0].win_credit}));
+  }
   const totalBetAmount = bets.reduce((s,r) => s + BigInt(r.amount || 0), 0n);
   const totalWinCredit = bets.reduce((s,r) => s + BigInt(r.win_credit || 0), 0n);
   const totalInsCut = bets.reduce((s,r) => s + BigInt(r.ins_cut || 0), 0n);
-  const settledBets = bets.filter(b => b.settled === 1);
+  const settledBets = bets.filter(b => Number(b.settled) === 1);
+  console.error('[admin-lookup] settled bets:', settledBets.length, 'of', bets.length);
   const winCount = settledBets.filter(b => BigInt(b.win_credit || 0) > 0n).length;
+  console.error('[admin-lookup] win count:', winCount);
   const settledBetAmount = settledBets.reduce((s,r) => s + BigInt(r.amount || 0), 0n);
   const settledWinCredit = settledBets.reduce((s,r) => s + BigInt(r.win_credit || 0), 0n);
   const netProfit = settledWinCredit - settledBetAmount;

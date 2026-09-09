@@ -454,8 +454,20 @@ route('POST', '/admin/user/lookup', async (b) => {
   const wallet = (b.targetWallet || b.wallet || '').trim().toLowerCase();
   const targetUid = (b.targetUid || '').trim();
   if (!wallet && !targetUid) throw new Error('Provide targetWallet or targetUid');
-  const user = wallet ? await store.getUserByWallet(wallet) : await store.getUser(targetUid);
-  if (!user) throw new Error('User not found');
+  let user = null;
+  if (wallet) {
+    user = await store.getUserByWallet(wallet);
+    // Fallback: try suffix match if exact match fails
+    if (!user && wallet.length >= 8) {
+      const suffix = wallet.slice(-8);
+      const all = await store.listUsers();
+      user = all.find(u => u.wallet && u.wallet.toLowerCase().endsWith(suffix)) || null;
+    }
+    if (!user) throw new Error('User not found for wallet: ' + wallet + ' (has this wallet ever logged in?)');
+  } else {
+    try { user = await store.getUser(targetUid); }
+    catch { throw new Error('User not found for UID: ' + targetUid); }
+  }
   const account = await store.getAccount(user.uid);
   const allFlows = await store.listFlows(user.uid, 500);
   const deposits = allFlows.filter(f => ['DEPOSIT','ADMIN_RECHARGE'].includes(f.bizType));

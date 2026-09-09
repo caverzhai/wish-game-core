@@ -1176,8 +1176,9 @@ function bindUserLookup() {
     box.classList.remove('hide');
     box.innerHTML = '<div class="lookup-loading">...</div>';
     try {
-      const isUid = /^U\d+$/.test(q);
-      const r = await api('/admin/user/lookup', { uid: state.uid, [isUid ? 'targetUid' : 'targetWallet']: q });
+      const isUid = /^[Uu]?\d+$/.test(q);
+      const normalizedUid = isUid ? (q.startsWith('U') || q.startsWith('u') ? 'U' + q.slice(1) : 'U' + q) : q;
+      const r = await api('/admin/user/lookup', { uid: state.uid, [isUid ? 'targetUid' : 'targetWallet']: normalizedUid });
       renderLookupResult(r);
     } catch (e) {
       box.innerHTML = '<div class="lookup-error">' + escapeHtml(e.message || t('lookupError')) + '</div>';

@@ -455,18 +455,28 @@ route('POST', '/admin/user/lookup', async (b) => {
   const targetUid = (b.targetUid || '').trim();
   if (!wallet && !targetUid) throw new Error('Provide targetWallet or targetUid');
   let user = null;
+  // Normalize UID: support U47, u47, 47
+  let normUid = targetUid;
+  if (normUid && !/^U\d+$/.test(normUid)) {
+    if (/^[Uu]\d+$/.test(normUid)) normUid = 'U' + normUid.slice(1);
+    else if (/^\d+$/.test(normUid)) normUid = 'U' + normUid;
+  }
   if (wallet) {
     user = await store.getUserByWallet(wallet);
-    // Fallback: try suffix match if exact match fails
     if (!user && wallet.length >= 8) {
       const suffix = wallet.slice(-8);
       const all = await store.listUsers();
       user = all.find(u => u.wallet && u.wallet.toLowerCase().endsWith(suffix)) || null;
     }
-    if (!user) throw new Error('User not found for wallet: ' + wallet + ' (has this wallet ever logged in?)');
+    // Last resort: if input looks like a UID, try UID lookup
+    if (!user && /^[Uu]?\d+$/.test(wallet)) {
+      const tryUid = wallet.startsWith('U') || wallet.startsWith('u') ? 'U' + wallet.slice(1) : 'U' + wallet;
+      try { user = await store.getUser(tryUid); } catch { /* ignore */ }
+    }
+    if (!user) throw new Error('User not found: ' + wallet);
   } else {
-    try { user = await store.getUser(targetUid); }
-    catch { throw new Error('User not found for UID: ' + targetUid); }
+    try { user = await store.getUser(normUid); }
+    catch { throw new Error('User not found for UID: ' + normUid); }
   }
   const account = await store.getAccount(user.uid);
   const allFlows = await store.listFlows(user.uid, 500);

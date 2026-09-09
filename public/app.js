@@ -1161,7 +1161,8 @@ function bindNpcAdd() {
     } catch (e) { alert(t('npcAddFail') + ': ' + e.message); }
     finally { btn.disabled = false; }
   };
-
+  loadNpcs();
+}
 
 // Admin: user lookup
 function bindUserLookup() {

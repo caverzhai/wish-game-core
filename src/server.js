@@ -15,11 +15,55 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.19.1'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.20.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
+// #11 Rate limiter: in-memory sliding window by IP
+const RATE_LIMIT = new Map(); // ip -> { count, windowStart }
+const RATE_WINDOW_MS = 60000; // 1 minute
+const RATE_MAX = 120; // 120 requests per minute per IP
+function checkRateLimit(req) {
+  const ip = req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  let entry = RATE_LIMIT.get(ip);
+  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+    entry = { count: 0, windowStart: now };
+    RATE_LIMIT.set(ip, entry);
+  }
+  entry.count++;
+  if (entry.count > RATE_MAX) return false;
+  // Cleanup old entries periodically
+  if (RATE_LIMIT.size > 10000) {
+    for (const [k, v] of RATE_LIMIT) {
+      if (now - v.windowStart > RATE_WINDOW_MS * 2) RATE_LIMIT.delete(k);
+    }
+  }
+  return true;
+}
+
+// #15 XSS escape helper
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+function sanitizeUserInput(obj) {
+  if (typeof obj === 'string') return escapeHtml(obj);
+  if (Array.isArray(obj)) return obj.map(sanitizeUserInput);
+  if (obj && typeof obj === 'object') {
+    const out = {};
+    for (const k of Object.keys(obj)) out[k] = sanitizeUserInput(obj[k]);
+    return out;
+  }
+  return obj;
+}
+
 const now = () => Math.floor(Date.now() / 1000);
 const coinNum = (v) => Number(BigInt(v)) / Number(SCALE);
 function jstr(obj) {
@@ -119,8 +163,14 @@ route('POST', '/register', async (b) => {
   // Admin only via ADMIN_WALLETS env or DB admin table
   return u;
 });
-route('GET', /^\/user\/(.+)$/, async (b, m) => {
+route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
   const uid = m[1];
+  const authUidVal = authUid(b, req);
+  if (!authUidVal) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  if (authUidVal !== uid) {
+    const authUser = await store.getUser(authUidVal);
+    if (!(await isAdminWallet(authUser.wallet))) throw new GameError(Codes.FORBIDDEN, 'Cannot view other user profile');
+  }
   const user = await store.getUser(uid);
   const account = await store.getAccount(uid);
   const nodes = await store.listNodes({ uid });
@@ -422,12 +472,24 @@ route('POST', '/admin/recharge', async (b) => {
   const a = await store.getAccount(b.targetUid);
   return { targetUid: b.targetUid, available: a.available };
 });
+
+// #14 Withdraw cooldown: 60 seconds between withdrawals per user
+const WITHDRAW_COOLDOWN = new Map(); // uid -> lastWithdrawTs
+
 // Chain config (public, no private key)
 route('GET', '/chain/config', () => chain.publicConfig());
 // Withdrawal: auto on-chain payout if payout key configured, otherwise create pending order
 route('POST', '/withdraw/reap', async (b) => { await wallet.reconcileBroadcasted(b.uid).catch(() => {}); return await wallet.reapUnbroadcast(b.uid); });
-route('POST', '/withdraw', async (b) => {
-  await assertNotBanned(b.uid);
+route('POST', '/withdraw', async (b, _, req) => {
+  const uid = authUid(b, req);
+  if (!uid) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  await assertNotBanned(uid);
+  // #14 Withdraw cooldown check
+  const lastWd = WITHDRAW_COOLDOWN.get(uid);
+  if (lastWd && Date.now() - lastWd < 60000) {
+    throw new GameError(Codes.BAD_INPUT, 'Withdrawal cooldown: please wait 60 seconds between withdrawals');
+  }
+  WITHDRAW_COOLDOWN.set(uid, Date.now());
   if (chain.canPayout) {
     try { await wallet.reconcileBroadcasted(b.uid); } catch { /* reconcile broadcasted orders, non-blocking */ }
     try { await wallet.reapUnbroadcast(b.uid); } catch { /* recover unbroadcast leftover orders, never blocks this withdrawal */ }
@@ -558,9 +620,26 @@ route('GET', '/debug/npc', async (b, _, req) => {
   await requireAdmin(uid);
   const npcs = await npc.listNpcs();
   const nowTs = now();
+  // #17 NPC fund reconciliation
+  let npcTotalBalance = 0n;
+  for (const n of npcs) {
+    try {
+      const acc = await store.getAccount(n.uid);
+      npcTotalBalance += acc.available + acc.frozen;
+    } catch { /* account may not exist */ }
+  }
+  const npcFlows = await store.exec('SELECT SUM(amount) as total FROM flows WHERE type=?', ['NPC_FUND']).catch(() => [{ total: '0' }]);
+  const npcFunded = BigInt(npcFlows[0]?.total || '0');
+  const ledger = await store.getLedger();
   return {
     now: nowTs,
     npcCount: npcs.length,
+    npcReconciliation: {
+      totalBalance: npcTotalBalance.toString(),
+      totalFunded: npcFunded.toString(),
+      ledgerIssued: ledger.issued.toString(),
+      warning: npcTotalBalance > 0n ? 'REMINDER: ensure withdrawal wallet has at least ' + (Number(npcTotalBalance) / Number(SCALE)) + ' coins to cover NPC losses' : 'OK',
+    },
     rooms: (await voice.listRooms()).map(r => ({ id: r.roomId, name: r.name, type: r.type, members: r.memberCount })),
     npcs: npcs.map(n => ({
       id: n.npcId, uid: n.uid, wallet: n.wallet, lang: n.language,
@@ -575,6 +654,19 @@ route('GET', '/debug/npc', async (b, _, req) => {
 
 
 const server = http.createServer(async (req, res) => {
+  // #19 Security headers
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (req.headers['x-forwarded-proto'] === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  // #11 Rate limit check
+  if (!checkRateLimit(req)) {
+    res.writeHead(429, { 'content-type': 'application/json; charset=utf-8' });
+    return res.end(jstr({ error: 'RateLimit', message: 'Too many requests, please slow down' }));
+  }
   const url = new URL(req.url, 'http://localhost');
   try {
     if (routes.some((r) => (typeof r.p === 'string' ? r.p === url.pathname : r.p.test(url.pathname)))) {
@@ -597,8 +689,13 @@ const server = http.createServer(async (req, res) => {
     }
     res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' }).end(jstr({ error: 'not found' }));
   } catch (e) {
-    res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
-    res.end(jstr({ error: e.name, code: e.code ?? null, message: e.message }));
+    // #18 Don't leak internal error details
+    const isGameError = e instanceof GameError;
+    const status = isGameError ? (e.code === Codes.FORBIDDEN ? 403 : e.code === Codes.UNAUTHORIZED ? 401 : e.code === Codes.BANNED ? 403 : 400) : 500;
+    const message = isGameError ? e.message : 'Internal server error';
+    if (!isGameError) console.error('[server-error]', e.message, e.stack);
+    res.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });
+    res.end(jstr({ error: isGameError ? 'GameError' : 'ServerError', code: e.code ?? null, message }));
   }
 });
 

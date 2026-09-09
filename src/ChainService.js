@@ -44,7 +44,7 @@ export class ChainService {
     // Payout key must be 0x+64 hex; placeholder (e.g. 0xPAYOUT_PRIVATE_KEY) treated as unconfigured, avoids crash at signing
     this.pkValid = /^0x[0-9a-fA-F]{64}$/.test(this.pk);
     this.decimals = Number(env.TOKEN_DECIMALS || 18);
-    this.needConfirm = Number(env.CONFIRM_BLOCKS ?? 1);
+    this.needConfirm = Number(env.CONFIRM_BLOCKS ?? 3);
     this._providerInstance = null; // cached ethers Provider (must not share name with _provider() method, else shadows it)
   }
 

@@ -15,9 +15,13 @@ body { display: flex; justify-content: center; }
 .ok { color: var(--ok); } .bad { color: var(--bad); }
 
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; position: sticky; top: 0; background: rgba(13,17,23,.92); backdrop-filter: blur(6px); z-index: 5; border-bottom: 1px solid var(--line); }
-.brand { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+.brand { display: flex; align-items: center; gap: 6px; font-weight: 700; flex-shrink: 1; min-width: 0; }
 .brand .logo { color: var(--gold); }
-.brand .logo-img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
+.brand .logo-img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+.brand [data-i18n="appTitle"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 480px) {
+  .brand [data-i18n="appTitle"] { display: none; }
+}
 .top-right { display: flex; align-items: center; gap: 8px; }
 .lang-dropdown { position: relative; z-index: 1000; }
 .lang-trigger {

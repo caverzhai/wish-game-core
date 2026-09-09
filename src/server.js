@@ -19,7 +19,7 @@ const BUILD = '2.20.0'; // deploy version tag: visible in /health and frontend, 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon' };
 // #11 Rate limiter: in-memory sliding window by IP
 const RATE_LIMIT = new Map(); // ip -> { count, windowStart }
 const RATE_WINDOW_MS = 60000; // 1 minute

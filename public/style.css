@@ -17,6 +17,8 @@ body { display: flex; justify-content: center; }
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; position: sticky; top: 0; background: rgba(13,17,23,.92); backdrop-filter: blur(6px); z-index: 5; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; }
 .brand .logo { color: var(--gold); }
+.brand .logo-img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
+.brand .logo-text { display: flex; align-items: center; gap: 6px; }
 .top-right { display: flex; align-items: center; gap: 8px; }
 .lang-dropdown { position: relative; z-index: 1000; }
 .lang-trigger {
@@ -52,6 +54,7 @@ body { display: flex; justify-content: center; }
 .mask { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 20; }
 .login-card { width: 100%; max-width: 360px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 28px 22px; text-align: center; }
 .login-logo { font-size: 44px; color: var(--gold); }
+.login-logo img { width: 96px; height: 96px; border-radius: 20px; object-fit: cover; }
 .login-card h2 { margin: 8px 0; }
 
 .btn-primary, .btn-ghost, .btn-mini { cursor: pointer; border-radius: 10px; font-size: 14px; }

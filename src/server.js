@@ -475,10 +475,22 @@ route('POST', '/admin/user/lookup', async (b) => {
     }
     if (!user) throw new Error('User not found: ' + wallet);
   } else {
-    try { user = await store.getUser(normUid); }
-    catch { throw new Error('User not found for UID: ' + normUid); }
+    try {
+      user = await store.getUser(normUid);
+    } catch (e) {
+      console.error('[admin-lookup] getUser failed for', normUid, ':', e.message);
+      throw new Error('User not found for UID: ' + normUid + ' (raw: ' + e.message + ')');
+    }
   }
-  const account = await store.getAccount(user.uid);
+  console.error('[admin-lookup] found user:', user.uid, user.wallet);
+  let account;
+  try {
+    account = await store.getAccount(user.uid);
+    console.error('[admin-lookup] account avail:', account.available?.toString());
+  } catch (e) {
+    console.error('[admin-lookup] getAccount failed:', e.message);
+    throw new Error('getAccount failed: ' + e.message);
+  }
   const allFlows = await store.listFlows(user.uid, 500);
   const deposits = allFlows.filter(f => ['DEPOSIT','ADMIN_RECHARGE'].includes(f.bizType));
   const totalDeposited = deposits.reduce((s,f) => s + f.amount, 0n);
@@ -496,7 +508,7 @@ route('POST', '/admin/user/lookup', async (b) => {
   const netProfit = settledWinCredit - settledBetAmount;
   return {
     user: { uid: user.uid, wallet: user.wallet, createdAt: user.createdAt, banned: user.banned },
-    account: { avail: account.avail.toString(), frozen: account.frozen.toString(), insurance: account.insurance ? account.insurance.toString() : '0', insuranceEnabled: account.insuranceEnabled },
+    account: { avail: account.available.toString(), frozen: account.frozen.toString(), insurance: account.premium.toString(), insuranceEnabled: !!user.insSwitch },
     deposits: { count: deposits.length, total: totalDeposited.toString(), records: deposits.slice(0,20) },
     withdrawals: { count: withdrawals.length, totalArrived: totalWithdrawn.toString(), totalFees: totalWithdrawFees.toString(), records: withdrawals.slice(0,20).map(r => ({ id: r.withdraw_id, amount: r.amount, fee: r.fee, arrive: r.arrive, state: r.state, txhash: r.txhash, at: r.created_at })) },
     betting: {

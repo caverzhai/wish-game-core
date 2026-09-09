@@ -42,7 +42,7 @@ const I18N = {
     directInvitees: 'Direct invites', downlineTotal: 'Total downline',
     invTierTip: 'Tier is set by how many direct friends ever generated a payout node; commission on their wish volume:', invColPeople: 'Qualified friends', invColRate: 'Rate', invPeopleUnit: '',
     bbsTitle: 'Board (plain text, up to 1024 bytes)', bbsPlaceholder: 'Say something (max 1024 bytes)', bbsSend: 'Post', bbsEmpty: 'No posts yet. Be the first.',
-    adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words', npcAdded: 'NPC added successfully', npcAddFail: 'Failed to add NPC', npcNamePh: 'Name (optional)', npcWalletPh: '0x wallet (optional)', npcAddBtn: 'Add',
+    adminModeration: 'Moderation', addBlockedWord: 'Block word', wordPh: 'Add a blocked word', deletePost: 'Delete', banUser: 'Ban', unbanUser: 'Unban', bannedTag: 'BANNED', noBlocked: 'No blocked words', npcAdded: 'NPC added successfully', npcAddFail: 'Failed to add NPC', npcNamePh: 'Name (optional)', npcWalletPh: '0x wallet (optional)', npcAddBtn: 'Add', userLookup: 'User Lookup', lookupBtn: 'Lookup', lookupPh: '0x wallet or UID', lookupNotFound: 'User not found', lookupError: 'Lookup failed', lookupUid: 'UID', lookupWallet: 'Wallet', lookupCreated: 'Registered', lookupBanned: 'BANNED', lookupAvail: 'Available', lookupFrozen: 'Frozen', lookupInsurance: 'Insurance', lookupInsOn: 'ON', lookupInsOff: 'OFF', lookupDeposits: 'Deposits', lookupWithdrawals: 'Withdrawals', lookupBetting: 'Betting', lookupTotalBets: 'Total bets', lookupSettled: 'Settled', lookupWins: 'Wins', lookupWagered: 'Total wagered', lookupWon: 'Total won', lookupInsCut: 'Insurance cut', lookupNetPL: 'Net P&L', lookupRecent: 'Recent tx', lookupCount: 'count', lookupTotal: 'total', lookupArrived: 'arrived', lookupFees: 'fees',
     avail: 'Available', frozen: 'Held', withdraw: 'Withdraw (2-500, fee 1)', withdrawing: 'Processing…', flows: 'Transactions',
     frozenDetail: 'Frozen Detail', frozenTotal: 'Total Frozen', frozenBets: 'Unsettled Bets', frozenDonations: 'Frozen Donations', frozenWithdraws: 'Pending Withdrawals', frozenMatch: 'Breakdown matches total', frozenMismatch: 'Breakdown does NOT match total', frozenError: 'Failed to load frozen detail',
     wdOk: 'Withdrawal sent.', wdCheckReceive: 'Please check your wallet for the funds.', wdPending: 'Submitted, pending platform processing.',
@@ -971,7 +971,7 @@ function syncAdmin(isAdmin) {
   state.isAdmin = !!isAdmin;
   $('adminPanel').classList.toggle('hide', !state.isAdmin);
   $('adminAnnounceBox').classList.toggle('hide', !state.isAdmin);
-  if (state.isAdmin) { loadAdminWords(); loadWhitelist(); bindNpcAdd(); }
+  if (state.isAdmin) { loadAdminWords(); loadWhitelist(); bindNpcAdd(); bindUserLookup(); }
 }
 
 // ---------------- System announcement ----------------
@@ -1161,8 +1161,67 @@ function bindNpcAdd() {
     } catch (e) { alert(t('npcAddFail') + ': ' + e.message); }
     finally { btn.disabled = false; }
   };
-  loadNpcs();
+
+
+// Admin: user lookup
+function bindUserLookup() {
+  const btn = $('lookupBtn');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const q = $('lookupWalletInput').value.trim();
+    if (!q) return;
+    btn.disabled = true;
+    const box = $('lookupResult');
+    box.classList.remove('hide');
+    box.innerHTML = '<div class="lookup-loading">...</div>';
+    try {
+      const isUid = /^U\d+$/.test(q);
+      const url = '/admin/user/lookup?' + (isUid ? 'uid=' : 'wallet=') + encodeURIComponent(q);
+      const r = await api(url, { uid: state.uid });
+      renderLookupResult(r);
+    } catch (e) {
+      box.innerHTML = '<div class="lookup-error">' + escapeHtml(e.message || t('lookupError')) + '</div>';
+    } finally { btn.disabled = false; }
+  };
 }
+function renderLookupResult(r) {
+  const box = $('lookupResult');
+  const u = r.user, a = r.account, d = r.deposits, w = r.withdrawals, b = r.betting;
+  const fmt = (n) => { try { return (BigInt(n) / 1000000n).toString(); } catch { return String(n); } };
+  const date = (ts) => { if (!ts) return '-'; const dt = new Date(Number(ts)); return dt.toLocaleDateString() + ' ' + dt.toLocaleTimeString().slice(0,5); };
+  let html = '<div class="lookup-section">';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupUid') + ':</span><b>' + escapeHtml(u.uid) + '</b>';
+  if (u.banned) html += ' <span class="lookup-banned">' + t('lookupBanned') + '</span>';
+  html += '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWallet') + ':</span><span class="lookup-wallet">' + escapeHtml(u.wallet) + '</span></div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupCreated') + ':</span>' + date(u.createdAt) + '</div>';
+  html += '</div>';
+  html += '<div class="lookup-section">';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupAvail') + ':</span><b>' + fmt(a.avail) + '</b></div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupFrozen') + ':</span>' + fmt(a.frozen) + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupInsurance') + ':</span>' + fmt(a.insurance) + ' (' + (a.insuranceEnabled ? t('lookupInsOn') : t('lookupInsOff')) + ')</div>';
+  html += '</div>';
+  html += '<div class="lookup-section">';
+  html += '<div class="lookup-title">' + t('lookupDeposits') + ': ' + d.count + ' ' + t('lookupCount') + ', ' + fmt(d.total) + ' ' + t('lookupTotal') + '</div>';
+  html += '</div>';
+  html += '<div class="lookup-section">';
+  html += '<div class="lookup-title">' + t('lookupWithdrawals') + ': ' + w.count + ' ' + t('lookupCount') + ', ' + fmt(w.totalArrived) + ' ' + t('lookupArrived') + ', ' + fmt(w.totalFees) + ' ' + t('lookupFees') + '</div>';
+  html += '</div>';
+  const netPL = BigInt(b.netProfit || 0);
+  const plClass = netPL > 0n ? 'lookup-profit' : (netPL < 0n ? 'lookup-loss' : '');
+  html += '<div class="lookup-section">';
+  html += '<div class="lookup-title">' + t('lookupBetting') + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupTotalBets') + ':</span>' + b.totalBets + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupSettled') + ':</span>' + b.settledBets + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWins') + ':</span>' + b.winCount + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWagered') + ':</span>' + fmt(b.totalBetAmount) + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupWon') + ':</span>' + fmt(b.totalWinCredit) + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupInsCut') + ':</span>' + fmt(b.totalInsuranceCut) + '</div>';
+  html += '<div class="lookup-row"><span class="lookup-label">' + t('lookupNetPL') + ':</span><b class="' + plClass + '">' + (netPL > 0n ? '+' : '') + fmt(b.netProfit) + '</b></div>';
+  html += '</div>';
+  box.innerHTML = html;
+}
+
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 async function postBbs() {
   const content = $('bbsInput').value.trim();
@@ -1560,7 +1619,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.20.0';
+const FE_BUILD = '2.21.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

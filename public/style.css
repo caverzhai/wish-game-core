@@ -240,6 +240,18 @@ textarea { resize: vertical; }
 .word-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .word-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--card2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 8px 3px 10px; font-size: 12px; }
 .word-tag button { border: none; background: var(--red); color: #fff; border-radius: 50%; width: 16px; height: 16px; line-height: 14px; font-size: 12px; cursor: pointer; padding: 0; }
+.lookup-result { margin-top: 10px; background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.lookup-section { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.lookup-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.lookup-title { font-size: 13px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+.lookup-row { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; }
+.lookup-label { color: var(--muted); }
+.lookup-wallet { font-family: monospace; font-size: 11px; word-break: break-all; }
+.lookup-banned { color: var(--red); font-weight: 700; font-size: 11px; }
+.lookup-profit { color: #4caf50; }
+.lookup-loss { color: var(--red); }
+.lookup-error { color: var(--red); font-size: 12px; padding: 8px; }
+.lookup-loading { color: var(--muted); font-size: 12px; padding: 8px; }
 .pending-box { background: rgba(230,180,80,.1); border: 1px solid rgba(230,180,80,.4); border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
 .pending-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--gold); margin-bottom: 6px; }
 .pending-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }

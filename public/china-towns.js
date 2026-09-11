@@ -1,6 +1,6 @@
 // China towns/streets data: District -> Town/Street list
 // Covers major cities; other districts fall back to manual input
-const CHINA_TOWNS = {
+var CHINA_TOWNS = {
   // Beijing districts
   "东城": ["东华门街道","景山街道","交道口街道","安定门街道","北新桥街道","东四街道","朝阳门街道","建国门街道","东直门街道","和平里街道"],
   "西城": ["西长安街街道","新街口街道","月坛街道","展览路街道","德胜街道","金融街街道","椿树街道","陶然亭街道","广安门内街道","牛街街道","白纸坊街道","大栅栏街道","天桥街道","广安门外街道"],

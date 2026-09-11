@@ -1535,14 +1535,31 @@ const CHINA_DISTRICTS = {
 };
 
 
+function loadTownsForDistrict(districtName) {
+  const townSelect = $('regionTownSelect');
+  const townInput = $('regionTown');
+  if (!townSelect || !townInput) return;
+  const towns = (typeof CHINA_TOWNS !== 'undefined') ? CHINA_TOWNS[districtName] : null;
+  if (towns && towns.length > 0) {
+    townSelect.innerHTML = '<option value="">-- Select Town/Street --</option>' +
+      towns.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+    townSelect.style.display = 'block';
+    townInput.style.display = 'none';
+  } else {
+    townSelect.innerHTML = '<option value="">-- Select Town/Street --</option>';
+    townSelect.style.display = 'none';
+    townInput.style.display = 'block';
+  }
+}
+
 function initChinaCascade() {
   const provinceSelect = $('regionProvince');
   const citySelect = $('regionCitySelect');
   const districtSelect = $('regionDistrict');
-  if (!provinceSelect || !citySelect) return;
+  if (!provinceSelect || !citySelect || !districtSelect) return;
   const data = (typeof CHINA_DISTRICTS_FULL !== 'undefined') ? CHINA_DISTRICTS_FULL : CHINA_PROVINCES;
-  provinceSelect.innerHTML = '<option value="">-- Select Province --</option>' +
-    Object.keys(data).map(p => '<option value="' + p + '">' + p + '</option>').join('');
+
+  // Province change -> load cities
   provinceSelect.onchange = function() {
     const provinceData = data[this.value];
     let cities = [];
@@ -1555,59 +1572,44 @@ function initChinaCascade() {
     }
     citySelect.innerHTML = '<option value="">-- Select City --</option>' +
       cities.map(c => '<option value="' + c + '">' + c + '</option>').join('');
-    if (districtSelect) districtSelect.innerHTML = '<option value="">-- Select District/County --</option>';
+    districtSelect.innerHTML = '<option value="">-- Select District/County --</option>';
+    districtSelect.style.display = 'none';
+    loadTownsForDistrict('');
   };
+
+  // City change -> load districts
   citySelect.onchange = function() {
-    if (!districtSelect) return;
     const provinceData = data[provinceSelect.value];
     let districts = null;
     if (provinceData && !Array.isArray(provinceData)) {
       districts = provinceData[this.value];
     }
+    // Reset towns first
+    loadTownsForDistrict('');
+
     if (districts && districts.length > 0) {
       districtSelect.innerHTML = '<option value="">-- Select District/County --</option>' +
         districts.map(d => '<option value="' + d + '">' + d + '</option>').join('');
       districtSelect.style.display = 'block';
-      const distInput = $('regionDistrictInput');
-      if (distInput) distInput.style.display = 'none';
-      // Auto-select if only one district (e.g. Zhongshan, Dongguan - direct-pipe cities)
+      // Auto-select if only one district (direct-pipe cities like Zhongshan, Dongguan)
       if (districts.length === 1) {
         districtSelect.value = districts[0];
-        // Trigger district onchange to load towns
-        if (typeof districtSelect.onchange === 'function') {
-          districtSelect.onchange.call(districtSelect);
-        }
+        loadTownsForDistrict(districts[0]);
       }
     } else {
+      districtSelect.innerHTML = '<option value="">-- Select District/County --</option>';
       districtSelect.style.display = 'none';
-      const distInput = $('regionDistrictInput');
-      if (distInput) distInput.style.display = 'block';
-    }
-    // Reset town select
-    const townSelect = $('regionTownSelect');
-    if (townSelect) {
-      townSelect.innerHTML = '<option value="">-- Select Town/Street --</option>';
-      townSelect.style.display = 'none';
     }
   };
-  // District onchange - load towns
-  if (districtSelect) {
-    districtSelect.onchange = function() {
-      const townSelect = $('regionTownSelect');
-      const townInput = $('regionTown');
-      if (!townSelect) return;
-      const towns = (typeof CHINA_TOWNS !== 'undefined') ? CHINA_TOWNS[this.value] : null;
-      if (towns && towns.length > 0) {
-        townSelect.innerHTML = '<option value="">-- Select Town/Street --</option>' +
-          towns.map(t => '<option value="' + t + '">' + t + '</option>').join('');
-        townSelect.style.display = 'block';
-        if (townInput) townInput.style.display = 'none';
-      } else {
-        townSelect.style.display = 'none';
-        if (townInput) townInput.style.display = 'block';
-      }
-    };
-  }
+
+  // District change -> load towns
+  districtSelect.onchange = function() {
+    loadTownsForDistrict(this.value);
+  };
+
+  // Initialize province list
+  provinceSelect.innerHTML = '<option value="">-- Select Province --</option>' +
+    Object.keys(data).map(p => '<option value="' + p + '">' + p + '</option>').join('');
 }
 
 function toggleRegionInputs() {
@@ -2025,7 +2027,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.30.4';
+const FE_BUILD = '2.30.5';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

@@ -518,13 +518,23 @@
         <option value="">-- Select Province --</option>
       </select>
     </div>
-    <div style="margin-bottom:16px;" id="regionCityWrapper">
-      <label style="display:block;font-size:13px;margin-bottom:4px;color:var(--text);" data-i18n="regionCity">City/Town</label>
-      <input id="regionCity" type="text" maxlength="200" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;" placeholder="e.g. Shenzhen / Los Angeles (China: down to town)" />
-      <select id="regionCitySelect" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;margin-bottom:8px;">
+    <div style="margin-bottom:12px;" id="regionCityWrapper">
+      <label style="display:block;font-size:13px;margin-bottom:4px;color:var(--text);" data-i18n="regionCity">City</label>
+      <input id="regionCity" type="text" maxlength="200" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;" placeholder="e.g. Shenzhen / Los Angeles" />
+      <select id="regionCitySelect" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;">
         <option value="">-- Select City --</option>
       </select>
-      <input id="regionTown" type="text" maxlength="200" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;" placeholder="Town / District (required for China)" />
+    </div>
+    <div style="margin-bottom:12px;" id="regionDistrictWrapper">
+      <label style="display:block;font-size:13px;margin-bottom:4px;color:var(--text);" data-i18n="regionDistrict">District/County</label>
+      <select id="regionDistrict" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;margin-bottom:8px;">
+        <option value="">-- Select District/County --</option>
+      </select>
+      <input id="regionDistrictInput" type="text" maxlength="200" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;" placeholder="District/County" />
+    </div>
+    <div style="margin-bottom:16px;" id="regionTownWrapper">
+      <label style="display:block;font-size:13px;margin-bottom:4px;color:var(--text);" data-i18n="regionTown">Town/Street</label>
+      <input id="regionTown" type="text" maxlength="200" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;" placeholder="Town / Street / Village" />
     </div>
     <button id="regionSubmitBtn" class="btn-primary" style="width:100%;" data-i18n="regionSubmit">Submit & Continue</button>
   </div>

@@ -40,15 +40,16 @@ export function consumeNonce(nonce, wallet) {
 }
 
 // Build EIP-4361 style message for signing
-export function buildSignMessage(wallet, nonce, domain = 'wishtree.up.railway.app') {
+export function buildSignMessage(wallet, nonce, domain = 'wishtree.up.railway.app', version = '1') {
   const issuedAt = new Date().toISOString();
-  return `${domain} wants you to sign in with your Ethereum account:
+  return `Wish Pool (Amsterdam, Netherlands) wants you to sign in with your Ethereum account:
 ${wallet}
 
 Sign in to Wish Pool. This signature proves you own this wallet address.
+By signing, you agree to the Terms of Service and Privacy Policy.
 
 URI: https://${domain}
-Version: 1
+Version: ${version}
 Chain ID: 56
 Nonce: ${nonce}
 Issued At: ${issuedAt}`;

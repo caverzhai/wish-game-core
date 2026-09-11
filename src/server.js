@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.24.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.25.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -136,7 +136,7 @@ route('GET', '/auth/nonce', async (b, _, req) => {
   if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) throw new Error('Invalid wallet address');
   const nonce = generateNonce(wallet);
   const domain = (req.headers.host || 'wishtree.up.railway.app').split(':')[0];
-  const message = buildSignMessage(wallet, nonce, domain);
+  const message = buildSignMessage(wallet, nonce, domain, BUILD);
   return { nonce, message };
 });
 
@@ -148,7 +148,7 @@ route('POST', '/login', async (b, _, req) => {
   if (b.signature && b.nonce) {
     if (!consumeNonce(b.nonce, wallet)) throw new Error('Invalid or expired nonce');
     const domain = (req.headers.host || 'wishtree.up.railway.app').split(':')[0];
-    const message = b.message || buildSignMessage(wallet, b.nonce, domain);
+    const message = b.message || buildSignMessage(wallet, b.nonce, domain, BUILD);
     const recovered = verifySignature(message, b.signature);
     if (!recovered || recovered !== wallet.toLowerCase()) {
       throw new GameError(Codes.FORBIDDEN, 'Signature verification failed');

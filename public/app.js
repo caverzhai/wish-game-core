@@ -1570,6 +1570,14 @@ function initChinaCascade() {
       districtSelect.style.display = 'block';
       const distInput = $('regionDistrictInput');
       if (distInput) distInput.style.display = 'none';
+      // Auto-select if only one district (e.g. Zhongshan, Dongguan - direct-pipe cities)
+      if (districts.length === 1) {
+        districtSelect.value = districts[0];
+        // Trigger district onchange to load towns
+        if (typeof districtSelect.onchange === 'function') {
+          districtSelect.onchange.call(districtSelect);
+        }
+      }
     } else {
       districtSelect.style.display = 'none';
       const distInput = $('regionDistrictInput');
@@ -2017,7 +2025,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.30.2';
+const FE_BUILD = '2.30.3';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

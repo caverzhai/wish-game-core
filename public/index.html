@@ -138,7 +138,16 @@
             <button id="wlAddBtn" class="btn-primary" data-i18n="addWhitelist">Add</button>
           </div>
           <div id="wlList" class="word-tags"></div>
-          <div class="admin-title">NPC Bots</div>
+                    <div class="admin-title">Regional Agents</div>
+          <div class="row">
+            <input id="raNameInput" maxlength="32" placeholder="Agent name" style="width:100px" />
+            <input id="raWalletInput" maxlength="64" placeholder="0x wallet" style="width:140px" />
+            <input id="raRateInput" type="number" min="0" max="100" step="1" placeholder="rate" style="width:60px" />
+            <input id="raRegionsInput" maxlength="256" placeholder="Regions (comma sep)" style="width:180px" />
+            <button id="raAddBtn" class="btn-primary">Add</button>
+          </div>
+          <div id="raList" class="word-tags"></div>
+<div class="admin-title">NPC Bots</div>
           <div class="row">
             <input id="npcNameInput" maxlength="32" placeholder="Name (optional)" style="width:100px" />
             <input id="npcWalletInput" maxlength="64" placeholder="0x wallet (optional)" style="width:160px" />
@@ -466,8 +475,8 @@
   </div>
 </div>
 <script src="/qrcode.min.js?v=2187"></script>
-<script src="/china-districts.js?v=2290"></script>
-  <script src="/china-towns.js?v=2290"></script>
+<script src="/china-districts.js?v=2300"></script>
+  <script src="/china-towns.js?v=2300"></script>
   <script src="/app.js?v=2187"></script>
 <script src="/lottery.js?v=2187"></script>
 <script src="/charity.js?v=2187"></script>

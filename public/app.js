@@ -1139,6 +1139,51 @@ function bindWhitelist() {
   };
   loadWhitelist();
 }
+// ---------------- Regional agents admin management ----------------
+async function loadRegionalAgents() {
+  try {
+    const r = await api('/admin/regional-agents?uid=' + encodeURIComponent(state.uid));
+    const list = r.list || [];
+    const box = $('raList');
+    if (!box) return;
+    if (!list.length) { box.innerHTML = '<span class="muted">No regional agents yet</span>'; return; }
+    box.innerHTML = list.map((a) => {
+      const rate = (Number(a.perMille) / 10).toFixed(1) + '%';
+      const regions = (a.regions || []).join(', ');
+      return '<div class="wl-row" data-id="' + a.id + '" style="flex-wrap:wrap;gap:4px">' +
+        '<span class="wl-addr" style="flex:1;min-width:60px">' + escapeHtml(a.name || 'N/A') + '</span>' +
+        '<span class="wl-addr" style="font-family:monospace;font-size:11px">' + shortAddr(a.wallet) + '</span>' +
+        '<span class="wl-rate">' + rate + '</span>' +
+        '<span style="font-size:10px;color:#888;max-width:200px;overflow:hidden;text-overflow:ellipsis" title="' + escapeHtml(regions) + '">' + escapeHtml(regions) + '</span>' +
+        '<button class="btn-mini ra-del" data-id="' + a.id + '">×</button>' +
+        '</div>';
+    }).join('');
+    box.querySelectorAll('.ra-del').forEach((b) => b.onclick = () => {
+      if (!confirm('Remove this regional agent?')) return;
+      api('/admin/regional-agent/remove', { uid: state.uid, id: parseInt(b.dataset.id, 10) }).then(loadRegionalAgents).catch((e) => alert(e.message));
+    });
+  } catch (e) { /* not admin, ignore */ }
+}
+function bindRegionalAgents() {
+  const btn = $('raAddBtn');
+  if (!btn) return;
+  btn.onclick = async () => {
+    const name = $('raNameInput').value.trim();
+    const wallet = $('raWalletInput').value.trim();
+    const rate = parseInt($('raRateInput').value, 10);
+    const regionsStr = $('raRegionsInput').value.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) { alert('Invalid wallet address'); return; }
+    if (isNaN(rate) || rate < 0 || rate > 100) { alert('Invalid per-mille rate (0-100)'); return; }
+    const regions = regionsStr ? regionsStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+    try {
+      await api('/admin/regional-agent/add', { uid: state.uid, name, wallet, perMille: rate, regions });
+      $('raNameInput').value = ''; $('raWalletInput').value = ''; $('raRateInput').value = ''; $('raRegionsInput').value = '';
+      showToast('Regional agent added');
+      loadRegionalAgents();
+    } catch (e) { alert(e.message); }
+  };
+  loadRegionalAgents();
+}
 // ---------------- NPC admin management ----------------
 async function loadNpcs() {
   try {

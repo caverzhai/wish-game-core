@@ -1,14 +1,14 @@
 // =============================================================
 // engine-settle.js - round settlement pure function (no side effects, easy to unit test)
 // Rule: sum of picks odd => red wins, even => green wins; 2.5% fee then winners split by stake ratio
-// Invite commission (v2.3.7): normal users 0.1% direct only; whitelisted users admin-set rate all depths,
-//   whitelist-to-whitelist pays rate difference (upstream - downstream, min 0)
+// Invite commission (v3.0): member level system based on valid invite count
+//   All depths, rate difference between levels, 24h activity requirement
 // =============================================================
 import { mulDivFloor } from './money.js';
 
 /**
  * @param bets  [{uid, side:'red'|'green', amount:bigint, pick:number}]
- * @param ctx   { insActiveByUid:Map, inviterByUid:Map(uid->inviterUid|null), whitelistByUid:Map(uid->perMille bigint) }
+ * @param ctx   { insActiveByUid:Map, inviterByUid:Map(uid->inviterUid|null), memberRateByUid:Map(uid->perMille bigint), commissionEligibleByUid:Map(uid->bool) }
  * @param cfg   global config
  * @returns Settlement plan (posted by GameService)
  */
@@ -64,7 +64,7 @@ export function planSettlement(bets, ctx, cfg) {
     }
     row.winCredit = row.winRaw - row.insCut;
 
-    // Walk up the invite chain for multi-level commission
+    // Walk up the invite chain for multi-level commission (v3.0 member level system)
     if (row.totalStake > 0n) {
       let current = row.uid;
       let depth = 0;
@@ -74,17 +74,13 @@ export function planSettlement(bets, ctx, cfg) {
         if (!inviter || visited.has(inviter)) break;
         visited.add(inviter);
         depth += 1;
-        const inviterRate = ctx.whitelistByUid.get(inviter); // undefined => normal user
-        if (inviterRate === undefined) {
-          // Normal user: only direct (depth 1), fixed 0.1%
-          if (depth === 1) {
-            const reward = mulDivFloor(row.totalStake, cfg.referralNormalPerMille, cfg.referralDen);
-            if (reward > 0n) referral.push({ inviterUid: inviter, fromUid: row.uid, stake: row.totalStake, perMille: cfg.referralNormalPerMille, reward, depth });
-          }
-        } else {
-          // Whitelisted user: all depths; if immediate downstream (current) is also whitelisted, pay rate difference
-          const currentRate = ctx.whitelistByUid.get(current);
-          const effectiveRate = currentRate !== undefined
+        // Get inviter's member level rate (0 = not eligible)
+        const inviterRate = ctx.memberRateByUid.get(inviter) || 0n;
+        const inviterEligible = ctx.commissionEligibleByUid.get(inviter) === true;
+        if (inviterRate > 0n && inviterEligible) {
+          // Rate difference: if immediate downstream (current) also has a rate, pay only the difference
+          const currentRate = ctx.memberRateByUid.get(current) || 0n;
+          const effectiveRate = currentRate > 0n
             ? (inviterRate > currentRate ? inviterRate - currentRate : 0n)
             : inviterRate;
           if (effectiveRate > 0n) {

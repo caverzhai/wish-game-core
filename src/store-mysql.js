@@ -359,6 +359,44 @@ export class MysqlStore {
     `, [uid]);
     return Number(r[0].c);
   }
+
+  // Count valid invitees: direct invitees who have placed at least one bet
+  async countValidInvitees(uid) {
+    const r = await this.exec(`
+      SELECT COUNT(DISTINCT u.uid) c FROM users u
+      INNER JOIN bets b ON b.uid = u.uid
+      WHERE u.inviter_uid=?
+    `, [uid]);
+    return Number(r[0].c);
+  }
+
+  // Get member level info: valid invite count, level, commission rate
+  async getMemberLevelInfo(uid, memberLevels) {
+    const validInvites = await this.countValidInvitees(uid);
+    let level = 0, perMille = 0n, levelName = 'None';
+    for (const lv of memberLevels) {
+      if (validInvites >= lv.minInvites) {
+        level = lv.level;
+        perMille = lv.perMille;
+        levelName = lv.name;
+      }
+    }
+    return { validInvites, level, perMille, levelName };
+  }
+
+  // Get timestamp of user's last winning bet (win_credit > 0)
+  async getLastWinAt(uid) {
+    const r = await this.exec('SELECT MAX(at) last_win FROM bets WHERE uid=? AND settled=1 AND win_credit>0', [uid]);
+    return r[0] && r[0].last_win ? Number(r[0].last_win) : null;
+  }
+
+  // Check if user is eligible for commission (has a win in last 24h)
+  async isCommissionEligible(uid, nowSec, windowSec) {
+    const lastWin = await this.getLastWinAt(uid);
+    if (!lastWin) return false;
+    return (nowSec - lastWin) <= windowSec;
+  }
+
   async saveRoom(room) {
     await this.exec(`INSERT INTO voice_rooms(room_id,type,name,host_uid,balance,per_minute,created_at,last_active_at,empty_since,guest_uid,description,password,destroyed)
       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE

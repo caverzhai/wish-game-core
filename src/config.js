@@ -32,12 +32,26 @@ export const DEFAULT_CONFIG = {
   payoutEverySec: 6 * 3600,
   surviveWindowBatches: 28,  // 168 hours = 28 payout batches
 
-  // Invite commission (v2.3.7 rewrite):
-  // Normal users: fixed 0.1%, direct referrals only (depth 1)
-  // Whitelisted users: admin-set rate, all depths (unlimited generations);
-  //   if a downstream user is also whitelisted, upstream gets only the rate difference (upstream - downstream), min 0
-  referralNormalPerMille: 1n, // 0.1%
+  // Invite commission (v3.0 - Member level system):
+  // Valid invite = invitee has placed at least one bet
+  // Member levels based on valid invite count:
+  //   1-star: 3+ valid invites, 0.1% commission
+  //   2-star: 20+ valid invites, 0.2% commission
+  //   3-star: 100+ valid invites, 0.3% commission
+  //   4-star: 300+ valid invites, 0.4% commission
+  //   5-star: 1000+ valid invites, 0.5% commission
+  // Higher level gets rate difference from lower-level downline (all depths)
+  // Commission eligibility: inviter must have at least one WIN in last 24h
+  //   If no win in 24h, commission paused; resumes 24h after next win
   referralDen: 1000n,
+  memberLevels: [
+    { level: 1, name: '1-Star', minInvites: 3, perMille: 1n },    // 0.1%
+    { level: 2, name: '2-Star', minInvites: 20, perMille: 2n },   // 0.2%
+    { level: 3, name: '3-Star', minInvites: 100, perMille: 3n },  // 0.3%
+    { level: 4, name: '4-Star', minInvites: 300, perMille: 4n },  // 0.4%
+    { level: 5, name: '5-Star', minInvites: 1000, perMille: 5n }, // 0.5%
+  ],
+  commissionActiveWindowSec: 24 * 3600, // 24 hours since last win
 
   // Withdrawal: user-initiated
   withdrawMin: coin(2),      // min 2 units (withdrawing 1 with 1 fee is pointless)

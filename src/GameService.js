@@ -72,24 +72,30 @@ export class GameService {
 
     const insActiveByUid = new Map();
     const inviterByUid = new Map();
-    const whitelistByUid = new Map();
+    const memberRateByUid = new Map();
+    const commissionEligibleByUid = new Map();
     const visited = new Set();
-    // Load full invite chain for every bettor: inviterByUid + whitelistByUid (multi-level commission)
+    const nowSec = Math.floor(Date.now() / 1000);
+    // Load full invite chain for every bettor: inviterByUid + memberRateByUid + eligibility (multi-level commission)
     const loadChain = async (uid) => {
       if (visited.has(uid)) return;
       visited.add(uid);
       const u = await s.getUser(uid);
       if (!u) { inviterByUid.set(uid, null); return; }
       inviterByUid.set(uid, u.inviterUid);
-      const rate = await s.getWhitelistRate(u.wallet);
-      if (rate !== null) whitelistByUid.set(uid, BigInt(rate));
+      // Get member level rate based on valid invite count
+      const levelInfo = await s.getMemberLevelInfo(uid, cfg.memberLevels);
+      if (levelInfo.perMille > 0n) memberRateByUid.set(uid, levelInfo.perMille);
+      // Check 24h activity eligibility
+      const eligible = await s.isCommissionEligible(uid, nowSec, cfg.commissionActiveWindowSec);
+      commissionEligibleByUid.set(uid, eligible);
       if (u.inviterUid) await loadChain(u.inviterUid);
     };
     for (const b of bets) {
       insActiveByUid.set(b.uid, { insActive: await this.insurance.isActive(b.uid) });
       await loadChain(b.uid);
     }
-    const plan = planSettlement(bets, { insActiveByUid, inviterByUid, whitelistByUid }, cfg);
+    const plan = planSettlement(bets, { insActiveByUid, inviterByUid, memberRateByUid, commissionEligibleByUid }, cfg);
 
     return await s.transaction(async () => {
       if (plan.status === 'cancelled') {

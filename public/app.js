@@ -838,28 +838,40 @@ function renderPoolPublic() {
   updatePoolCountdown();
 }
 
-// Invite commission tier table (clear rows, current tier highlighted)
+// Invite commission tier table (member level system v3.0)
 function renderInvTiers(invite) {
   const box = $('invTiers'); if (!box) return;
   if (!invite) { box.innerHTML = ''; return; }
-  const isWL = !!invite.isWhitelisted;
+  const level = invite.memberLevel || 0;
+  const validInvites = invite.validInvites || 0;
   const rate = (Number(invite.perMille) / 10).toFixed(1) + '%';
-  if (isWL) {
-    const dc = invite.directCount != null ? invite.directCount : '-';
-    const dt = invite.downlineTotal != null ? invite.downlineTotal : '-';
-    box.innerHTML = `<div class="inv-tip"><span class="wl-tag">${t('whitelistTitle')}</span> ${t('wlScope')} <b>${rate}</b> ${t('wlAllDepth')}</div>
-      <div class="it-grid"><div class="it-row active"><span>${t('normalDirect')}</span><b>${rate}</b></div></div>
-      <div class="inv-stats"><span>${t('directInvitees')}: <b>${dc}</b></span><span>${t('downlineTotal')}: <b>${dt}</b></span></div>`;
-  } else {
-    const dc = invite.directCount != null ? invite.directCount : '-';
-    box.innerHTML = `<div class="inv-tip">${t('normalInvTip')} <b>0.1%</b> ${t('normalDirect')}</div>
-      <div class="it-grid"><div class="it-row active"><span>${t('normalDirect')}</span><b>0.1%</b></div></div>
-      <div class="inv-stats"><span>${t('directInvitees')}: <b>${dc}</b></span></div>
-      <p class="muted apply-tip">${t('applyWhitelistTip')}</p>`;
-  }
+  const eligible = invite.commissionEligible;
+  const tiers = [
+    { level: 1, name: '1-Star', min: 3, rate: '0.1%' },
+    { level: 2, name: '2-Star', min: 20, rate: '0.2%' },
+    { level: 3, name: '3-Star', min: 100, rate: '0.3%' },
+    { level: 4, name: '4-Star', min: 300, rate: '0.4%' },
+    { level: 5, name: '5-Star', min: 1000, rate: '0.5%' },
+  ];
+  let rowsHtml = tiers.map(t =>
+    '<div class="it-row ' + (t.level <= level ? 'active' : '') + '">' +
+    '<span>' + t.name + ' (' + t.min + '+ valid invites)</span>' +
+    '<b>' + t.rate + '</b></div>'
+  ).join('');
+  const statusText = eligible
+    ? '<span class="inv-eligible">Commission active</span>'
+    : '<span class="inv-paused">Commission paused (win a bet within 24h to resume)</span>';
+  box.innerHTML =
+    '<div class="inv-tip"><b>' + (level > 0 ? tiers[level-1].name : 'No level') + '</b> — ' + rate + ' commission' +
+    ' | Valid invites: <b>' + validInvites + '</b>' +
+    ' | ' + statusText + '</div>' +
+    '<div class="it-grid">' + rowsHtml + '</div>' +
+    '<div class="inv-stats">' +
+    '<span>' + t('directInvitees') + ': <b>' + (invite.directCount != null ? invite.directCount : '-') + '</b></span>' +
+    '<span>' + t('downlineTotal') + ': <b>' + (invite.downlineTotal != null ? invite.downlineTotal : '-') + '</b></span>' +
+    '</div>';
 }
 
-// ---------------- Me ----------------
 function renderMe() {
   const me = state.me; if (!me) return;
   const a = me.account;
@@ -872,8 +884,8 @@ function renderMe() {
   const insActive = !!me.user.insSwitch && Number(a.premium) >= 20;
   const insBar = $('insStatusBar');
   if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
-  const invRate = (me.invite.perMille / 10).toFixed(1) + '%';
-  $('invCount').textContent = me.invite.rewardedInvitees || 0;
+  const invRate = (Number(me.invite.perMille) / 10).toFixed(1) + '%';
+  $('invCount').textContent = me.invite.validInvites || 0;
   $('invRate').textContent = invRate;
   $('invTotal').textContent = fmt(me.invite.rewardTotal) + t('coinUnit');
   const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = `${t('meInvite')}（${invRate}）`;
@@ -1631,7 +1643,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.21.0';
+const FE_BUILD = '2.22.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

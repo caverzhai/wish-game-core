@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.21.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.22.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -178,19 +178,27 @@ route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
   const nodes = await store.listNodes({ uid });
   const referral = await store.referralSummary(uid);
   const flows = await store.listFlows(uid, 50);
-  const whitelistRate = await store.getWhitelistRate(user.wallet);
+  const memberLevel = await store.getMemberLevelInfo(uid, cfg.memberLevels);
   const directCount = await store.countDirectInvitees(uid);
   const downlineTotal = await store.countTotalDownline(uid);
+  const validInvites = memberLevel.validInvites;
+  const nowSec = Math.floor(Date.now() / 1000);
+  const commissionEligible = await store.isCommissionEligible(uid, nowSec, cfg.commissionActiveWindowSec);
+  const lastWinAt = await store.getLastWinAt(uid);
   return {
     user, account, nodes, isAdmin: await isAdminWallet(user.wallet),
     invite: {
       code: uid,
-      isWhitelisted: whitelistRate !== null,
-      perMille: whitelistRate !== null ? whitelistRate : 1, // normal users fixed 0.1% = 1 per mille
+      memberLevel: memberLevel.level,
+      memberLevelName: memberLevel.levelName,
+      perMille: memberLevel.perMille.toString(),
+      validInvites,
       rewardTotal: referral.total,
       rewardedInvitees: referral.activeInvitees,
       directCount,
       downlineTotal,
+      commissionEligible,
+      lastWinAt,
     },
     flows,
   };

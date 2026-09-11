@@ -13,7 +13,8 @@ const jstr = (o) => JSON.stringify(o, (k, v) => (typeof v === 'bigint' ? Number(
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT AUTO_INCREMENT PRIMARY KEY, uid VARCHAR(16) UNIQUE, wallet VARCHAR(128) UNIQUE,
-  inviter_uid VARCHAR(16) NULL, ins_switch TINYINT DEFAULT 0, banned TINYINT DEFAULT 0, created_at BIGINT DEFAULT 0
+  inviter_uid VARCHAR(16) NULL, ins_switch TINYINT DEFAULT 0, banned TINYINT DEFAULT 0, created_at BIGINT DEFAULT 0,
+  country VARCHAR(100) NULL, region VARCHAR(200) NULL, city VARCHAR(200) NULL
 );
 CREATE TABLE IF NOT EXISTS accounts (
   uid VARCHAR(16) PRIMARY KEY,
@@ -221,7 +222,7 @@ export class MysqlStore {
     return `${prefix}${rows[0].val}`;
   }
 
-  _userRow(r) { return r && { uid: r.uid, wallet: r.wallet, inviterUid: r.inviter_uid, insSwitch: !!r.ins_switch, banned: !!r.banned, createdAt: Number(r.created_at) }; }
+  _userRow(r) { return r && { uid: r.uid, wallet: r.wallet, inviterUid: r.inviter_uid, insSwitch: !!r.ins_switch, banned: !!r.banned, createdAt: Number(r.created_at), country: r.country || '', region: r.region || '', city: r.city || '' }; }
   _acctRow(r) { return r && { available: B(r.available), frozen: B(r.frozen), premium: B(r.premium), lossAccum: B(r.loss_accum) }; }
   _roundRow(r) {
     if (!r) return null;
@@ -371,6 +372,20 @@ export class MysqlStore {
   }
 
   // Get member level info: valid invite count, level, commission rate
+  async updateUserRegion(uid, country, region, city) {
+    await this.exec('UPDATE users SET country=?, region=?, city=? WHERE uid=?', [country, region, city, uid]);
+    return this.getUser(uid);
+  }
+  async hasInviter(uid) {
+    const r = await this.exec('SELECT inviter_uid FROM users WHERE uid=?', [uid]);
+    return r.length > 0 && r[0].inviter_uid != null && r[0].inviter_uid !== '';
+  }
+  async hasRegionInfo(uid) {
+    const r = await this.exec('SELECT country, region, city FROM users WHERE uid=?', [uid]);
+    if (r.length === 0) return false;
+    return !!(r[0].country && r[0].region && r[0].city);
+  }
+
   async getMemberLevelInfo(uid, memberLevels) {
     const validInvites = await this.countValidInvitees(uid);
     let level = 0, perMille = 0n, levelName = 'None';

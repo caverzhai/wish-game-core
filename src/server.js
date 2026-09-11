@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.22.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.23.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -566,6 +566,19 @@ route('POST', '/admin/recharge', async (b) => {
   return { targetUid: b.targetUid, available: a.available };
 });
 
+// User region info update (required for users without inviter before withdrawal)
+route('POST', '/user/region', async (b, _, req) => {
+  const uid = authUid(b, req);
+  if (!uid) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  const country = (b.country || '').trim();
+  const region = (b.region || '').trim();
+  const city = (b.city || '').trim();
+  if (!country || !region || !city) throw new GameError(Codes.BAD_INPUT, 'Country, region and city are all required');
+  if (country.length > 100 || region.length > 200 || city.length > 200) throw new GameError(Codes.BAD_INPUT, 'Input too long');
+  const user = await store.updateUserRegion(uid, country, region, city);
+  return { ok: true, user };
+});
+
 // #14 Withdraw cooldown: 60 seconds between withdrawals per user
 const WITHDRAW_COOLDOWN = new Map(); // uid -> lastWithdrawTs
 
@@ -583,6 +596,14 @@ route('POST', '/withdraw', async (b, _, req) => {
     throw new GameError(Codes.BAD_INPUT, 'Withdrawal cooldown: please wait 60 seconds between withdrawals');
   }
   WITHDRAW_COOLDOWN.set(uid, Date.now());
+  // Region requirement: users without inviter must fill region info before withdrawal
+  const hasInv = await store.hasInviter(uid);
+  if (!hasInv) {
+    const hasRegion = await store.hasRegionInfo(uid);
+    if (!hasRegion) {
+      throw new GameError(Codes.BAD_INPUT, 'Please complete your region information (country/region/city) before withdrawal. Users without an inviter must verify their location.');
+    }
+  }
   if (chain.canPayout) {
     try { await wallet.reconcileBroadcasted(b.uid); } catch { /* reconcile broadcasted orders, non-blocking */ }
     try { await wallet.reapUnbroadcast(b.uid); } catch { /* recover unbroadcast leftover orders, never blocks this withdrawal */ }
@@ -805,6 +826,14 @@ setInterval(async () => {
 // Startup repair: force-cancel stuck rounds and fix ledger imbalance (caused by rolled-back NPC version)
 (async () => {
   try {
+    // Migration: add region fields to users table if not exist
+    try {
+      const cols = await store.pool.query("SHOW COLUMNS FROM users LIKE 'country'");
+      if (cols[0].length === 0) {
+        await store.pool.query('ALTER TABLE users ADD COLUMN country VARCHAR(100) NULL, ADD COLUMN region VARCHAR(200) NULL, ADD COLUMN city VARCHAR(200) NULL');
+        console.log('[migration] added country/region/city columns to users table');
+      }
+    } catch (e) { console.error('[migration] region fields:', e.message); }
     const nowS = now();
     const [stuck] = await store.pool.query("SELECT round_id FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
     for (const row of stuck) {

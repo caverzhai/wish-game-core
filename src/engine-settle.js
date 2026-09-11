@@ -8,7 +8,7 @@ import { mulDivFloor } from './money.js';
 
 /**
  * @param bets  [{uid, side:'red'|'green', amount:bigint, pick:number}]
- * @param ctx   { insActiveByUid:Map, inviterByUid:Map(uid->inviterUid|null), memberRateByUid:Map(uid->perMille bigint), commissionEligibleByUid:Map(uid->bool) }
+ * @param ctx   { insActiveByUid:Map, inviterByUid:Map(uid->inviterUid|null), memberRateByUid:Map(uid->perMille bigint), commissionEligibleByUid:Map(uid->bool), regionalAgentByUid:Map(uid->{perMille,name,agentWallet}) }
  * @param cfg   global config
  * @returns Settlement plan (posted by GameService)
  */
@@ -89,6 +89,18 @@ export function planSettlement(bets, ctx, cfg) {
           }
         }
         current = inviter;
+      }
+    }
+    // Regional agent commission: if user's region is under a regional agent, the agent gets commission (minus user's own rate)
+    const regionalAgent = ctx.regionalAgentByUid ? ctx.regionalAgentByUid.get(row.uid) : null;
+    if (regionalAgent && regionalAgent.perMille > 0n) {
+      const userRate = ctx.memberRateByUid.get(row.uid) || 0n;
+      const effectiveRate = userRate > 0n
+        ? (regionalAgent.perMille > userRate ? regionalAgent.perMille - userRate : 0n)
+        : regionalAgent.perMille;
+      if (effectiveRate > 0n) {
+        const reward = mulDivFloor(row.totalStake, effectiveRate, cfg.referralDen);
+        if (reward > 0n) referral.push({ inviterUid: 'regional_' + regionalAgent.agentWallet, fromUid: row.uid, stake: row.totalStake, perMille: effectiveRate, reward, depth: 0, regionalAgent: true, agentName: regionalAgent.name });
       }
     }
   }

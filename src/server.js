@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.29.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.30.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -543,6 +543,10 @@ route('POST', '/admin/user/lookup', async (b) => {
 route('GET', '/admin/whitelist', async (b) => { await requireAdmin(b.uid); return { list: await store.listWhitelist() }; });
 route('POST', '/admin/whitelist/add', async (b) => { await requireAdmin(b.uid); return { list: await store.addWhitelist(b.wallet, b.perMille) }; });
 route('POST', '/admin/whitelist/remove', async (b) => { await requireAdmin(b.uid); return { list: await store.removeWhitelist(b.wallet) }; });
+// Regional agents management
+route('GET', '/admin/regional-agents', async (b) => { await requireAdmin(b.uid); return { list: await store.listRegionalAgents() }; });
+route('POST', '/admin/regional-agent/add', async (b) => { await requireAdmin(b.uid); return { list: await store.addRegionalAgent(b.name, b.wallet, b.perMille, b.regions) }; });
+route('POST', '/admin/regional-agent/remove', async (b) => { await requireAdmin(b.uid); return { list: await store.removeRegionalAgent(b.id) }; });
 // NPC bot management (social-only bots, no betting)
 route('GET', '/admin/npcs', async (b) => { await requireAdmin(b.uid); return { list: await npc.listNpcs() }; });
 route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return { npc: await npc.addNpc(b.name, b.wallet, b.language) }; });

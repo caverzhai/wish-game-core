@@ -1009,7 +1009,7 @@ function syncAdmin(isAdmin) {
   state.isAdmin = !!isAdmin;
   $('adminPanel').classList.toggle('hide', !state.isAdmin);
   $('adminAnnounceBox').classList.toggle('hide', !state.isAdmin);
-  if (state.isAdmin) { loadAdminWords(); loadWhitelist(); bindNpcAdd(); bindUserLookup(); }
+  if (state.isAdmin) { loadAdminWords(); loadWhitelist(); bindRegionalAgents(); bindNpcAdd(); bindUserLookup(); }
 }
 
 // ---------------- System announcement ----------------
@@ -1972,7 +1972,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.29.0';
+const FE_BUILD = '2.30.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

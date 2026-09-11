@@ -95,7 +95,7 @@ export class GameService {
       insActiveByUid.set(b.uid, { insActive: await this.insurance.isActive(b.uid) });
       await loadChain(b.uid);
     }
-    const plan = planSettlement(bets, { insActiveByUid, inviterByUid, memberRateByUid, commissionEligibleByUid }, cfg);
+    const plan = planSettlement(bets, { insActiveByUid, inviterByUid, memberRateByUid, commissionEligibleByUid, regionalAgentByUid }, cfg);
 
     return await s.transaction(async () => {
       if (plan.status === 'cancelled') {

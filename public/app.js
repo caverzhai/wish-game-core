@@ -1368,6 +1368,7 @@ function openRegionModal(amount) {
   pendingWithdrawAmount = amount;
   const modal = $('regionModal');
   if (modal) modal.style.display = 'flex';
+  setTimeout(() => { if (typeof toggleRegionInputs === 'function') toggleRegionInputs(); }, 50);
 }
 // China provinces and major cities (cascading selection)
 const CHINA_PROVINCES = {
@@ -1477,17 +1478,30 @@ function initChinaCascade() {
   const citySelect = $('regionCitySelect');
   const districtSelect = $('regionDistrict');
   if (!provinceSelect || !citySelect) return;
+  const data = (typeof CHINA_DISTRICTS_FULL !== 'undefined') ? CHINA_DISTRICTS_FULL : CHINA_PROVINCES;
   provinceSelect.innerHTML = '<option value="">-- Select Province --</option>' +
-    Object.keys(CHINA_PROVINCES).map(p => '<option value="' + p + '">' + p + '</option>').join('');
+    Object.keys(data).map(p => '<option value="' + p + '">' + p + '</option>').join('');
   provinceSelect.onchange = function() {
-    const cities = CHINA_PROVINCES[this.value] || [];
+    const provinceData = data[this.value];
+    let cities = [];
+    if (provinceData) {
+      if (Array.isArray(provinceData)) {
+        cities = provinceData;
+      } else {
+        cities = Object.keys(provinceData);
+      }
+    }
     citySelect.innerHTML = '<option value="">-- Select City --</option>' +
       cities.map(c => '<option value="' + c + '">' + c + '</option>').join('');
     if (districtSelect) districtSelect.innerHTML = '<option value="">-- Select District/County --</option>';
   };
   citySelect.onchange = function() {
     if (!districtSelect) return;
-    const districts = CHINA_DISTRICTS[this.value];
+    const provinceData = data[provinceSelect.value];
+    let districts = null;
+    if (provinceData && !Array.isArray(provinceData)) {
+      districts = provinceData[this.value];
+    }
     if (districts && districts.length > 0) {
       districtSelect.innerHTML = '<option value="">-- Select District/County --</option>' +
         districts.map(d => '<option value="' + d + '">' + d + '</option>').join('');
@@ -1905,7 +1919,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.25.0';
+const FE_BUILD = '2.26.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

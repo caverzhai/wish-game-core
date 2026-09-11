@@ -1368,7 +1368,7 @@ function openRegionModal(amount) {
   pendingWithdrawAmount = amount;
   const modal = $('regionModal');
   if (modal) modal.style.display = 'flex';
-  setTimeout(() => { if (typeof toggleRegionInputs === 'function') toggleRegionInputs(); }, 50);
+  try { toggleRegionInputs(); } catch (e) { console.warn('toggleRegionInputs error:', e); }
 }
 // China provinces and major cities (cascading selection)
 const CHINA_PROVINCES = {
@@ -1513,11 +1513,37 @@ function initChinaCascade() {
       const distInput = $('regionDistrictInput');
       if (distInput) distInput.style.display = 'block';
     }
+    // Reset town select
+    const townSelect = $('regionTownSelect');
+    if (townSelect) {
+      townSelect.innerHTML = '<option value="">-- Select Town/Street --</option>';
+      townSelect.style.display = 'none';
+    }
   };
+  // District onchange - load towns
+  if (districtSelect) {
+    districtSelect.onchange = function() {
+      const townSelect = $('regionTownSelect');
+      const townInput = $('regionTown');
+      if (!townSelect) return;
+      const towns = (typeof CHINA_TOWNS !== 'undefined') ? CHINA_TOWNS[this.value] : null;
+      if (towns && towns.length > 0) {
+        townSelect.innerHTML = '<option value="">-- Select Town/Street --</option>' +
+          towns.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+        townSelect.style.display = 'block';
+        if (townInput) townInput.style.display = 'none';
+      } else {
+        townSelect.style.display = 'none';
+        if (townInput) townInput.style.display = 'block';
+      }
+    };
+  }
 }
 
 function toggleRegionInputs() {
-  const country = $('regionCountry').value;
+  const countryEl = $('regionCountry');
+  if (!countryEl) return;
+  const country = countryEl.value;
   const isChina = country === 'China';
   const regionInput = $('regionRegion');
   const provinceSelect = $('regionProvince');
@@ -1526,6 +1552,7 @@ function toggleRegionInputs() {
   const districtSelect = $('regionDistrict');
   const districtInput = $('regionDistrictInput');
   const townInput = $('regionTown');
+  const townSelect = $('regionTownSelect');
   if (isChina) {
     if (regionInput) regionInput.style.display = 'none';
     if (provinceSelect) provinceSelect.style.display = 'block';
@@ -1533,7 +1560,8 @@ function toggleRegionInputs() {
     if (citySelect) citySelect.style.display = 'block';
     if (districtSelect) districtSelect.style.display = 'block';
     if (districtInput) districtInput.style.display = 'none';
-    if (townInput) townInput.style.display = 'block';
+    if (townSelect) townSelect.style.display = 'block';
+    if (townInput) townInput.style.display = 'none';
     initChinaCascade();
   } else {
     if (regionInput) regionInput.style.display = 'block';
@@ -1542,6 +1570,7 @@ function toggleRegionInputs() {
     if (citySelect) citySelect.style.display = 'none';
     if (districtSelect) districtSelect.style.display = 'none';
     if (districtInput) districtInput.style.display = 'none';
+    if (townSelect) townSelect.style.display = 'none';
     if (townInput) townInput.style.display = 'none';
   }
 }
@@ -1559,7 +1588,14 @@ function getRegionValues() {
     } else if (districtInput) {
       district = districtInput.value.trim();
     }
-    const town = $('regionTown').value.trim();
+    const townSelect = $('regionTownSelect');
+    const townInput = $('regionTown');
+    let town = '';
+    if (townSelect && townSelect.style.display !== 'none') {
+      town = townSelect.value;
+    } else if (townInput) {
+      town = townInput.value.trim();
+    }
     return {
       country: country,
       region: province,
@@ -1919,7 +1955,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.26.0';
+const FE_BUILD = '2.27.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

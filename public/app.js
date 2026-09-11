@@ -1222,6 +1222,23 @@ function bindUserLookup() {
       box.innerHTML = '<div class="lookup-error">' + escapeHtml(e.message || t('lookupError')) + '</div>';
     } finally { btn.disabled = false; }
   };
+  const setBtn = $('setInviterBtn');
+  if (setBtn) {
+    setBtn.onclick = async () => {
+      const targetUid = $('setInviterTarget').value.trim();
+      const inviterUid = $('setInviterUid').value.trim();
+      if (!targetUid || !inviterUid) { alert('Both UIDs are required'); return; }
+      setBtn.disabled = true; setBtn.textContent = '...';
+      try {
+        await api('/admin/user/set-inviter', { uid: state.uid, targetUid, inviterUid });
+        alert('Inviter set successfully for ' + targetUid);
+        $('setInviterTarget').value = '';
+        $('setInviterUid').value = '';
+      } catch (e) {
+        alert(e.message || 'Failed');
+      } finally { setBtn.disabled = false; setBtn.textContent = 'Set'; }
+    };
+  }
 }
 function renderLookupResult(r) {
   const box = $('lookupResult');
@@ -1955,7 +1972,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.27.0';
+const FE_BUILD = '2.28.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.27.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.28.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -591,6 +591,22 @@ route('POST', '/user/inviter', async (b, _, req) => {
   } catch {
     return { wallet: null };
   }
+});
+
+// Admin: set user's inviter (for legacy users or corrections)
+route('POST', '/admin/user/set-inviter', async (b, _, req) => {
+  const uid = authUid(b, req);
+  if (!uid) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  await requireAdmin(uid);
+  const targetUid = b.targetUid;
+  const inviterUid = b.inviterUid;
+  if (!targetUid || !inviterUid) throw new GameError(Codes.BAD_INPUT, 'targetUid and inviterUid are required');
+  // Verify both users exist
+  await store.getUser(targetUid);
+  await store.getUser(inviterUid);
+  await store.exec('UPDATE users SET inviter_uid=? WHERE uid=?', [inviterUid, targetUid]);
+  const user = await store.getUser(targetUid);
+  return { ok: true, user };
 });
 
 // #14 Withdraw cooldown: 60 seconds between withdrawals per user

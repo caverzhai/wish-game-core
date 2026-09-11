@@ -365,6 +365,9 @@
       </div>
 
       <h3 class="me-gap" id="meInviteTitle" data-i18n="meInvite">Invite</h3>
+      <div id="inviterInfo" class="inviter-info" style="display:none;margin-bottom:12px;padding:10px;background:var(--bg);border-radius:8px;font-size:13px;">
+        <span data-i18n="myInviter">My Inviter:</span> <b id="inviterWallet">-</b>
+      </div>
       <div id="invTiers" class="inv-tiers"></div>
       <div class="row">
         <input id="inviteLink" readonly />
@@ -508,13 +511,20 @@
         <option value="Other">Other</option>
       </select>
     </div>
-    <div style="margin-bottom:12px;">
+    <div style="margin-bottom:12px;" id="regionRegionWrapper">
       <label style="display:block;font-size:13px;margin-bottom:4px;color:var(--text);" data-i18n="regionRegion">Province/State</label>
       <input id="regionRegion" type="text" maxlength="200" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;" placeholder="e.g. Guangdong / California" />
+      <select id="regionProvince" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;">
+        <option value="">-- Select Province --</option>
+      </select>
     </div>
-    <div style="margin-bottom:16px;">
+    <div style="margin-bottom:16px;" id="regionCityWrapper">
       <label style="display:block;font-size:13px;margin-bottom:4px;color:var(--text);" data-i18n="regionCity">City/Town</label>
       <input id="regionCity" type="text" maxlength="200" style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;" placeholder="e.g. Shenzhen / Los Angeles (China: down to town)" />
+      <select id="regionCitySelect" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;margin-bottom:8px;">
+        <option value="">-- Select City --</option>
+      </select>
+      <input id="regionTown" type="text" maxlength="200" style="display:none;width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;box-sizing:border-box;" placeholder="Town / District (required for China)" />
     </div>
     <button id="regionSubmitBtn" class="btn-primary" style="width:100%;" data-i18n="regionSubmit">Submit & Continue</button>
   </div>

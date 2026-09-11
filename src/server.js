@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.23.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.24.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -577,6 +577,20 @@ route('POST', '/user/region', async (b, _, req) => {
   if (country.length > 100 || region.length > 200 || city.length > 200) throw new GameError(Codes.BAD_INPUT, 'Input too long');
   const user = await store.updateUserRegion(uid, country, region, city);
   return { ok: true, user };
+});
+
+// Get inviter (direct referrer) info for current user
+route('POST', '/user/inviter', async (b, _, req) => {
+  const uid = authUid(b, req);
+  if (!uid) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  const user = await store.getUser(uid);
+  if (!user.inviterUid) return { wallet: null };
+  try {
+    const inviter = await store.getUser(user.inviterUid);
+    return { wallet: inviter.wallet.slice(0, 6) + '...' + inviter.wallet.slice(-4), uid: inviter.uid };
+  } catch {
+    return { wallet: null };
+  }
 });
 
 // #14 Withdraw cooldown: 60 seconds between withdrawals per user

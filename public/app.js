@@ -23,7 +23,7 @@ const pad2 = (n) => String(n).padStart(2, '0');
 const I18N = {
   en: {
     coinUnit: 'coins', platformTitle: 'Global Self-Service Charity Donation Platform', platformDesc: 'The Amsterdam team is committed to providing direct donations to people in need worldwide. Through blockchain, we offer transparent, fair, traceable free donation matching. Those in need receive lossless support, while donors gain recognition and rewards. Protected by the laws of the host country. Relevant certificates are displayed in the Insurance section.', appTitle: 'Wish Pool', loginTip: 'Connect a wallet to start. Invite links bind referrers automatically.', connectWallet: 'Connect Wallet', demoEnter: 'No wallet? Enter as demo', logout: 'Sign out',
-    dockHome: 'Home', dockLottery: 'Lucky', dockBbs: 'Board', dockIns: 'Insurance', dockMe: 'Me', disclaimerTitle: 'Serious Statement', disclaimerAgree: 'I have read and agree', lotteryTitle: 'Lucky Draw Pools', lotteryMainTitle: 'Everyone Needs Donations', lotterySubtitle: 'Up to 5000 coins', lotteryRulesTitle: 'How to Play', lotteryRule1: 'Choose a lucky pool and enter an integer amount (min 1 coin). Numbers are randomly assigned from the remaining pool, not necessarily consecutive.', lotteryRule2: 'When all numbers are sold, the system automatically draws winners randomly. Fully fair and transparent, everyone can view the winning numbers.', lotteryRule3: 'Prize money is automatically credited to your balance and can be withdrawn immediately - no holding, no application, no review.', lotteryRule4: 'Every number has equal odds. The more you buy, the greater your chance. A new round starts automatically after each draw.', lotteryRule5: 'Platform charges 5% fee for operations and charitable donations. Good people get good rewards. Good luck!', lotteryPlayers: 'players', lotteryRound: 'Round', lotterySold: 'sold', lotteryProductDesc: 'Product Description', lotteryDesc1: 'Enter an integer amount, numbers are randomly assigned from the remaining pool. When sold out, the system automatically draws winners randomly - fully fair and transparent.', lotteryDesc2: 'Prize money is automatically credited to your balance and can be withdrawn immediately - no holding, no application, no review.', lotteryPrizePool: 'Prize Structure', lotteryBuyNow: 'Buy Now', lotteryAmount: 'Amount', lotteryConfirmBuy: 'Confirm Buy', lotteryMyNumbers: 'My Numbers', lotteryNoNumbers: 'No purchases yet', lotteryNumberRange: 'Numbers', lotteryHistory: 'Draw History', lotteryNoHistory: 'No draws yet', lotteryComments: 'Comments', lotteryCommentPh: 'Say something...', lotteryNeedAmount: 'Please enter a valid amount', lotteryProcessing: 'Processing...', lotteryBuySuccess: 'Purchase successful!', lotteryBuyFail: 'Purchase failed', lotteryNeedWallet: 'Insufficient balance, charging wallet...', lotteryWalletCancel: 'Wallet payment cancelled or failed', lotteryNoComments: 'No comments yet', seriousNotice: 'Serious Notice', maxDonation: 'Max Donation', prize1: 'First Prize', prize2: 'Second Prize', prize3: 'Third Prize', prize4: 'Fourth Prize', coinUnitLottery: 'coins', howToPlay: 'How to Play', lotteryDescDetail: 'Enter an integer amount (min 1). Numbers are randomly assigned from the remaining pool, not necessarily consecutive. When all numbers are sold, the system automatically draws winners randomly. Prize money is credited to your balance instantly.', wishSuccess1: 'Wish Granted', wishSuccess2: 'Dreams Come True', announcement: 'Announcement', publishAnnouncement: 'Publish', charityApplyBtn: 'Relief Application', charityName: 'Name', charityGender: 'Gender', charityPhoto: 'Photo', charityCountry: 'Country', charityCity: 'City', charityHelpType: 'Help Needed', charityReason: 'Reason', charityAmount: 'Requested Amount', charityProof: 'Proof', charityProofUpload: 'Upload Proof', charitySubmit: 'Submit', charityGoalNote: 'Goal = Requested x 5', charityDonate: 'Donate', charityDonateNow: 'Donate Now', charitySupport: 'Support', charityOppose: 'Oppose', charityVoteNote: 'Only users with insurance nodes can vote. One vote per project, cannot be changed.', charityComments: 'Comments', charityCommentPh: 'Write a comment...', charitySend: 'Send', charityRaised: 'Raised', charityGoal: 'Goal', charityRequested: 'Requested', charityNoProjects: 'No relief applications yet', charityHowToPlay: 'Help Needed', charityBack: 'Back', charityDonated: 'Donated', charityDonor: 'Donor', charityImgTooLarge: 'Image too large, max 2MB', charityPhotoRequired: 'Photo is required', charityPhotoUploadFail: 'Photo upload failed', charityProofUploadFail: 'Proof upload failed', charitySubmitted: 'Submitted successfully!', charitySubmitFail: 'Submission failed', charityError: 'Error', charityLoadFail: 'Failed to load project', charityAmountInvalid: 'Please enter a valid amount', charityDonateSuccess: 'Donation successful!', charityVoteSuccess: 'Vote recorded!', charityCommentSuccess: 'Comment posted!', charityPrizeTitle: 'Prize Distribution', charityPrizeTotal: 'Total Pool', charityPrizeGoal: 'Goal = Requested x 5', charityPrizeRecipient: 'Recipient: 20%', charityPrize1st: '1st Prize: 30% (1 winner)', charityPrize2nd: '2nd Prize: 10% each (2 winners)', charityPrize3rd: '3rd Prize: 2% each (10 winners)', charityPrizePlatform: 'Platform: 10%', charityPrizeNote: 'Each 1 coin donated = 1 lottery ticket. Winners drawn randomly when goal reached. Donations not refunded if not won.', regionTitle: 'Location Verification', regionTip: 'Users without an inviter must verify their location before the first withdrawal.', regionCountry: 'Country', regionRegion: 'Province/State', regionCity: 'City/Town', regionSubmit: 'Submit & Continue', regionRequired: 'All fields are required',
+    dockHome: 'Home', dockLottery: 'Lucky', dockBbs: 'Board', dockIns: 'Insurance', dockMe: 'Me', disclaimerTitle: 'Serious Statement', disclaimerAgree: 'I have read and agree', lotteryTitle: 'Lucky Draw Pools', lotteryMainTitle: 'Everyone Needs Donations', lotterySubtitle: 'Up to 5000 coins', lotteryRulesTitle: 'How to Play', lotteryRule1: 'Choose a lucky pool and enter an integer amount (min 1 coin). Numbers are randomly assigned from the remaining pool, not necessarily consecutive.', lotteryRule2: 'When all numbers are sold, the system automatically draws winners randomly. Fully fair and transparent, everyone can view the winning numbers.', lotteryRule3: 'Prize money is automatically credited to your balance and can be withdrawn immediately - no holding, no application, no review.', lotteryRule4: 'Every number has equal odds. The more you buy, the greater your chance. A new round starts automatically after each draw.', lotteryRule5: 'Platform charges 5% fee for operations and charitable donations. Good people get good rewards. Good luck!', lotteryPlayers: 'players', lotteryRound: 'Round', lotterySold: 'sold', lotteryProductDesc: 'Product Description', lotteryDesc1: 'Enter an integer amount, numbers are randomly assigned from the remaining pool. When sold out, the system automatically draws winners randomly - fully fair and transparent.', lotteryDesc2: 'Prize money is automatically credited to your balance and can be withdrawn immediately - no holding, no application, no review.', lotteryPrizePool: 'Prize Structure', lotteryBuyNow: 'Buy Now', lotteryAmount: 'Amount', lotteryConfirmBuy: 'Confirm Buy', lotteryMyNumbers: 'My Numbers', lotteryNoNumbers: 'No purchases yet', lotteryNumberRange: 'Numbers', lotteryHistory: 'Draw History', lotteryNoHistory: 'No draws yet', lotteryComments: 'Comments', lotteryCommentPh: 'Say something...', lotteryNeedAmount: 'Please enter a valid amount', lotteryProcessing: 'Processing...', lotteryBuySuccess: 'Purchase successful!', lotteryBuyFail: 'Purchase failed', lotteryNeedWallet: 'Insufficient balance, charging wallet...', lotteryWalletCancel: 'Wallet payment cancelled or failed', lotteryNoComments: 'No comments yet', seriousNotice: 'Serious Notice', maxDonation: 'Max Donation', prize1: 'First Prize', prize2: 'Second Prize', prize3: 'Third Prize', prize4: 'Fourth Prize', coinUnitLottery: 'coins', howToPlay: 'How to Play', lotteryDescDetail: 'Enter an integer amount (min 1). Numbers are randomly assigned from the remaining pool, not necessarily consecutive. When all numbers are sold, the system automatically draws winners randomly. Prize money is credited to your balance instantly.', wishSuccess1: 'Wish Granted', wishSuccess2: 'Dreams Come True', announcement: 'Announcement', publishAnnouncement: 'Publish', charityApplyBtn: 'Relief Application', charityName: 'Name', charityGender: 'Gender', charityPhoto: 'Photo', charityCountry: 'Country', charityCity: 'City', charityHelpType: 'Help Needed', charityReason: 'Reason', charityAmount: 'Requested Amount', charityProof: 'Proof', charityProofUpload: 'Upload Proof', charitySubmit: 'Submit', charityGoalNote: 'Goal = Requested x 5', charityDonate: 'Donate', charityDonateNow: 'Donate Now', charitySupport: 'Support', charityOppose: 'Oppose', charityVoteNote: 'Only users with insurance nodes can vote. One vote per project, cannot be changed.', charityComments: 'Comments', charityCommentPh: 'Write a comment...', charitySend: 'Send', charityRaised: 'Raised', charityGoal: 'Goal', charityRequested: 'Requested', charityNoProjects: 'No relief applications yet', charityHowToPlay: 'Help Needed', charityBack: 'Back', charityDonated: 'Donated', charityDonor: 'Donor', charityImgTooLarge: 'Image too large, max 2MB', charityPhotoRequired: 'Photo is required', charityPhotoUploadFail: 'Photo upload failed', charityProofUploadFail: 'Proof upload failed', charitySubmitted: 'Submitted successfully!', charitySubmitFail: 'Submission failed', charityError: 'Error', charityLoadFail: 'Failed to load project', charityAmountInvalid: 'Please enter a valid amount', charityDonateSuccess: 'Donation successful!', charityVoteSuccess: 'Vote recorded!', charityCommentSuccess: 'Comment posted!', charityPrizeTitle: 'Prize Distribution', charityPrizeTotal: 'Total Pool', charityPrizeGoal: 'Goal = Requested x 5', charityPrizeRecipient: 'Recipient: 20%', charityPrize1st: '1st Prize: 30% (1 winner)', charityPrize2nd: '2nd Prize: 10% each (2 winners)', charityPrize3rd: '3rd Prize: 2% each (10 winners)', charityPrizePlatform: 'Platform: 10%', charityPrizeNote: 'Each 1 coin donated = 1 lottery ticket. Winners drawn randomly when goal reached. Donations not refunded if not won.', regionTitle: 'Location Verification', regionTip: 'Users without an inviter must verify their location before the first withdrawal.', regionCountry: 'Country', regionRegion: 'Province/State', regionCity: 'City/Town', regionSubmit: 'Submit & Continue', regionRequired: 'All fields are required', myInviter: 'My Inviter',
     remainSec: 'seconds left', lockAt: 'closed at 170s', betCount: 'Wishes', redPool: 'Red Pool', greenPool: 'Green Pool',
     oddWin: 'Odd sum → Red', evenWin: 'Even sum → Green', pickLabel: 'Pick a number (0-9)',
     amountLabel: 'Wish amount (1-99 枚, integer)', confirmWish: 'Confirm Wish', waitingStart: 'Waiting for the first wish…', historyTitle: 'Past rounds',
@@ -87,7 +87,7 @@ const I18N = {
     adminModeration: '管理員治理', npcAdded: 'NPC添加成功', npcAddFail: 'NPC添加失敗', npcNamePh: '名稱（選填）', npcWalletPh: '0x錢包地址（選填）', npcAddBtn: '添加', addBlockedWord: '加入屏蔽詞', wordPh: '輸入要屏蔽的詞', deletePost: '刪帖', banUser: '封號', unbanUser: '解封', bannedTag: '已封號', noBlocked: '暫無屏蔽詞',
     avail: '可用', frozen: '凍結', withdraw: '提現（單筆2-500，費1枚）', withdrawing: '處理中…', flows: '收支流水',
     frozenDetail: '凍結明細', frozenTotal: '凍結總額', frozenBets: '未結算許願', frozenDonations: '凍結捐款', frozenWithdraws: '提現處理中', frozenMatch: '明細與總額一致', frozenMismatch: '明細與總額不一致', frozenError: '載入凍結明細失敗',
-    wdOk: '提現已發送', wdCheckReceive: '請注意查收。', wdPending: '已提交，待平台處理。', regionTitle: '地区验证', regionTip: '没有邀请人的用户首次提现前必须验证所在地区。', regionCountry: '国家', regionRegion: '省/州', regionCity: '市/镇', regionSubmit: '提交并继续', regionRequired: '所有字段必填',
+    wdOk: '提現已發送', wdCheckReceive: '請注意查收。', wdPending: '已提交，待平台處理。', regionTitle: '地区验证', regionTip: '没有邀请人的用户首次提现前必须验证所在地区。', regionCountry: '国家', regionRegion: '省/州', regionCity: '市/镇', regionSubmit: '提交并继续', regionRequired: '所有字段必填', myInviter: '我的直推人',
     premiumWithdraw: '保費提回餘額（需先關閉保險）', premiumOutPh: '留空＝全部提回', premiumNeed: '請輸入正整數金額',
    
     chainOn: '鏈上模式：優先用站內餘額，不足部分由錢包補足', chainOff: '站內餘額模式（未配置鏈上代幣）', chainPending: '鏈上交易已提交，正在等待確認…', pendingLock: '上一筆正在鏈上確認，請稍候幾秒、切勿重複許願，確認後會自動到帳。', walletChanged: '目前錢包帳戶與登入帳號不一致，請退出後重新連接同一個錢包。',
@@ -129,7 +129,7 @@ const I18N = {
     adminModeration: 'モデレーション', npcAdded: 'NPC追加成功', npcAddFail: 'NPC追加失敗', npcNamePh: '名前（任意）', npcWalletPh: '0xウォレット（任意）', npcAddBtn: '追加', addBlockedWord: 'NGワード追加', wordPh: 'NGワードを入力', deletePost: '削除', banUser: 'BAN', unbanUser: '解除', bannedTag: 'BAN済', noBlocked: 'NGワードなし',
     avail: '利用可能', frozen: '保留中', withdraw: '出金（2-500、手数料1枚）', withdrawing: '処理中…', flows: '取引履歴',
     frozenDetail: '保留明細', frozenTotal: '保留合計', frozenBets: '未決済ベット', frozenDonations: '保留寄付', frozenWithdraws: '出金処理中', frozenMatch: '明細と合計が一致', frozenMismatch: '明細と合計が不一致', frozenError: '保留明細の読み込みに失敗',
-    wdOk: '送金しました。', wdCheckReceive: 'ウォレットへの着金をご確認ください。', wdPending: '送信済み。プラットフォーム処理待ち。', regionTitle: '所在地確認', regionTip: '招待者のいないユーザーは初回出金前に所在地を確認する必要があります。', regionCountry: '国', regionRegion: '省/州', regionCity: '市/町', regionSubmit: '送信して続行', regionRequired: 'すべての項目が必須です',
+    wdOk: '送金しました。', wdCheckReceive: 'ウォレットへの着金をご確認ください。', wdPending: '送信済み。プラットフォーム処理待ち。', regionTitle: '所在地確認', regionTip: '招待者のいないユーザーは初回出金前に所在地を確認する必要があります。', regionCountry: '国', regionRegion: '省/州', regionCity: '市/町', regionSubmit: '送信して続行', regionRequired: 'すべての項目が必須です', myInviter: '招待者',
     premiumWithdraw: '保険料を残高へ戻す（保険OFF時）', premiumOutPh: '空欄＝全額戻す', premiumNeed: '正の整数を入力してください',
    
     chainOn: 'オンチェーン：残高を優先し、不足分だけウォレットから支払い', chainOff: 'オフチェーン残高モード（トークン未設定）', chainPending: '送信済み、承認待ちです…', pendingLock: '直前の取引がオンチェーン承認待ちです。数秒お待ちください（重複提交はしないでください）。承認後に自動で反映されます。', walletChanged: '現在のウォレットがログイン中アカウントと異なります。ログアウトして同じウォレットを再接続してください。',
@@ -170,7 +170,7 @@ const I18N = {
     adminModeration: 'الإشراف', addBlockedWord: 'حظر كلمة', wordPh: 'أدخل كلمة للحظر', deletePost: 'حذف', banUser: 'حظر', unbanUser: 'رفع الحظر', bannedTag: 'محظور', noBlocked: 'لا توجد كلمات محظورة', npcAdded: 'تمت إضافة NPC بنجاح', npcAddFail: 'فشل إضافة NPC', npcNamePh: 'الاسم (اختياري)', npcWalletPh: '0x المحفظة (اختياري)', npcAddBtn: 'إضافة',
     avail: 'متاح', frozen: 'محتجز', withdraw: 'سحب (2-500، رسوم 1)', withdrawing: 'جارٍ المعالجة…', flows: 'المعاملات',
     frozenDetail: 'تفاصيل المحتجز', frozenTotal: 'إجمالي المحتجز', frozenBets: 'رهانات غير مسوّاة', frozenDonations: 'تبرعات محتجزة', frozenWithdraws: 'سحوبات قيد المعالجة', frozenMatch: 'التفاصيل تطابق الإجمالي', frozenMismatch: 'التفاصيل لا تطابق الإجمالي', frozenError: 'فشل تحميل تفاصيل المحتجز',
-    wdOk: 'تم إرسال السحب.', wdCheckReceive: 'يرجى التحقق من محفظتك للحصول على الأموال.', wdPending: 'تم الإرسال، بانتظار معالجة المنصة.', regionTitle: 'التحقق من الموقع', regionTip: 'يجب على المستخدمين بدون دعوة التحقق من موقعهم قبل السحب الأول.', regionCountry: 'الدولة', regionRegion: 'المحافظة/الولاية', regionCity: 'المدينة/البلدة', regionSubmit: 'إرسال ومتابعة', regionRequired: 'جميع الحقول مطلوبة',
+    wdOk: 'تم إرسال السحب.', wdCheckReceive: 'يرجى التحقق من محفظتك للحصول على الأموال.', wdPending: 'تم الإرسال، بانتظار معالجة المنصة.', regionTitle: 'التحقق من الموقع', regionTip: 'يجب على المستخدمين بدون دعوة التحقق من موقعهم قبل السحب الأول.', regionCountry: 'الدولة', regionRegion: 'المحافظة/الولاية', regionCity: 'المدينة/البلدة', regionSubmit: 'إرسال ومتابعة', regionRequired: 'جميع الحقول مطلوبة', myInviter: 'الداعي',
     premiumWithdraw: 'رسم التأمين → الرصيد (التأمين متوقف)', premiumOutPh: 'اتركه فارغاً = سحب الكل', premiumNeed: 'أدخل مبلغاً صحيحاً موجباً',
     chainOn: 'على السلسلة: الرصيد أولاً، والجزء الناقص يُدفع من محفظتك.', chainOff: 'وضع الرصيد خارج السلسلة (لم يتم تكوين رمز مميز).', chainPending: 'تم الإرسال، بانتظار التأكيد…', pendingLock: 'المعاملة السابقة لا تزال قيد التأكيد على السلسلة. انتظر ثوانٍ — لا تُرسل مرة أخرى؛ سيُضاف تلقائياً.', walletChanged: 'المحفظة النشطة تختلف عن الحساب المسجل. اخرج وأعد الاتصال بنفس المحفظة.',
     pendingTitle: 'مدفوعات السلسلة قيد الانتظار', pendingVerify: 'تحقق وأضف الآن', chainWillCredit: 'تم الدفع على السلسلة. يُضاف تلقائياً بعد التأكيد؛ يمكنك أيضاً الضغط على تحقق ضمن حسابي.', chainCreditedRedo: 'تمت إضافة الدفع على السلسلة إلى الرصيد، يرجى إعادة تقديم الأمنية.',
@@ -210,7 +210,7 @@ const I18N = {
     adminModeration: 'Moderasi', addBlockedWord: 'Blokir kata', wordPh: 'Masukkan kata yang diblokir', deletePost: 'Hapus', banUser: 'Blokir', unbanUser: 'Buka blokir', bannedTag: 'DIBLOKIR', noBlocked: 'Tidak ada kata diblokir', npcAdded: 'NPC berhasil ditambahkan', npcAddFail: 'Gagal menambahkan NPC', npcNamePh: 'Nama (opsional)', npcWalletPh: '0x dompet (opsional)', npcAddBtn: 'Tambah',
     avail: 'Tersedia', frozen: 'Ditahan', withdraw: 'Tarik (2-500, biaya 1)', withdrawing: 'Memproses…', flows: 'Transaksi',
     frozenDetail: 'Detail Ditahan', frozenTotal: 'Total Ditahan', frozenBets: 'Taruhan Belum Selesai', frozenDonations: 'Donasi Ditahan', frozenWithdraws: 'Penarikan Diproses', frozenMatch: 'Rincian cocok dengan total', frozenMismatch: 'Rincian TIDAK cocok dengan total', frozenError: 'Gagal memuat detail ditahan',
-    wdOk: 'Penarikan dikirim.', wdCheckReceive: 'Silakan cek dompet Anda untuk dana.', wdPending: 'Terkirim, menunggu pemrosesan platform.', regionTitle: 'Verifikasi Lokasi', regionTip: 'Pengguna tanpa undangan harus memverifikasi lokasi sebelum penarikan pertama.', regionCountry: 'Negara', regionRegion: 'Provinsi/Negara Bagian', regionCity: 'Kota/Kabupaten', regionSubmit: 'Kirim & Lanjutkan', regionRequired: 'Semua field wajib diisi',
+    wdOk: 'Penarikan dikirim.', wdCheckReceive: 'Silakan cek dompet Anda untuk dana.', wdPending: 'Terkirim, menunggu pemrosesan platform.', regionTitle: 'Verifikasi Lokasi', regionTip: 'Pengguna tanpa undangan harus memverifikasi lokasi sebelum penarikan pertama.', regionCountry: 'Negara', regionRegion: 'Provinsi/Negara Bagian', regionCity: 'Kota/Kabupaten', regionSubmit: 'Kirim & Lanjutkan', regionRequired: 'Semua field wajib diisi', myInviter: 'Pengundang Saya',
     premiumWithdraw: 'Premi → saldo (asuransi NONAKTIF)', premiumOutPh: 'Kosong = tarik semua', premiumNeed: 'Masukkan jumlah bilangan bulat positif',
     chainOn: 'On-chain: utamakan saldo, kekurangan dibayar dari dompet Anda.', chainOff: 'Mode saldo off-chain (token belum dikonfigurasi).', chainPending: 'Terkirim, menunggu konfirmasi…', pendingLock: 'Transaksi sebelumnya masih dikonfirmasi di on-chain. Tunggu beberapa detik — JANGAN kirim lagi; akan dikreditkan otomatis.', walletChanged: 'Dompet aktif berbeda dengan akun yang masuk. Keluar dan sambungkan kembali dompet yang sama.',
     pendingTitle: 'Pembayaran on-chain tertunda', pendingVerify: 'Verifikasi & kredit sekarang', chainWillCredit: 'Dibayar on-chain. Dikreditkan otomatis setelah dikonfirmasi; Anda juga bisa ketuk Verifikasi di Saya.', chainCreditedRedo: 'Pembayaran on-chain telah dikreditkan ke saldo, silakan ajukan keinginan lagi.',
@@ -250,7 +250,7 @@ const I18N = {
     adminModeration: '관리', addBlockedWord: '단어 차단', wordPh: '차단할 단어 입력', deletePost: '삭제', banUser: '차단', unbanUser: '차단 해제', bannedTag: '차단됨', noBlocked: '차단된 단어 없음', npcAdded: 'NPC 추가 성공', npcAddFail: 'NPC 추가 실패', npcNamePh: '이름 (선택)', npcWalletPh: '0x 지갑 (선택)', npcAddBtn: '추가',
     avail: '사용 가능', frozen: '보류', withdraw: '출금 (2-500, 수수료 1)', withdrawing: '처리 중…', flows: '거래 내역',
     frozenDetail: '보류 상세', frozenTotal: '보류 총액', frozenBets: '미정산 베팅', frozenDonations: '보류 기부', frozenWithdraws: '출금 처리 중', frozenMatch: '상세 내역이 총액과 일치', frozenMismatch: '상세 내역이 총액과 불일치', frozenError: '보류 상세 로드 실패',
-    wdOk: '출금이 전송되었습니다.', wdCheckReceive: '지갑에서 입금을 확인해 주세요.', wdPending: '접수되었습니다. 플랫폼 처리 대기 중.', regionTitle: '위치 인증', regionTip: '초대자가 없는 사용자는 첫 출금 전에 위치를 인증해야 합니다.', regionCountry: '국가', regionRegion: '도/주', regionCity: '시/군', regionSubmit: '제출 및 계속', regionRequired: '모든 필드는 필수입니다',
+    wdOk: '출금이 전송되었습니다.', wdCheckReceive: '지갑에서 입금을 확인해 주세요.', wdPending: '접수되었습니다. 플랫폼 처리 대기 중.', regionTitle: '위치 인증', regionTip: '초대자가 없는 사용자는 첫 출금 전에 위치를 인증해야 합니다.', regionCountry: '국가', regionRegion: '도/주', regionCity: '시/군', regionSubmit: '제출 및 계속', regionRequired: '모든 필드는 필수입니다', myInviter: '초대자',
     premiumWithdraw: '보험료 → 잔액 (보험 OFF 시)', premiumOutPh: '비우면 전액 출금', premiumNeed: '양의 정수 금액을 입력하세요',
     chainOn: '온체인: 잔액 우선, 부족분은 지갑에서 지불.', chainOff: '오프체인 잔액 모드 (토큰 미설정).', chainPending: '전송됨, 확인 대기 중…', pendingLock: '직전 거래가 아직 온체인 확인 중입니다. 몇 초 기다리세요 — 다시 제출하지 마세요. 자동 입금됩니다.', walletChanged: '활성 지갑이 로그인 계정과 다릅니다. 로그아웃 후 같은 지갑을 다시 연결하세요.',
     pendingTitle: '대기 중인 온체인 결제', pendingVerify: '지금 확인 및 입금', chainWillCredit: '온체인에서 결제되었습니다. 확인 후 자동 입금되며, 나의 메뉴에서 직접 확인할 수도 있습니다.', chainCreditedRedo: '온체인 결제가 잔액에 입금되었습니다. 다시 소원을 접수해 주세요.',
@@ -290,7 +290,7 @@ const I18N = {
     adminModeration: 'Модерация', addBlockedWord: 'Заблокировать слово', wordPh: 'Введите слово для блокировки', deletePost: 'Удалить', banUser: 'Забанить', unbanUser: 'Разбанить', bannedTag: 'ЗАБАНЕН', noBlocked: 'Нет заблокированных слов', npcAdded: 'NPC успешно добавлен', npcAddFail: 'Ошибка добавления NPC', npcNamePh: 'Имя (необязательно)', npcWalletPh: '0x кошелек (необязательно)', npcAddBtn: 'Добавить',
     avail: 'Доступно', frozen: 'Заморожено', withdraw: 'Вывод (2-500, комиссия 1)', withdrawing: 'Обработка…', flows: 'Транзакции',
     frozenDetail: 'Детали заморозки', frozenTotal: 'Всего заморожено', frozenBets: 'Незавершённые ставки', frozenDonations: 'Замороженные пожертвования', frozenWithdraws: 'Выводы в обработке', frozenMatch: 'Детали совпадают с итогом', frozenMismatch: 'Детали НЕ совпадают с итогом', frozenError: 'Не удалось загрузить детали',
-    wdOk: 'Вывод отправлен.', wdCheckReceive: 'Проверьте кошелёк — средства должны поступить.', wdPending: 'Отправлено, ожидает обработки платформой.', regionTitle: 'Подтверждение местоположения', regionTip: 'Пользователи без приглашения должны подтвердить местоположение перед первым выводом.', regionCountry: 'Страна', regionRegion: 'Область/Штат', regionCity: 'Город/Посёлок', regionSubmit: 'Отправить и продолжить', regionRequired: 'Все поля обязательны',
+    wdOk: 'Вывод отправлен.', wdCheckReceive: 'Проверьте кошелёк — средства должны поступить.', wdPending: 'Отправлено, ожидает обработки платформой.', regionTitle: 'Подтверждение местоположения', regionTip: 'Пользователи без приглашения должны подтвердить местоположение перед первым выводом.', regionCountry: 'Страна', regionRegion: 'Область/Штат', regionCity: 'Город/Посёлок', regionSubmit: 'Отправить и продолжить', regionRequired: 'Все поля обязательны', myInviter: 'Мой пригласитель',
     premiumWithdraw: 'Премия → баланс (страховка ВЫКЛ)', premiumOutPh: 'Пусто = вывести всё', premiumNeed: 'Введите положительное целое число',
     chainOn: 'В сети: сначала баланс, недостаток оплачивается из кошелька.', chainOff: 'Режим внутрисетевого баланса (токен не настроен).', chainPending: 'Отправлено, ожидание подтверждения…', pendingLock: 'Предыдущая транзакция ещё подтверждается в сети. Подождите несколько секунд — НЕ отправляйте снова; зачислится автоматически.', walletChanged: 'Активный кошелёк отличается от вошедшего аккаунта. Выйдите и подключите тот же кошелёк заново.',
     pendingTitle: 'Ожидающие сетевые платежи', pendingVerify: 'Проверить и зачислить сейчас', chainWillCredit: 'Оплачено в сети. Зачислится автоматически после подтверждения; можно также нажать «Проверить» в профиле.', chainCreditedRedo: 'Сетевой платёж зачислен на баланс, отправьте желание заново.',
@@ -330,7 +330,7 @@ const I18N = {
     adminModeration: 'मॉडरेशन', addBlockedWord: 'शब्द ब्लॉक करें', wordPh: 'ब्लॉक करने के लिए शब्द दर्ज करें', deletePost: 'हटाएँ', banUser: 'बैन', unbanUser: 'अनबैन', bannedTag: 'बैन्ड', noBlocked: 'कोई ब्लॉक शब्द नहीं', npcAdded: 'NPC सफलतापूर्वक जोड़ा गया', npcAddFail: 'NPC जोड़ने में विफल', npcNamePh: 'नाम (वैकल्पिक)', npcWalletPh: '0x वॉलेट (वैकल्पिक)', npcAddBtn: 'जोड़ें',
     avail: 'उपलब्ध', frozen: 'रोका गया', withdraw: 'निकासी (2-500, शुल्क 1)', withdrawing: 'प्रोसेसिंग…', flows: 'लेनदेन',
     frozenDetail: 'रोका गया विवरण', frozenTotal: 'कुल रोका गया', frozenBets: 'अनसमाप्त बेट', frozenDonations: 'रोके गए दान', frozenWithdraws: 'निकासी प्रोसेसिंग में', frozenMatch: 'विवरण कुल से मेल खाता है', frozenMismatch: 'विवरण कुल से मेल नहीं खाता', frozenError: 'विवरण लोड करने में विफल',
-    wdOk: 'निकासी भेजी गई.', wdCheckReceive: 'कृपया धन के लिए अपना वॉलेट देखें.', wdPending: 'सबमिट हुआ, प्लेटफ़ॉर्म प्रोसेसिंग की प्रतीक्षा में.', regionTitle: 'स्थान सत्यापन', regionTip: 'बिना निमंत्रण के उपयोगकर्ताओं को पहली निकासी से पहले अपना स्थान सत्यापित करना होगा।', regionCountry: 'देश', regionRegion: 'प्रांत/राज्य', regionCity: 'शहर/कस्बा', regionSubmit: 'जमा करें और जारी रखें', regionRequired: 'सभी फ़ील्ड आवश्यक हैं',
+    wdOk: 'निकासी भेजी गई.', wdCheckReceive: 'कृपया धन के लिए अपना वॉलेट देखें.', wdPending: 'सबमिट हुआ, प्लेटफ़ॉर्म प्रोसेसिंग की प्रतीक्षा में.', regionTitle: 'स्थान सत्यापन', regionTip: 'बिना निमंत्रण के उपयोगकर्ताओं को पहली निकासी से पहले अपना स्थान सत्यापित करना होगा।', regionCountry: 'देश', regionRegion: 'प्रांत/राज्य', regionCity: 'शहर/कस्बा', regionSubmit: 'जमा करें और जारी रखें', regionRequired: 'सभी फ़ील्ड आवश्यक हैं', myInviter: 'मेरा आमंत्रक',
     premiumWithdraw: 'प्रीमियम → बैलेंस (बीमा बंद)', premiumOutPh: 'खाली = सब निकालें', premiumNeed: 'धनात्मक पूर्णांक राशि दर्ज करें',
     chainOn: 'ऑन-चेन: पहले बैलेंस, कमी वॉलेट से भुगतान.', chainOff: 'ऑफ-चेन बैलेंस मोड (टोकन कॉन्फ़िगर नहीं).', chainPending: 'भेजा गया, पुष्टि की प्रतीक्षा में…', pendingLock: 'पिछला ट्रांज़ैक्शन अभी ऑन-चेन पुष्टि हो रहा है. कुछ सेकंड प्रतीक्षा करें — फिर से सबमिट न करें; स्वचालित जमा होगा.', walletChanged: 'सक्रिय वॉलेट लॉगिन खाते से भिन्न है. लॉग आउट करें और उसी वॉलेट को फिर कनेक्ट करें.',
     pendingTitle: 'लंबित ऑन-चेन भुगतान', pendingVerify: 'अभी सत्यापित करें और जमा करें', chainWillCredit: 'ऑन-चेन भुगतान हो गया. पुष्टि के बाद स्वचालित जमा होगा; आप मेरा में सत्यापन भी टैप कर सकते हैं.', chainCreditedRedo: 'ऑन-चेन भुगतान बैलेंस में जमा हो गया, कृपया फिर से विश सबमिट करें.',
@@ -370,7 +370,7 @@ const I18N = {
     adminModeration: 'ماڈریشن', npcAdded: 'NPC کامیابی سے شامل ہو گیا', npcAddFail: 'NPC شامل کرنے میں ناکامی', npcNamePh: 'نام (اختیاری)', npcWalletPh: '0x والیٹ (اختیاری)', npcAddBtn: 'شامل کریں', addBlockedWord: 'لفظ بلاک کریں', wordPh: 'بلاک کرنے کے لیے لفظ درج کریں', deletePost: 'حذف کریں', banUser: 'بین', unbanUser: 'ان بین', bannedTag: 'بین شدہ', noBlocked: 'کوئی بلاک شدہ لفظ نہیں',
     avail: 'دستیاب', frozen: 'روکا گیا', withdraw: 'نکاسی (2-500، فیس 1)', withdrawing: 'پروسیسنگ…', flows: 'لین دین',
     frozenDetail: 'روکا گیا تفصیل', frozenTotal: 'کل روکا گیا', frozenBets: 'غیر تصفیہ شدہ شرطیں', frozenDonations: 'روکے گئے عطیات', frozenWithdraws: 'نکاسی زیر التواء', frozenMatch: 'تفصیل کل سے مطابقت رکھتی ہے', frozenMismatch: 'تفصیل کل سے مطابقت نہیں رکھتی', frozenError: 'تفصیل لوڈ کرنے میں ناکامی',
-    wdOk: 'نکاسی بھیج دی گئی.', wdCheckReceive: 'رقم کے لیے اپنا والیٹ چیک کریں.', wdPending: 'جمع ہو گیا، پلیٹ فارم پروسیسنگ کا انتظار.', regionTitle: 'مقام کی تصدیق', regionTip: 'بغیر دعوت کے صارفین کو پہلی نکاسی سے پہلے اپنے مقام کی تصدیق کرنی ہوگی۔', regionCountry: 'ملک', regionRegion: 'صوبہ/ریاست', regionCity: 'شہر/قصبہ', regionSubmit: 'جمع کریں اور جاری رکھیں', regionRequired: 'تمام فیلڈز ضروری ہیں',
+    wdOk: 'نکاسی بھیج دی گئی.', wdCheckReceive: 'رقم کے لیے اپنا والیٹ چیک کریں.', wdPending: 'جمع ہو گیا، پلیٹ فارم پروسیسنگ کا انتظار.', regionTitle: 'مقام کی تصدیق', regionTip: 'بغیر دعوت کے صارفین کو پہلی نکاسی سے پہلے اپنے مقام کی تصدیق کرنی ہوگی۔', regionCountry: 'ملک', regionRegion: 'صوبہ/ریاست', regionCity: 'شہر/قصبہ', regionSubmit: 'جمع کریں اور جاری رکھیں', regionRequired: 'تمام فیلڈز ضروری ہیں', myInviter: 'میرا مدعو',
     premiumWithdraw: 'پریمیم → بیلنس (انشورنس آف)', premiumOutPh: 'خالی = سب نکالیں', premiumNeed: 'مثبت عدد صحیح رقم درج کریں',
     chainOn: 'آن چین: پہلے بیلنس، کمی والیٹ سے ادا.', chainOff: 'آف چین بیلنس موڈ (ٹوکن کنفیگر نہیں).', chainPending: 'بھیجا گیا، تصدیق کا انتظار…', pendingLock: 'پچھلا ٹرانزیکشن ابھی آن چین پر تصدیق ہو رہا ہے. چند سیکنڈ انتظار کریں — دوبارہ جمع نہ کریں; خود بخود جمع ہو جائے گا.', walletChanged: 'فعال والیٹ لاگ اکاؤنٹ سے مختلف ہے. لاگ آؤٹ کر کے اسی والیٹ کو دوبارہ منسلک کریں.',
     pendingTitle: 'زیر التزام آن چین ادائیگیاں', pendingVerify: 'ابھی تصدیق کریں اور جمع کروائیں', chainWillCredit: 'آن چین ادائیگی ہو گئی. تصدیق کے بعد خود بخود جمع ہو جائے گی; آپ میرا میں تصدیق بھی ٹیپ کر سکتے ہیں.', chainCreditedRedo: 'آن چین ادائیگی بیلنس میں جمع ہو گئی، براہ کرم دوبارہ خواہش جمع کروائیں.',
@@ -887,6 +887,32 @@ function renderMe() {
   const invRate = (Number(me.invite.perMille) / 10).toFixed(1) + '%';
   $('invCount').textContent = me.invite.validInvites || 0;
   $('invRate').textContent = invRate;
+  // Show inviter (direct referrer) info
+  const inviterBox = $('inviterInfo');
+  if (inviterBox) {
+    if (me.user.inviterUid) {
+      inviterBox.style.display = 'block';
+      const inviterEl = $('inviterWallet');
+      if (inviterEl) {
+        if (me.invite && me.invite.inviterWallet) {
+          inviterEl.textContent = me.invite.inviterWallet;
+        } else {
+          inviterEl.textContent = 'U' + me.user.inviterUid;
+          if (!state._inviterFetched) {
+            state._inviterFetched = true;
+            api('/user/inviter', { uid: state.uid }).then(r => {
+              if (r && r.wallet) {
+                inviterEl.textContent = r.wallet;
+                if (state.me && state.me.invite) state.me.invite.inviterWallet = r.wallet;
+              }
+            }).catch(() => {});
+          }
+        }
+      }
+    } else {
+      inviterBox.style.display = 'none';
+    }
+  }
   $('invTotal').textContent = fmt(me.invite.rewardTotal) + t('coinUnit');
   const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = `${t('meInvite')}（${invRate}）`;
   renderInvTiers(me.invite);
@@ -1343,11 +1369,104 @@ function openRegionModal(amount) {
   const modal = $('regionModal');
   if (modal) modal.style.display = 'flex';
 }
-async function submitRegion() {
+// China provinces and major cities (cascading selection)
+const CHINA_PROVINCES = {
+  "Beijing": ["Beijing"],
+  "Shanghai": ["Shanghai"],
+  "Tianjin": ["Tianjin"],
+  "Chongqing": ["Chongqing"],
+  "Guangdong": ["Guangzhou", "Shenzhen", "Zhuhai", "Foshan", "Dongguan", "Zhongshan", "Huizhou", "Shantou", "Jiangmen", "Zhanjiang", "Zhaoqing", "Maoming", "Meizhou", "Shanwei", "Heyuan", "Yangjiang", "Qingyuan", "Chaozhou", "Jieyang", "Yunfu"],
+  "Jiangsu": ["Nanjing", "Suzhou", "Wuxi", "Changzhou", "Nantong", "Yancheng", "Yangzhou", "Zhenjiang", "Taizhou", "Xuzhou", "Huai'an", "Lianyungang", "Suqian"],
+  "Zhejiang": ["Hangzhou", "Ningbo", "Wenzhou", "Jiaxing", "Huzhou", "Shaoxing", "Jinhua", "Quzhou", "Zhoushan", "Taizhou", "Lishui"],
+  "Shandong": ["Jinan", "Qingdao", "Zibo", "Zaozhuang", "Dongying", "Yantai", "Weifang", "Jining", "Tai'an", "Weihai", "Rizhao", "Linyi", "Dezhou", "Liaocheng", "Binzhou", "Heze"],
+  "Henan": ["Zhengzhou", "Kaifeng", "Luoyang", "Pingdingshan", "Anyang", "Hebi", "Xinxiang", "Jiaozuo", "Puyang", "Xuchang", "Luohe", "Sanmenxia", "Nanyang", "Shangqiu", "Xinyang", "Zhoukou", "Zhumadian"],
+  "Sichuan": ["Chengdu", "Zigong", "Panzhihua", "Luzhou", "Deyang", "Mianyang", "Guangyuan", "Suining", "Neijiang", "Leshan", "Nanchong", "Meishan", "Yibin", "Guang'an", "Dazhou", "Ya'an", "Bazhong", "Ziyang"],
+  "Hubei": ["Wuhan", "Huangshi", "Shiyan", "Yichang", "Xiangyang", "Ezhou", "Jingmen", "Xiaogan", "Jingzhou", "Huanggang", "Xianning", "Suizhou", "Enshi"],
+  "Hunan": ["Changsha", "Zhuzhou", "Xiangtan", "Hengyang", "Shaoyang", "Yueyang", "Changde", "Zhangjiajie", "Yiyang", "Chenzhou", "Yongzhou", "Huaihua", "Loudi", "Xiangxi"],
+  "Fujian": ["Fuzhou", "Xiamen", "Putian", "Sanming", "Quanzhou", "Zhangzhou", "Nanping", "Longyan", "Ningde"],
+  "Hebei": ["Shijiazhuang", "Tangshan", "Qinhuangdao", "Handan", "Xingtai", "Baoding", "Zhangjiakou", "Chengde", "Cangzhou", "Langfang", "Hengshui"],
+  "Shanxi": ["Taiyuan", "Datong", "Yangquan", "Changzhi", "Jincheng", "Shuozhou", "Jinzhong", "Yuncheng", "Xinzhou", "Linfen", "Lvliang"],
+  "Liaoning": ["Shenyang", "Dalian", "Anshan", "Fushun", "Benxi", "Dandong", "Jinzhou", "Yingkou", "Fuxin", "Liaoyang", "Panjin", "Tieling", "Chaoyang", "Huludao"],
+  "Jilin": ["Changchun", "Jilin", "Siping", "Liaoyuan", "Tonghua", "Baishan", "Songyuan", "Baicheng", "Yanbian"],
+  "Heilongjiang": ["Harbin", "Qiqihar", "Jixi", "Hegang", "Shuangyashan", "Daqing", "Yichun", "Jiamusi", "Qitaihe", "Mudanjiang", "Heihe", "Suihua", "Daxing'anling"],
+  "Anhui": ["Hefei", "Wuhu", "Bengbu", "Huainan", "Ma'anshan", "Huaibei", "Tongling", "Anqing", "Huangshan", "Chuzhou", "Fuyang", "Suzhou", "Lu'an", "Bozhou", "Chizhou", "Xuancheng"],
+  "Jiangxi": ["Nanchang", "Jingdezhen", "Pingxiang", "Jiujiang", "Xinyu", "Yingtan", "Ganzhou", "Ji'an", "Yichun", "Fuzhou", "Shangrao"],
+  "Shaanxi": ["Xi'an", "Tongchuan", "Baoji", "Xianyang", "Weinan", "Yan'an", "Hanzhong", "Yulin", "Ankang", "Shangluo"],
+  "Gansu": ["Lanzhou", "Jiayuguan", "Jinchang", "Baiyin", "Tianshui", "Wuwei", "Zhangye", "Pingliang", "Jiuquan", "Qingyang", "Dingxi", "Longnan", "Linxia", "Gannan"],
+  "Qinghai": ["Xining", "Haidong", "Haibei", "Hainan", "Huangnan", "Guoluo", "Yushu", "Haixi"],
+  "Hainan": ["Haikou", "Sanya", "Sansha", "Danzhou"],
+  "Yunnan": ["Kunming", "Qujing", "Yuxi", "Baoshan", "Zhaotong", "Lijiang", "Pu'er", "Lincang", "Chuxiong", "Honghe", "Wenshan", "Xishuangbanna", "Dali", "Dehong", "Nujiang", "Diqing"],
+  "Guizhou": ["Guiyang", "Liupanshui", "Zunyi", "Anshun", "Bijie", "Tongren", "Qianxinan", "Qiandongnan", "Qiannan"],
+  "Inner Mongolia": ["Hohhot", "Baotou", "Wuhai", "Chifeng", "Tongliao", "Ordos", "Hulunbuir", "Bayannur", "Ulanqab", "Xing'an", "Xilingol", "Alxa"],
+  "Guangxi": ["Nanning", "Liuzhou", "Guilin", "Wuzhou", "Beihai", "Fangchenggang", "Qinzhou", "Guigang", "Yulin", "Baise", "Hezhou", "Hechi", "Laibin", "Chongzuo"],
+  "Tibet": ["Lhasa", "Shigatse", "Chamdo", "Nyingchi", "Shannan", "Nagqu", "Ngari"],
+  "Ningxia": ["Yinchuan", "Shizuishan", "Wuzhong", "Guyuan", "Zhongwei"],
+  "Xinjiang": ["Urumqi", "Karamay", "Turpan", "Hami", "Changji", "Bortala", "Bayingolin", "Aksu", "Kizilsu", "Kashgar", "Hotan", "Ili", "Tacheng", "Altay"],
+  "Hong Kong": ["Hong Kong"],
+  "Macau": ["Macau"],
+  "Taiwan": ["Taipei", "New Taipei", "Taoyuan", "Taichung", "Tainan", "Kaohsiung", "Keelung", "Hsinchu", "Chiayi", "Yilan", "Hsinchu County", "Miaoli", "Changhua", "Nantou", "Yunlin", "Chiayi County", "Pingtung", "Taitung", "Hualien", "Penghu", "Kinmen", "Lienchiang"]
+};
+
+function initChinaCascade() {
+  const provinceSelect = $('regionProvince');
+  const citySelect = $('regionCitySelect');
+  if (!provinceSelect || !citySelect) return;
+  // Populate provinces
+  provinceSelect.innerHTML = '<option value="">-- Select Province --</option>' +
+    Object.keys(CHINA_PROVINCES).map(p => '<option value="' + p + '">' + p + '</option>').join('');
+  provinceSelect.onchange = function() {
+    const cities = CHINA_PROVINCES[this.value] || [];
+    citySelect.innerHTML = '<option value="">-- Select City --</option>' +
+      cities.map(c => '<option value="' + c + '">' + c + '</option>').join('');
+  };
+}
+
+function toggleRegionInputs() {
   const country = $('regionCountry').value;
-  const region = $('regionRegion').value.trim();
-  const city = $('regionCity').value.trim();
-  if (!country || !region || !city) { alert(t('regionRequired')); return; }
+  const isChina = country === 'China';
+  const regionInput = $('regionRegion');
+  const provinceSelect = $('regionProvince');
+  const cityInput = $('regionCity');
+  const citySelect = $('regionCitySelect');
+  const townInput = $('regionTown');
+  if (isChina) {
+    if (regionInput) regionInput.style.display = 'none';
+    if (provinceSelect) provinceSelect.style.display = 'block';
+    if (cityInput) cityInput.style.display = 'none';
+    if (citySelect) citySelect.style.display = 'block';
+    if (townInput) townInput.style.display = 'block';
+    initChinaCascade();
+  } else {
+    if (regionInput) regionInput.style.display = 'block';
+    if (provinceSelect) provinceSelect.style.display = 'none';
+    if (cityInput) cityInput.style.display = 'block';
+    if (citySelect) citySelect.style.display = 'none';
+    if (townInput) townInput.style.display = 'none';
+  }
+}
+
+function getRegionValues() {
+  const country = $('regionCountry').value;
+  if (country === 'China') {
+    return {
+      country: country,
+      region: $('regionProvince').value,
+      city: $('regionCitySelect').value + ' - ' + ($('regionTown').value.trim() || '')
+    };
+  }
+  return {
+    country: country,
+    region: $('regionRegion').value.trim(),
+    city: $('regionCity').value.trim()
+  };
+}
+
+async function submitRegion() {
+  const vals = getRegionValues();
+  if (!vals.country || !vals.region || !vals.city || vals.city === ' - ') { alert(t('regionRequired')); return; }
+  const country = vals.country;
+  const region = vals.region;
+  const city = vals.city;
   const btn = $('regionSubmitBtn');
   btn.disabled = true; btn.textContent = '...';
   try {
@@ -1643,6 +1762,7 @@ function init() {
   $('premiumOutBtn').onclick = withdrawPremium;
   $('wdBtn').onclick = withdraw;
   $('regionSubmitBtn').onclick = submitRegion;
+  $('regionCountry').onchange = toggleRegionInputs;
   $('pendingVerifyBtn').onclick = async () => { $('pendingVerifyBtn').disabled = true; try { await creditPending(); } finally { $('pendingVerifyBtn').disabled = false; renderPending(); } };
   $('manualTxBtn').onclick = async () => {
     const txHash = $('manualTxInput').value.trim();
@@ -1687,7 +1807,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.23.0';
+const FE_BUILD = '2.24.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

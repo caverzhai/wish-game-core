@@ -255,8 +255,8 @@ export class NpcService {
   }
 
   _rollNextTime() {
-    // 20-60 min for social posts
-    return nowSec() + Math.floor(Math.random() * 2400) + 1200;
+    // 200-600 min for social posts and chat (10x slower)
+    return nowSec() + Math.floor(Math.random() * 24000) + 12000;
   }
 
   _rollBetTime() {

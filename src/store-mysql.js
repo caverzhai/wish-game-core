@@ -463,7 +463,11 @@ export class MysqlStore {
     return id;
   }
   async listFlows(uid, limit = 64) {
-    return (await this.exec('SELECT * FROM flows WHERE uid=? ORDER BY id DESC LIMIT ?', [uid, limit])).map((r) => ({ id: r.flow_id, uid: r.uid, bizType: r.biz_type, amount: B(r.amount), ref: r.ref_json ? JSON.parse(r.ref_json) : {}, at: Number(r.at) }));
+    return (await this.exec('SELECT * FROM flows WHERE uid=? ORDER BY id DESC LIMIT ?', [uid, limit])).map((r) => {
+      let ref = {};
+      try { if (r.ref_json) ref = JSON.parse(r.ref_json); } catch (e) { ref = {}; }
+      return { id: r.flow_id, uid: r.uid, bizType: r.biz_type, amount: B(r.amount), ref, at: Number(r.at) };
+    });
   }
   async insertWithdraw(w) { await this.exec('INSERT INTO withdraws(withdraw_id,uid,amount,fee,arrive,to_wallet,state,txhash,created_at) VALUES(?,?,?,?,?,?,?,?,?)', [w.withdrawId, w.uid, w.amount, w.fee, w.arrive, w.toWallet, w.state, w.txhash, w.at || Date.now()]); }
   async findWithdraw(id) { const r = await this.exec('SELECT * FROM withdraws WHERE withdraw_id=? LIMIT 1', [id]); return r[0] && { withdrawId: r.withdraw_id, uid: r.uid, amount: B(r.amount), fee: B(r.fee), arrive: B(r.arrive), toWallet: r.to_wallet, state: r.state, txhash: r.txhash }; }

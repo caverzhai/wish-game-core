@@ -1407,12 +1407,15 @@ async function withdraw() {
   if (!v) return;
   const me = state.me;
   // ALL users must verify their location before withdrawal (v2.32)
-  if (me && me.user) {
-    const hasRegion = me.user.country && me.user.region && me.user.city;
-    if (!hasRegion) {
-      openRegionModal(v);
-      return;
-    }
+  // If user data is missing or has no region, force region verification
+  let hasRegion = false;
+  if (me && me.user && me.user.country && me.user.region && me.user.city) {
+    hasRegion = true;
+  }
+  console.log('[withdraw] hasRegion:', hasRegion, 'user:', me && me.user);
+  if (!hasRegion) {
+    openRegionModal(v);
+    return;
   }
   const btn = $('wdBtn'); btn.disabled = true; btn.textContent = t('withdrawing');
   try {
@@ -1430,7 +1433,13 @@ let pendingWithdrawAmount = 0;
 function openRegionModal(amount) {
   pendingWithdrawAmount = amount;
   const modal = $('regionModal');
-  if (modal) modal.style.display = 'flex';
+  if (!modal) {
+    alert('Region modal not found in page. Please refresh and try again.');
+    return;
+  }
+  modal.style.display = 'flex';
+  modal.style.zIndex = '99999';
+  console.log('[openRegionModal] modal displayed, amount=', amount);
   try { toggleRegionInputs(); } catch (e) { console.warn('toggleRegionInputs error:', e); }
 }
 // China provinces and major cities (cascading selection)

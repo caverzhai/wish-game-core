@@ -174,17 +174,19 @@ route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
     if (!(await isAdminWallet(authUser.wallet))) throw new GameError(Codes.FORBIDDEN, 'Cannot view other user profile');
   }
   const user = await store.getUser(uid);
-  const account = await store.getAccount(uid);
-  const nodes = await store.listNodes({ uid });
-  const referral = await store.referralSummary(uid);
-  const flows = await store.listFlows(uid, 50);
-  const memberLevel = await store.getMemberLevelInfo(uid, cfg.memberLevels);
-  const directCount = await store.countDirectInvitees(uid);
-  const downlineTotal = await store.countTotalDownline(uid);
+  // Each sub-query is independently protected so one failure doesn't blank the whole profile
+  const safe = async (fn, fallback) => { try { return await fn(); } catch (e) { console.log('[user/' + uid + '] sub-query failed:', e.message); return fallback; } };
+  const account = await safe(() => store.getAccount(uid), { available: 0n, frozen: 0n, premium: 0n, lossAccum: 0n });
+  const nodes = await safe(() => store.listNodes({ uid }), []);
+  const referral = await safe(() => store.referralSummary(uid), { total: 0n, activeInvitees: 0 });
+  const flows = await safe(() => store.listFlows(uid, 50), []);
+  const memberLevel = await safe(() => store.getMemberLevelInfo(uid, cfg.memberLevels), { validInvites: 0, level: 0, perMille: 0n, levelName: 'None' });
+  const directCount = await safe(() => store.countDirectInvitees(uid), 0);
+  const downlineTotal = await safe(() => store.countTotalDownline(uid), 0);
   const validInvites = memberLevel.validInvites;
   const nowSec = Math.floor(Date.now() / 1000);
-  const commissionEligible = await store.isCommissionEligible(uid, nowSec, cfg.commissionActiveWindowSec);
-  const lastWinAt = await store.getLastWinAt(uid);
+  const commissionEligible = await safe(() => store.isCommissionEligible(uid, nowSec, cfg.commissionActiveWindowSec), false);
+  const lastWinAt = await safe(() => store.getLastWinAt(uid), null);
   return {
     user, account, nodes, isAdmin: await isAdminWallet(user.wallet),
     invite: {

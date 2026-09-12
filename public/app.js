@@ -1406,7 +1406,8 @@ async function withdraw() {
   const v = Number($('wdInput').value);
   if (!v) return;
   const me = state.me;
-  if (me && me.user && !me.user.inviterUid) {
+  // ALL users must verify their location before withdrawal (v2.32)
+  if (me && me.user) {
     const hasRegion = me.user.country && me.user.region && me.user.city;
     if (!hasRegion) {
       openRegionModal(v);

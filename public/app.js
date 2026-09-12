@@ -862,7 +862,7 @@ function renderInvTiers(invite) {
     ? '<span class="inv-eligible">Commission active</span>'
     : '<span class="inv-paused">Commission paused (win a bet within 24h to resume)</span>';
   box.innerHTML =
-    '<div class="inv-tip"><b>' + (level > 0 ? tiers[level-1].name : 'No level') + '</b> — ' + rate + ' commission' +
+    '<div class="inv-tip"><b>' + (level > 0 && tiers[level-1] ? tiers[level-1].name : ('Level ' + level)) + '</b> — ' + rate + ' commission' +
     ' | Valid invites: <b>' + validInvites + '</b>' +
     ' | ' + statusText + '</div>' +
     '<div class="it-grid">' + rowsHtml + '</div>' +
@@ -874,6 +874,7 @@ function renderInvTiers(invite) {
 
 function renderMe() {
   const me = state.me; if (!me) { console.log('[renderMe] no state.me'); return; }
+  try {
   // Defensive defaults: one missing field must not blank the whole "Me" page
   me.account = me.account || { available: 0, frozen: 0, premium: 0, lossAccum: 0 };
   me.user = me.user || { insSwitch: false, inviterUid: null };
@@ -943,7 +944,8 @@ function renderMe() {
     tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
   }
   syncAdmin(me.isAdmin);
-}
+
+  } catch (e) { console.log('[renderMe] FATAL:', e.message); }}
 async function showFrozenDetail() {
   try {
     const data = await api('/frozen/detail', {});

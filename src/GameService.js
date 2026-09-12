@@ -95,8 +95,38 @@ export class GameService {
       insActiveByUid.set(b.uid, { insActive: await this.insurance.isActive(b.uid) });
       await loadChain(b.uid);
     }
-    const regionalAgentByUid = new Map(); // regional agent commission lookup (populated from store if needed)
-    console.log('[settle] round', round.roundId, 'bets:', bets.length, 'redTotal:', bets.filter(b=>b.side==='red').reduce((s,b)=>s+Number(b.amount),0), 'greenTotal:', bets.filter(b=>b.side==='green').reduce((s,b)=>s+Number(b.amount),0), 'uids:', [...new Set(bets.map(b=>b.uid))].join(','));
+    // Load regional agents and match users by region
+    const regionalAgentByUid = new Map();
+    try {
+      const allAgents = await s.listRegionalAgents();
+      const uniqueUids = [...new Set(bets.map(b => b.uid))];
+      for (const uid of uniqueUids) {
+        const user = await s.getUser(uid);
+        if (user) {
+          // Build user region string from country/region/city fields
+          const parts = [];
+          if (user.country) parts.push(String(user.country));
+          if (user.region) parts.push(String(user.region));
+          if (user.city) parts.push(String(user.city));
+          const regionStr = parts.join('-');
+          if (regionStr) {
+            for (const agent of allAgents) {
+              const agentRegions = agent.regions || [];
+              for (const ar of agentRegions) {
+                const arStr = String(ar);
+                // Prefix match: user region starts with agent region, or vice versa
+                if (regionStr.startsWith(arStr) || arStr.startsWith(regionStr)) {
+                  regionalAgentByUid.set(uid, { perMille: BigInt(agent.perMille), name: agent.name, agentWallet: agent.wallet });
+                  break;
+                }
+              }
+              if (regionalAgentByUid.has(uid)) break;
+            }
+          }
+        }
+      }
+    } catch (e) { console.log('[settle] regional agent load error:', e.message); }
+    console.log('[settle] round', round.roundId, 'bets:', bets.length, 'redTotal:', bets.filter(b=>b.side==='red').reduce((s,b)=>s+Number(b.amount),0), 'greenTotal:', bets.filter(b=>b.side==='green').reduce((s,b)=>s+Number(b.amount),0), 'uids:', [...new Set(bets.map(b=>b.uid))].join(','), 'regionalAgentsMatched:', regionalAgentByUid.size);
     const plan = planSettlement(bets, { insActiveByUid, inviterByUid, memberRateByUid, commissionEligibleByUid, regionalAgentByUid }, cfg);
     console.log('[settle] plan status:', plan.status, plan.status==='cancelled' ? 'REFUND!' : 'winSide:'+plan.totals.winSide);
 

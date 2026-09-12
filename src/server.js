@@ -670,13 +670,10 @@ route('POST', '/withdraw', async (b, _, req) => {
     throw new GameError(Codes.BAD_INPUT, 'Withdrawal cooldown: please wait 60 seconds between withdrawals');
   }
   WITHDRAW_COOLDOWN.set(uid, Date.now());
-  // Region requirement: users without inviter must fill region info before withdrawal
-  const hasInv = await store.hasInviter(uid);
-  if (!hasInv) {
-    const hasRegion = await store.hasRegionInfo(uid);
-    if (!hasRegion) {
-      throw new GameError(Codes.BAD_INPUT, 'Please complete your region information (country/region/city) before withdrawal. Users without an inviter must verify their location.');
-    }
+  // Region requirement: ALL users must bind their address before withdrawal
+  const hasRegion = await store.hasRegionInfo(uid);
+  if (!hasRegion) {
+    throw new GameError(Codes.BAD_INPUT, 'Please complete your region information (country/region/city/district/town) before first withdrawal. Address binding is required for all users.');
   }
   if (chain.canPayout) {
     try { await wallet.reconcileBroadcasted(b.uid); } catch { /* reconcile broadcasted orders, non-blocking */ }

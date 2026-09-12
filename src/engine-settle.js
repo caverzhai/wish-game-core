@@ -64,44 +64,30 @@ export function planSettlement(bets, ctx, cfg) {
     }
     row.winCredit = row.winRaw - row.insCut;
 
-    // Walk up the invite chain for multi-level commission (v3.0 member level system)
+    // New commission system: direct inviter first, then regional agent gets the difference
     if (row.totalStake > 0n) {
-      let current = row.uid;
-      let depth = 0;
-      const visited = new Set(); // cycle guard
-      while (current && ctx.inviterByUid.has(current)) {
-        const inviter = ctx.inviterByUid.get(current);
-        if (!inviter || visited.has(inviter)) break;
-        visited.add(inviter);
-        depth += 1;
-        // Get inviter's member level rate (0 = not eligible)
-        const inviterRate = ctx.memberRateByUid.get(inviter) || 0n;
-        const inviterEligible = ctx.commissionEligibleByUid.get(inviter) === true;
+      // 1. Direct inviter gets their rate first
+      const directInviter = ctx.inviterByUid.get(row.uid);
+      let directInviterRate = 0n;
+      if (directInviter) {
+        const inviterRate = ctx.memberRateByUid.get(directInviter) || 0n;
+        const inviterEligible = ctx.commissionEligibleByUid.get(directInviter) === true;
         if (inviterRate > 0n && inviterEligible) {
-          // Rate difference: if immediate downstream (current) also has a rate, pay only the difference
-          const currentRate = ctx.memberRateByUid.get(current) || 0n;
-          const effectiveRate = currentRate > 0n
-            ? (inviterRate > currentRate ? inviterRate - currentRate : 0n)
-            : inviterRate;
-          if (effectiveRate > 0n) {
-            const reward = mulDivFloor(row.totalStake, effectiveRate, cfg.referralDen);
-            if (reward > 0n) referral.push({ inviterUid: inviter, fromUid: row.uid, stake: row.totalStake, perMille: effectiveRate, reward, depth });
-          }
+          directInviterRate = inviterRate;
+          const reward = mulDivFloor(row.totalStake, inviterRate, cfg.referralDen);
+          if (reward > 0n) referral.push({ inviterUid: directInviter, fromUid: row.uid, stake: row.totalStake, perMille: inviterRate, reward, depth: 1 });
         }
-        current = inviter;
       }
-    }
-    // Regional agent commission: if user's region is under a regional agent, the agent gets commission (minus user's own rate)
-    const regionalAgent = ctx.regionalAgentByUid ? ctx.regionalAgentByUid.get(row.uid) : null;
-    if (regionalAgent && regionalAgent.perMille > 0n) {
-      const userRate = ctx.memberRateByUid.get(row.uid) || 0n;
-      const effectiveRate = userRate > 0n
-        ? (regionalAgent.perMille > userRate ? regionalAgent.perMille - userRate : 0n)
-        : regionalAgent.perMille;
-      if (effectiveRate > 0n) {
-        const reward = mulDivFloor(row.totalStake, effectiveRate, cfg.referralDen);
-        if (reward > 0n) referral.push({ inviterUid: 'regional_' + regionalAgent.agentWallet, fromUid: row.uid, stake: row.totalStake, perMille: effectiveRate, reward, depth: 0, regionalAgent: true, agentName: regionalAgent.name });
+      // 2. Regional agent gets the difference (regional agent rate - direct inviter rate)
+      const regionalAgent = ctx.regionalAgentByUid ? ctx.regionalAgentByUid.get(row.uid) : null;
+      if (regionalAgent && regionalAgent.perMille > directInviterRate) {
+        const effectiveRate = regionalAgent.perMille - directInviterRate;
+        if (effectiveRate > 0n) {
+          const reward = mulDivFloor(row.totalStake, effectiveRate, cfg.referralDen);
+          if (reward > 0n) referral.push({ inviterUid: 'regional_' + regionalAgent.agentWallet, fromUid: row.uid, stake: row.totalStake, perMille: effectiveRate, reward, depth: 0, regionalAgent: true, agentName: regionalAgent.name });
+        }
       }
+      // If no regional agent, the difference is not distributed (goes to platform)
     }
   }
 

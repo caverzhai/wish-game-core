@@ -873,15 +873,21 @@ function renderInvTiers(invite) {
 }
 
 function renderMe() {
-  const me = state.me; if (!me) return;
-  const a = me.account;
-  $('availBal').textContent = fmt(a.available) + t('coinUnit'); $('frozenBal').textContent = fmt(a.frozen) + t('coinUnit');
-  $('premiumBal').textContent = fmt(a.premium) + t('coinUnit'); $('premiumBal2').textContent = fmt(a.premium) + t('coinUnit');
-  $('lossAccum').textContent = fmt(a.lossAccum) + t('coinUnit');
+  const me = state.me; if (!me) { console.log('[renderMe] no state.me'); return; }
+  // Defensive defaults: one missing field must not blank the whole "Me" page
+  me.account = me.account || { available: 0, frozen: 0, premium: 0, lossAccum: 0 };
+  me.user = me.user || { insSwitch: false, inviterUid: null };
+  me.invite = me.invite || { perMille: 0, validInvites: 0, rewardTotal: 0 };
+  me.nodes = me.nodes || [];
+  me.flows = me.flows || [];
+  console.log('[renderMe] account:', !!me.account, 'user:', !!me.user, 'invite:', !!me.invite, 'nodes:', me.nodes.length, 'flows:', me.flows.length);
+  $('availBal').textContent = fmt(me.account.available) + t('coinUnit'); $('frozenBal').textContent = fmt(me.account.frozen) + t('coinUnit');
+  $('premiumBal').textContent = fmt(me.account.premium) + t('coinUnit'); $('premiumBal2').textContent = fmt(me.account.premium) + t('coinUnit');
+  $('lossAccum').textContent = fmt(me.account.lossAccum) + t('coinUnit');
   $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
   $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
   // Insurance status bar: switch on AND premium>=20 units -> green active, else gray off
-  const insActive = !!me.user.insSwitch && Number(a.premium) >= 20;
+  const insActive = !!me.user.insSwitch && Number(me.account.premium) >= 20;
   const insBar = $('insStatusBar');
   if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
   const invRate = (Number(me.invite.perMille) / 10).toFixed(1) + '%';

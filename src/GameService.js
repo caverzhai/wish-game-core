@@ -95,7 +95,9 @@ export class GameService {
       insActiveByUid.set(b.uid, { insActive: await this.insurance.isActive(b.uid) });
       await loadChain(b.uid);
     }
+    console.log('[settle] round', round.roundId, 'bets:', bets.length, 'redTotal:', bets.filter(b=>b.side==='red').reduce((s,b)=>s+Number(b.amount),0), 'greenTotal:', bets.filter(b=>b.side==='green').reduce((s,b)=>s+Number(b.amount),0), 'uids:', [...new Set(bets.map(b=>b.uid))].join(','));
     const plan = planSettlement(bets, { insActiveByUid, inviterByUid, memberRateByUid, commissionEligibleByUid, regionalAgentByUid }, cfg);
+    console.log('[settle] plan status:', plan.status, plan.status==='cancelled' ? 'REFUND!' : 'winSide:'+plan.totals.winSide);
 
     return await s.transaction(async () => {
       if (plan.status === 'cancelled') {

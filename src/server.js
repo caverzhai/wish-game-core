@@ -553,6 +553,39 @@ route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return
 route('POST', '/admin/npc/remove', async (b) => { await requireAdmin(b.uid); return { removed: await npc.removeNpc(b.npcId) }; });
 route('POST', '/admin/npc/recharge', async (b) => { await requireAdmin(b.uid); return await npc.rechargeNpc(b.npcId, b.amount); });
 route('POST', '/admin/npc/insurance', async (b) => { await requireAdmin(b.uid); return await npc.setInsurance(b.npcId, b.enabled === true || b.enabled === 'true', b.premiumCoins || 20); });
+// Admin diagnose - check system health
+route('GET', '/admin/diagnose', async (b) => {
+  await requireAdmin(b.uid);
+  const nowS = now();
+  const [stuck] = await store.pool.query("SELECT COUNT(*) as cnt FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
+  const [active] = await store.pool.query("SELECT COUNT(*) as cnt FROM rounds WHERE state='active'");
+  const [totalBal] = await store.pool.query("SELECT COALESCE(SUM(available),0) as avail, COALESCE(SUM(frozen),0) as frozen, COALESCE(SUM(premium),0) as premium FROM accounts");
+  const l = await store.getLedger();
+  return {
+    stuckRounds: stuck[0].cnt,
+    activeRounds: active[0].cnt,
+    totalAvailable: totalBal[0].avail.toString(),
+    totalFrozen: totalBal[0].frozen.toString(),
+    totalPremium: totalBal[0].premium.toString(),
+    ledger: { issued: l.issued.toString(), withdrawn: l.withdrawn.toString() },
+  };
+});
+
+// Admin user detail - check specific user balance
+route('GET', '/admin/user/:uid', async (b) => {
+  await requireAdmin(b.uid);
+  const acc = await store.getAccount(b.params.uid);
+  const user = await store.getUser(b.params.uid);
+  const [bets] = await store.pool.query("SELECT COUNT(*) as cnt, COALESCE(SUM(amount),0) as total FROM bets WHERE uid=? AND settled=0", [b.params.uid]);
+  return {
+    uid: b.params.uid,
+    wallet: user ? user.wallet : null,
+    account: acc ? { available: acc.available.toString(), frozen: acc.frozen.toString(), premium: acc.premium.toString() } : null,
+    unsettledBets: bets[0].cnt,
+    unsettledAmount: bets[0].total.toString(),
+  };
+});
+
 // Admin recharge user balance (for testing and manual top-up)
 route('POST', '/admin/recharge', async (b) => {
   await requireAdmin(b.uid);
@@ -871,8 +904,12 @@ setInterval(async () => {
     const nowS = now();
     const [stuck] = await store.pool.query("SELECT round_id FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
     for (const row of stuck) {
-      await store.pool.query("UPDATE rounds SET state='cancelled', result_json=? WHERE round_id=?", [JSON.stringify({ status: 'cancelled', reason: 'startup_repair' }), row.round_id]);
-      console.log('[startup-repair] cancelled stuck round', row.round_id);
+      try {
+        await game.settle(nowS); // settle will handle refund/cancellation properly
+        console.log('[startup-repair] settled stuck round', row.round_id);
+      } catch (e) {
+        console.error('[startup-repair] failed to settle round', row.round_id, e.message);
+      }
     }
     const inside = await store.totalInside();
     const l = await store.getLedger();

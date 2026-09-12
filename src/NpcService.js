@@ -198,10 +198,18 @@ export class NpcService {
     return npcs;
   }
 
-  // NPC recharge disabled: each NPC gets exactly 100 coins at creation, no manual top-up
-  // When balance runs out, NPC only does social posts/chat, no more betting
+  // NPC recharge: admin manually tops up NPC balance (must also fund withdrawal wallet equally)
   async rechargeNpc(npcId, amountCoins) {
-    throw new Error('NPC recharge disabled. Each NPC gets exactly 100 coins at creation.');
+    const npc = await this.store.getNpc(npcId);
+    if (!npc) throw new Error('NPC not found');
+    const amount = BigInt(amountCoins) * COIN;
+    await this.store.transaction(async () => {
+      await this.store.applyLedger({ issued: amount });
+      await this.store.applyAccount(npc.uid, { avail: amount });
+      await this.store.addFlow(npc.uid, 'NPC_FUND', amount, { note: 'admin manual recharge ' + amountCoins + ' coins' });
+    }, 'npc-recharge');
+    console.log('[npc:recharge]', npcId, '+', amountCoins, 'coins (REMINDER: add same amount to withdrawal wallet)');
+    return { npcId, recharged: amountCoins };
   }
 
   // NPC insurance: admin can toggle insurance for any NPC

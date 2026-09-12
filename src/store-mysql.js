@@ -404,6 +404,19 @@ export class MysqlStore {
         levelName = lv.name;
       }
     }
+    // Regional agent overrides member level rate
+    try {
+      const user = await this.getUser(uid);
+      if (user && user.wallet) {
+        const w = String(user.wallet).toLowerCase();
+        const ra = await this.exec('SELECT per_mille, name FROM regional_agents WHERE wallet=? LIMIT 1', [w]);
+        if (ra.length > 0) {
+          perMille = BigInt(ra[0].per_mille);
+          levelName = 'Regional Agent (' + ra[0].name + ')';
+          level = 99;
+        }
+      }
+    } catch (e) { /* ignore regional agent lookup errors */ }
     return { validInvites, level, perMille, levelName };
   }
 

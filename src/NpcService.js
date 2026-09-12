@@ -295,7 +295,7 @@ export class NpcService {
           }
           // If balance < 1 coin, skip (admin must manually recharge)
         } catch (e) {
-          console.error('[npc:bet] FAILED', npc.name, e.name, e.message, 'balance:', acc ? acc.available.toString() : 'no-account');
+          console.error('[npc:bet] FAILED', npc.name, e.name, e.message);
           // ROUND_LOCKED: round in last 30s, give up and wait next interval
           // INSUFFICIENT_BALANCE: skip, wait for admin recharge
         }

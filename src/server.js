@@ -576,15 +576,16 @@ route('GET', '/admin/diagnose', async (b) => {
 });
 
 // Admin user detail - check specific user balance
-route('GET', '/admin/user/:uid', async (b) => {
+route('GET', /^\/admin\/user\/(.+)$/, async (b, m) => {
   if (!b.uid) throw new GameError(Codes.UNAUTHORIZED, 'Login required');
   await requireAdmin(b.uid);
-  const acc = await store.getAccount(b.params.uid);
-  const user = await store.getUser(b.params.uid);
-  const betRows = await store.pool.query("SELECT COUNT(*) as cnt, COALESCE(SUM(amount),0) as total FROM bets WHERE uid=? AND settled=0", [b.params.uid]);
+  const targetUid = m[1];
+  const acc = await store.getAccount(targetUid);
+  const user = await store.getUser(targetUid);
+  const betRows = await store.pool.query("SELECT COUNT(*) as cnt, COALESCE(SUM(amount),0) as total FROM bets WHERE uid=? AND settled=0", [targetUid]);
   const bets = Array.isArray(betRows) ? (betRows[0] ? betRows[0][0] : betRows) : betRows;
   return {
-    uid: b.params.uid,
+    uid: targetUid,
     wallet: user ? user.wallet : null,
     account: acc ? { available: String(acc.available || 0), frozen: String(acc.frozen || 0), premium: String(acc.premium || 0) } : null,
     unsettledBets: Number(bets.cnt || 0),

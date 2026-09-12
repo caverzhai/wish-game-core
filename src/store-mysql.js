@@ -528,7 +528,7 @@ export class MysqlStore {
     const n = String(name ?? '').trim();
     const reg = Array.isArray(regions) ? regions : [];
     if (!w || !n || !Number.isFinite(p) || p < 0) throw new GameError(Codes.BAD_INPUT, 'Invalid name, wallet or rate');
-    await this.exec('INSERT INTO regional_agents(name, wallet, per_mille, regions, created_at) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), per_mille=VALUES(per_mille), regions=VALUES(regions)', [n, w, p, JSON.stringify(reg), now()]);
+    await this.exec('INSERT INTO regional_agents(name, wallet, per_mille, regions, created_at) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), per_mille=VALUES(per_mille), regions=VALUES(regions)', [n, w, p, JSON.stringify(reg), Date.now()]);
     return this.listRegionalAgents();
   }
   async removeRegionalAgent(id) {

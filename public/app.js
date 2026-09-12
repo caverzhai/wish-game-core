@@ -1962,18 +1962,30 @@ function wishOkToast() {
 }
 async function refresh() {
   if (!state.uid) return;
-  creditPending(); // Auto-recover confirmed on-chain pending orders each round, clear pending and unlock immediately after confirmation
-  try {
-    const [r, recent, me, pool] = await Promise.all([api('/round/current'), api('/recent'), api('/user/' + state.uid), api('/insurance/pool')]);
-    // Detect round settlement: announce winner in English
-    const prevRound = state.round;
-    if (prevRound && prevRound.state === 'active' && r && r.state !== 'active' && r.result && r.result.winSide) {
-      playFinalBeep();
-    }
-    state.round = r; state.recent = recent; state.me = me; state.pool = pool;
-    renderRound(); renderMe(); renderPoolPublic();
-    if ($('tab-home').classList.contains('active')) renderHistory();
-  } catch (e) { /* self-heal next round */ }
+  creditPending();
+  // Each API call is independently protected - one failing must not blank the others
+  const safeApi = async (url, label) => {
+    try { const d = await api(url); return d; }
+    catch (e) { console.log('[refresh] ' + label + ' FAILED:', e.message); return null; }
+  };
+  const r = await safeApi('/round/current', 'round');
+  const recent = await safeApi('/recent', 'recent');
+  const me = await safeApi('/user/' + state.uid, 'user');
+  const pool = await safeApi('/insurance/pool', 'pool');
+  console.log('[refresh] round:', !!r, 'recent:', !!recent, 'me:', !!me, 'pool:', !!pool);
+  // Detect round settlement: announce winner in English
+  const prevRound = state.round;
+  if (prevRound && prevRound.state === 'active' && r && r.state !== 'active' && r.result && r.result.winSide) {
+    playFinalBeep();
+  }
+  if (r) state.round = r;
+  if (recent) state.recent = recent;
+  if (me) state.me = me;
+  if (pool) state.pool = pool;
+  try { renderRound(); } catch (e) { console.log('[refresh] renderRound error:', e.message); }
+  try { renderMe(); } catch (e) { console.log('[refresh] renderMe error:', e.message); }
+  try { renderPoolPublic(); } catch (e) { console.log('[refresh] renderPool error:', e.message); }
+  if ($('tab-home').classList.contains('active')) { try { renderHistory(); } catch (e) {} }
 }
 
 // ---------------- Init ----------------

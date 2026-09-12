@@ -170,33 +170,45 @@ route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
   const authUidVal = authUid(b, req);
   if (!authUidVal) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
   if (authUidVal !== uid) {
-    const authUser = await store.getUser(authUidVal);
-    if (!(await isAdminWallet(authUser.wallet))) throw new GameError(Codes.FORBIDDEN, 'Cannot view other user profile');
+    try {
+      const authUser = await store.getUser(authUidVal);
+      if (!(await isAdminWallet(authUser.wallet))) throw new GameError(Codes.FORBIDDEN, 'Cannot view other user profile');
+    } catch (e) {
+      if (e.code === Codes.FORBIDDEN) throw e;
+      console.log('[user/' + uid + '] auth check failed:', e.message);
+      throw new GameError(Codes.FORBIDDEN, 'Cannot view other user profile');
+    }
   }
-  const user = await store.getUser(uid);
-  // Each sub-query is independently protected so one failure doesn't blank the whole profile
-  const safe = async (fn, fallback) => { try { return await fn(); } catch (e) { console.log('[user/' + uid + '] sub-query failed:', e.message); return fallback; } };
-  const account = await safe(() => store.getAccount(uid), { available: 0n, frozen: 0n, premium: 0n, lossAccum: 0n });
-  const nodes = await safe(() => store.listNodes({ uid }), []);
-  const referral = await safe(() => store.referralSummary(uid), { total: 0n, activeInvitees: 0 });
-  const flows = await safe(() => store.listFlows(uid, 50), []);
-  const memberLevel = await safe(() => store.getMemberLevelInfo(uid, cfg.memberLevels), { validInvites: 0, level: 0, perMille: 0n, levelName: 'None' });
-  const directCount = await safe(() => store.countDirectInvitees(uid), 0);
-  const downlineTotal = await safe(() => store.countTotalDownline(uid), 0);
-  const validInvites = memberLevel.validInvites;
+  // EVERYTHING below is protected - no single failure can blank the profile
+  const safe = async (label, fn, fallback) => {
+    try { return await fn(); }
+    catch (e) { console.log('[user/' + uid + '] ' + label + ' FAILED:', e.message); return fallback; }
+  };
+  const user = await safe('getUser', () => store.getUser(uid), { uid, wallet: '', inviterUid: null, insSwitch: false, banned: false, createdAt: 0, country: '', region: '', city: '' });
+  const account = await safe('getAccount', () => store.getAccount(uid), { available: 0n, frozen: 0n, premium: 0n, lossAccum: 0n });
+  const nodes = await safe('listNodes', () => store.listNodes({ uid }), []);
+  const referral = await safe('referralSummary', () => store.referralSummary(uid), { total: 0n, activeInvitees: 0 });
+  const flows = await safe('listFlows', () => store.listFlows(uid, 50), []);
+  const memberLevel = await safe('getMemberLevelInfo', () => store.getMemberLevelInfo(uid, cfg.memberLevels), { validInvites: 0, level: 0, perMille: 0n, levelName: 'None' });
+  const directCount = await safe('countDirectInvitees', () => store.countDirectInvitees(uid), 0);
+  const downlineTotal = await safe('countTotalDownline', () => store.countTotalDownline(uid), 0);
+  const validInvites = memberLevel.validInvites || 0;
   const nowSec = Math.floor(Date.now() / 1000);
-  const commissionEligible = await safe(() => store.isCommissionEligible(uid, nowSec, cfg.commissionActiveWindowSec), false);
-  const lastWinAt = await safe(() => store.getLastWinAt(uid), null);
+  const commissionEligible = await safe('isCommissionEligible', () => store.isCommissionEligible(uid, nowSec, cfg.commissionActiveWindowSec), false);
+  const lastWinAt = await safe('getLastWinAt', () => store.getLastWinAt(uid), null);
+  const isAdmin = await safe('isAdminWallet', () => isAdminWallet(user.wallet), false);
+  const perMilleStr = (memberLevel.perMille != null && typeof memberLevel.perMille.toString === 'function') ? memberLevel.perMille.toString() : '0';
+  console.log('[user/' + uid + '] OK -> user:', !!user, 'account:', !!account, 'flows:', flows.length, 'isAdmin:', isAdmin);
   return {
-    user, account, nodes, isAdmin: await isAdminWallet(user.wallet),
+    user, account, nodes, isAdmin,
     invite: {
       code: uid,
-      memberLevel: memberLevel.level,
-      memberLevelName: memberLevel.levelName,
-      perMille: memberLevel.perMille.toString(),
+      memberLevel: memberLevel.level || 0,
+      memberLevelName: memberLevel.levelName || 'None',
+      perMille: perMilleStr,
       validInvites,
-      rewardTotal: referral.total,
-      rewardedInvitees: referral.activeInvitees,
+      rewardTotal: referral.total || 0n,
+      rewardedInvitees: referral.activeInvitees || 0,
       directCount,
       downlineTotal,
       commissionEligible,

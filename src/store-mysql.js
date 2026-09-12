@@ -463,7 +463,14 @@ export class MysqlStore {
     return id;
   }
   async listFlows(uid, limit = 64) {
-    const rows = await this.exec('SELECT * FROM flows WHERE uid=? ORDER BY id DESC LIMIT ?', [uid, limit]);
+    let rows = [];
+    try {
+      rows = await this.exec('SELECT * FROM flows WHERE uid=? ORDER BY id DESC LIMIT ?', [uid, limit]);
+      console.log('[listFlows] uid=' + uid + ' raw rows=' + rows.length);
+    } catch (e) {
+      console.log('[listFlows] QUERY FAILED uid=' + uid + ': ' + e.message);
+      return [];
+    }
     const result = [];
     for (const r of rows) {
       try {
@@ -474,6 +481,7 @@ export class MysqlStore {
         console.log('[listFlows] skip malformed flow id=' + (r && r.flow_id) + ': ' + e.message);
       }
     }
+    console.log('[listFlows] uid=' + uid + ' returned=' + result.length);
     return result;
   }
   async insertWithdraw(w) { await this.exec('INSERT INTO withdraws(withdraw_id,uid,amount,fee,arrive,to_wallet,state,txhash,created_at) VALUES(?,?,?,?,?,?,?,?,?)', [w.withdrawId, w.uid, w.amount, w.fee, w.arrive, w.toWallet, w.state, w.txhash, w.at || Date.now()]); }

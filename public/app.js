@@ -920,7 +920,13 @@ function renderMe() {
     const pct = Math.round((n.periodN / 100) * 100);
     return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
   }).join('') : '<p class="muted">—</p>';
-  $('flowList').innerHTML = me.flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} ${t('coinUnit')}</b><small>${new Date(f.at).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
+  try {
+    const flows = me.flows || [];
+    $('flowList').innerHTML = flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} ${t('coinUnit')}</b><small>${new Date(Number(f.at) || 0).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
+  } catch (e) {
+    console.log('[renderMe] flows render error:', e);
+    $('flowList').innerHTML = '<p class="muted">—</p>';
+  }
   const tip = $('chainModeTip');
   tip.classList.remove('hide');
   if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {

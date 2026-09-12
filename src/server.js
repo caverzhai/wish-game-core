@@ -555,34 +555,40 @@ route('POST', '/admin/npc/recharge', async (b) => { await requireAdmin(b.uid); r
 route('POST', '/admin/npc/insurance', async (b) => { await requireAdmin(b.uid); return await npc.setInsurance(b.npcId, b.enabled === true || b.enabled === 'true', b.premiumCoins || 20); });
 // Admin diagnose - check system health
 route('GET', '/admin/diagnose', async (b) => {
+  if (!b.uid) throw new GameError(Codes.UNAUTHORIZED, 'Login required');
   await requireAdmin(b.uid);
   const nowS = now();
-  const [stuck] = await store.pool.query("SELECT COUNT(*) as cnt FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
-  const [active] = await store.pool.query("SELECT COUNT(*) as cnt FROM rounds WHERE state='active'");
-  const [totalBal] = await store.pool.query("SELECT COALESCE(SUM(available),0) as avail, COALESCE(SUM(frozen),0) as frozen, COALESCE(SUM(premium),0) as premium FROM accounts");
+  const stuckRows = await store.pool.query("SELECT COUNT(*) as cnt FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
+  const activeRows = await store.pool.query("SELECT COUNT(*) as cnt FROM rounds WHERE state='active'");
+  const balRows = await store.pool.query("SELECT COALESCE(SUM(available),0) as avail, COALESCE(SUM(frozen),0) as frozen, COALESCE(SUM(premium),0) as premium FROM accounts");
   const l = await store.getLedger();
+  const stuck = Array.isArray(stuckRows) ? (stuckRows[0] ? stuckRows[0][0] : stuckRows) : stuckRows;
+  const active = Array.isArray(activeRows) ? (activeRows[0] ? activeRows[0][0] : activeRows) : activeRows;
+  const bal = Array.isArray(balRows) ? (balRows[0] ? balRows[0][0] : balRows) : balRows;
   return {
-    stuckRounds: stuck[0].cnt,
-    activeRounds: active[0].cnt,
-    totalAvailable: totalBal[0].avail.toString(),
-    totalFrozen: totalBal[0].frozen.toString(),
-    totalPremium: totalBal[0].premium.toString(),
-    ledger: { issued: l.issued.toString(), withdrawn: l.withdrawn.toString() },
+    stuckRounds: Number(stuck.cnt || 0),
+    activeRounds: Number(active.cnt || 0),
+    totalAvailable: String(bal.avail || 0),
+    totalFrozen: String(bal.frozen || 0),
+    totalPremium: String(bal.premium || 0),
+    ledger: { issued: String(l.issued || 0), withdrawn: String(l.withdrawn || 0) },
   };
 });
 
 // Admin user detail - check specific user balance
 route('GET', '/admin/user/:uid', async (b) => {
+  if (!b.uid) throw new GameError(Codes.UNAUTHORIZED, 'Login required');
   await requireAdmin(b.uid);
   const acc = await store.getAccount(b.params.uid);
   const user = await store.getUser(b.params.uid);
-  const [bets] = await store.pool.query("SELECT COUNT(*) as cnt, COALESCE(SUM(amount),0) as total FROM bets WHERE uid=? AND settled=0", [b.params.uid]);
+  const betRows = await store.pool.query("SELECT COUNT(*) as cnt, COALESCE(SUM(amount),0) as total FROM bets WHERE uid=? AND settled=0", [b.params.uid]);
+  const bets = Array.isArray(betRows) ? (betRows[0] ? betRows[0][0] : betRows) : betRows;
   return {
     uid: b.params.uid,
     wallet: user ? user.wallet : null,
-    account: acc ? { available: acc.available.toString(), frozen: acc.frozen.toString(), premium: acc.premium.toString() } : null,
-    unsettledBets: bets[0].cnt,
-    unsettledAmount: bets[0].total.toString(),
+    account: acc ? { available: String(acc.available || 0), frozen: String(acc.frozen || 0), premium: String(acc.premium || 0) } : null,
+    unsettledBets: Number(bets.cnt || 0),
+    unsettledAmount: String(bets.total || 0),
   };
 });
 

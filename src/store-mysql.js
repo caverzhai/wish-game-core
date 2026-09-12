@@ -515,6 +515,27 @@ export class MysqlStore {
     return r.length > 0 ? r[0].per_mille : null;
   }
 
+  // Regional agents management
+  async listRegionalAgents() {
+    return (await this.exec('SELECT id, name, wallet, per_mille, regions, created_at FROM regional_agents ORDER BY id')).map((r) => ({
+      id: r.id, name: r.name, wallet: r.wallet, perMille: r.per_mille,
+      regions: r.regions ? JSON.parse(r.regions) : [], createdAt: Number(r.created_at),
+    }));
+  }
+  async addRegionalAgent(name, wallet, perMille, regions) {
+    const w = String(wallet ?? '').trim().toLowerCase();
+    const p = Number(perMille);
+    const n = String(name ?? '').trim();
+    const reg = Array.isArray(regions) ? regions : [];
+    if (!w || !n || !Number.isFinite(p) || p < 0) throw new GameError(Codes.BAD_INPUT, 'Invalid name, wallet or rate');
+    await this.exec('INSERT INTO regional_agents(name, wallet, per_mille, regions, created_at) VALUES(?,?,?,?,?) ON DUPLICATE KEY UPDATE name=VALUES(name), per_mille=VALUES(per_mille), regions=VALUES(regions)', [n, w, p, JSON.stringify(reg), now()]);
+    return this.listRegionalAgents();
+  }
+  async removeRegionalAgent(id) {
+    await this.exec('DELETE FROM regional_agents WHERE id=?', [Number(id)]);
+    return this.listRegionalAgents();
+  }
+
   // System announcement (single row, id=1)
   async getAnnouncement() {
     const r = await this.exec('SELECT content, at, uid, wallet FROM announcement WHERE id=1 LIMIT 1');

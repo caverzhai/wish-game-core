@@ -874,78 +874,98 @@ function renderInvTiers(invite) {
 
 function renderMe() {
   const me = state.me; if (!me) { console.log('[renderMe] no state.me'); return; }
-  try {
-  // Defensive defaults: one missing field must not blank the whole "Me" page
+  // Defensive defaults
   me.account = me.account || { available: 0, frozen: 0, premium: 0, lossAccum: 0 };
   me.user = me.user || { insSwitch: false, inviterUid: null };
   me.invite = me.invite || { perMille: 0, validInvites: 0, rewardTotal: 0 };
   me.nodes = me.nodes || [];
   me.flows = me.flows || [];
-  console.log('[renderMe] account:', !!me.account, 'user:', !!me.user, 'invite:', !!me.invite, 'nodes:', me.nodes.length, 'flows:', me.flows.length);
-  $('availBal').textContent = fmt(me.account.available) + t('coinUnit'); $('frozenBal').textContent = fmt(me.account.frozen) + t('coinUnit');
-  $('premiumBal').textContent = fmt(me.account.premium) + t('coinUnit'); $('premiumBal2').textContent = fmt(me.account.premium) + t('coinUnit');
-  $('lossAccum').textContent = fmt(me.account.lossAccum) + t('coinUnit');
-  $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
-  $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
-  // Insurance status bar: switch on AND premium>=20 units -> green active, else gray off
-  const insActive = !!me.user.insSwitch && Number(me.account.premium) >= 20;
-  const insBar = $('insStatusBar');
-  if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
-  const invRate = (Number(me.invite.perMille) / 10).toFixed(1) + '%';
-  $('invCount').textContent = me.invite.validInvites || 0;
-  $('invRate').textContent = invRate;
-  // Show inviter (direct referrer) info
-  const inviterBox = $('inviterInfo');
-  if (inviterBox) {
-    if (me.user.inviterUid) {
-      inviterBox.style.display = 'block';
-      const inviterEl = $('inviterWallet');
-      if (inviterEl) {
-        if (me.invite && me.invite.inviterWallet) {
-          inviterEl.textContent = me.invite.inviterWallet;
-        } else {
-          inviterEl.textContent = 'U' + me.user.inviterUid;
-          if (!state._inviterFetched) {
-            state._inviterFetched = true;
-            api('/user/inviter', { uid: state.uid }).then(r => {
-              if (r && r.wallet) {
-                inviterEl.textContent = r.wallet;
-                if (state.me && state.me.invite) state.me.invite.inviterWallet = r.wallet;
-              }
-            }).catch(() => {});
+  console.log('[renderMe] isAdmin:', me.isAdmin, 'memberLevel:', me.invite.memberLevel, 'perMille:', me.invite.perMille, 'flows:', me.flows.length);
+
+  // Step 1: balances
+  try {
+    $('availBal').textContent = fmt(me.account.available) + t('coinUnit');
+    $('frozenBal').textContent = fmt(me.account.frozen) + t('coinUnit');
+    $('premiumBal').textContent = fmt(me.account.premium) + t('coinUnit');
+    $('premiumBal2').textContent = fmt(me.account.premium) + t('coinUnit');
+    $('lossAccum').textContent = fmt(me.account.lossAccum) + t('coinUnit');
+  } catch (e) { console.log('[renderMe] step1 balances error:', e.message); }
+
+  // Step 2: insurance switch
+  try {
+    $('insSwitchState').textContent = me.user.insSwitch ? 'ON' : 'OFF';
+    $('insSwitchBtn').textContent = me.user.insSwitch ? 'OFF' : 'ON';
+    const insActive = !!me.user.insSwitch && Number(me.account.premium) >= 20;
+    const insBar = $('insStatusBar');
+    if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
+  } catch (e) { console.log('[renderMe] step2 insurance error:', e.message); }
+
+  // Step 3: invite rate
+  try {
+    const invRate = (Number(me.invite.perMille) / 10).toFixed(1) + '%';
+    $('invCount').textContent = me.invite.validInvites || 0;
+    $('invRate').textContent = invRate;
+    $('invTotal').textContent = fmt(me.invite.rewardTotal) + t('coinUnit');
+    const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = t('meInvite') + '（' + invRate + '）';
+  } catch (e) { console.log('[renderMe] step3 invite rate error:', e.message); }
+
+  // Step 4: inviter info
+  try {
+    const inviterBox = $('inviterInfo');
+    if (inviterBox) {
+      if (me.user.inviterUid) {
+        inviterBox.style.display = 'block';
+        const inviterEl = $('inviterWallet');
+        if (inviterEl) {
+          if (me.invite && me.invite.inviterWallet) {
+            inviterEl.textContent = me.invite.inviterWallet;
+          } else {
+            inviterEl.textContent = 'U' + me.user.inviterUid;
+            if (!state._inviterFetched) {
+              state._inviterFetched = true;
+              api('/user/inviter', { uid: state.uid }).then(r => {
+                if (r && r.wallet) { inviterEl.textContent = r.wallet; if (state.me && state.me.invite) state.me.invite.inviterWallet = r.wallet; }
+              }).catch(() => {});
+            }
           }
         }
-      }
-    } else {
-      inviterBox.style.display = 'none';
+      } else { inviterBox.style.display = 'none'; }
     }
-  }
-  $('invTotal').textContent = fmt(me.invite.rewardTotal) + t('coinUnit');
-  const invTitle = $('meInviteTitle'); if (invTitle) invTitle.textContent = `${t('meInvite')}（${invRate}）`;
-  renderInvTiers(me.invite);
-  $('nodeList').innerHTML = me.nodes.length ? me.nodes.map((n) => {
-    const pct = Math.round((n.periodN / 100) * 100);
-    return `<div class="node-row"><b>${n.nodeId}</b><span>${t('nodePeriod')} ${n.periodN}/100</span><div class="bar"><i style="width:${pct}%"></i></div><span>${t('nodeProgress')} ${pct}%</span></div>`;
-  }).join('') : '<p class="muted">—</p>';
+  } catch (e) { console.log('[renderMe] step4 inviter error:', e.message); }
+
+  // Step 5: invite tiers (MOST LIKELY CRASH POINT for agents)
+  try { renderInvTiers(me.invite); } catch (e) { console.log('[renderMe] step5 tiers ERROR:', e.message); }
+
+  // Step 6: nodes
+  try {
+    $('nodeList').innerHTML = me.nodes.length ? me.nodes.map((n) => {
+      const pct = Math.round(((n.periodN || 0) / 100) * 100);
+      return '<div class="node-row"><b>' + n.nodeId + '</b><span>' + t('nodePeriod') + ' ' + (n.periodN || 0) + '/100</span><div class="bar"><i style="width:' + pct + '%"></i></div><span>' + t('nodeProgress') + ' ' + pct + '%</span></div>';
+    }).join('') : '<p class="muted">—</p>';
+  } catch (e) { console.log('[renderMe] step6 nodes error:', e.message); }
+
+  // Step 7: flows
   try {
     const flows = me.flows || [];
-    $('flowList').innerHTML = flows.map((f) => `<div class="flow-line"><span>${t('flow_' + f.bizType) || f.bizType}</span><b>${fmt(f.amount)} ${t('coinUnit')}</b><small>${new Date(Number(f.at) || 0).toLocaleString()}</small></div>`).join('') || '<p class="muted">—</p>';
-  } catch (e) {
-    console.log('[renderMe] flows render error:', e);
-    $('flowList').innerHTML = '<p class="muted">—</p>';
-  }
-  const tip = $('chainModeTip');
-  tip.classList.remove('hide');
-  if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
-    tip.style.color = '#ff6b6b';
-    tip.textContent = '⚠ Platform payout private key not configured correctly (PAYOUT_PRIVATE_KEY is placeholder or malformed). Withdrawals cannot be sent. Admin must set the real platform wallet private key in environment variables and redeploy.';
-  } else {
-    tip.style.color = '';
-    tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
-  }
-  syncAdmin(me.isAdmin);
+    $('flowList').innerHTML = flows.map((f) => '<div class="flow-line"><span>' + (t('flow_' + f.bizType) || f.bizType) + '</span><b>' + fmt(f.amount) + ' ' + t('coinUnit') + '</b><small>' + new Date(Number(f.at) || 0).toLocaleString() + '</small></div>').join('') || '<p class="muted">—</p>';
+  } catch (e) { console.log('[renderMe] step7 flows error:', e.message); $('flowList').innerHTML = '<p class="muted">—</p>'; }
 
-  } catch (e) { console.log('[renderMe] FATAL:', e.message); }}
+  // Step 8: chain mode tip
+  try {
+    const tip = $('chainModeTip');
+    tip.classList.remove('hide');
+    if (state.chainCfg && state.chainCfg.enabled && state.chainCfg.canPayout === false) {
+      tip.style.color = '#ff6b6b';
+      tip.textContent = '⚠ Platform payout private key not configured correctly. Withdrawals cannot be sent.';
+    } else {
+      tip.style.color = '';
+      tip.textContent = (state.chainCfg && state.chainCfg.enabled) ? t('chainOn') : t('chainOff');
+    }
+  } catch (e) { console.log('[renderMe] step8 tip error:', e.message); }
+
+  // Step 9: admin sync
+  try { syncAdmin(me.isAdmin); } catch (e) { console.log('[renderMe] step9 syncAdmin ERROR:', e.message); }
+}
 async function showFrozenDetail() {
   try {
     const data = await api('/frozen/detail', {});

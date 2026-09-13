@@ -217,27 +217,18 @@ const Lottery = (() => {
     }
   }
 
-  async function tryBuy(amount) {
-    const res = await fetch('/lottery/buy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: state.uid, productId: currentProduct.product.id, amount }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Buy failed');
-    }
-    return await res.json();
+      async function tryBuy(amount) {
+    return await api('/lottery/buy', { uid: state.uid, productId: currentProduct.product.id, amount });
   }
 
-  async function topUpAndBuy(amount, totalCost) {
+async function topUpAndBuy(amount, totalCost) {
     if (typeof alignWallet !== 'function' || typeof ensureWalletReady !== 'function') {
       alert(t('chainNotConfigured') || 'Wallet not configured, please use online site');
       return false;
     }
     const S6 = 1_000_000;
     await alignWallet();
-        const fresh = await fetch('/user/' + state.uid).then(r => r.json());
+        const fresh = await api('/user/' + state.uid);
     if (!fresh || !fresh.account) {
       console.error('[lottery topUp] invalid user response:', JSON.stringify(fresh).slice(0, 200));
       alert((t('lotteryBuyFail') || 'Purchase failed') + ': invalid user data');
@@ -273,12 +264,10 @@ const Lottery = (() => {
     for (let i = 0; i < 30; i++) {
       await new Promise(r => setTimeout(r, 4000));
       try {
-        const creditRes = await fetch('/wallet/credit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: state.uid, txHash }),
-        });
-        const creditData = await creditRes.json();
+        let creditData;
+        try {
+          creditData = await api('/wallet/credit', { uid: state.uid, txHash });
+        } catch (e) { lastMsg = e.message || 'Credit check failed, retrying...'; continue; }
         if (creditData.credited > 0 || creditData.already) return true;
         if (creditData.message) lastMsg = creditData.message;
       } catch (e) { lastMsg = 'Network error, retrying...'; }
@@ -332,15 +321,12 @@ const Lottery = (() => {
       return;
     }
     try {
-      await fetch('/lottery/comment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: state.uid, productId: currentProduct.product.id, content }),
-      });
+      await api('/lottery/comment', { uid: state.uid, productId: currentProduct.product.id, content });
       input.value = '';
       loadComments(currentProduct.product.id);
     } catch (e) {
       console.error('postComment error', e);
+      alert(e.message || 'Comment failed');
     }
   }
 

@@ -124,6 +124,7 @@ export class LotteryService {
     if (!user) throw new Error('User not found');
 
     const account = await this.store.getAccount(uid);
+    if (!account || account.available == null) throw new Error('Account not initialized, please login again');
     const cost = BigInt(amount) * BigInt(SCALE);
     if (account.available < cost) {
       return { needWallet: true, amount, cost: Number(cost) / SCALE };

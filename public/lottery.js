@@ -237,8 +237,13 @@ const Lottery = (() => {
     }
     const S6 = 1_000_000;
     await alignWallet();
-    const fresh = await fetch('/user/' + state.uid).then(r => r.json());
-    const availInner = Math.round(Number(fresh.account.available) * S6);
+        const fresh = await fetch('/user/' + state.uid).then(r => r.json());
+    if (!fresh || !fresh.account) {
+      console.error('[lottery topUp] invalid user response:', JSON.stringify(fresh).slice(0, 200));
+      alert((t('lotteryBuyFail') || 'Purchase failed') + ': invalid user data');
+      return false;
+    }
+    const availInner = Math.round(Number(fresh.account.available || 0) * S6);
     const totalInner = amount * S6;
     const chainInner = Math.max(0, totalInner - Math.min(availInner, totalInner));
     if (chainInner <= 0) return true;

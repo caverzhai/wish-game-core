@@ -269,7 +269,8 @@ const Lottery = (() => {
       alert(e.message || String(e));
       return false;
     }
-    for (let i = 0; i < 15; i++) {
+    let lastMsg = 'Waiting for blockchain confirmation...';
+    for (let i = 0; i < 30; i++) {
       await new Promise(r => setTimeout(r, 4000));
       try {
         const creditRes = await fetch('/wallet/credit', {
@@ -279,8 +280,10 @@ const Lottery = (() => {
         });
         const creditData = await creditRes.json();
         if (creditData.credited > 0 || creditData.already) return true;
-      } catch { /* continue */ }
+        if (creditData.message) lastMsg = creditData.message;
+      } catch (e) { lastMsg = 'Network error, retrying...'; }
     }
+    alert('Deposit still confirming. TX: ' + txHash + ' - Please retry purchase later, your deposit will be credited automatically. Last status: ' + lastMsg);
     return false;
   }
 

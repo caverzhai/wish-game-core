@@ -260,8 +260,8 @@ export class NpcService {
   }
 
   _rollBetTime() {
-    // 30-60 min for bets
-    return nowSec() + Math.floor(Math.random() * 1800) + 1800;
+    // 5-180 min for bets
+    return nowSec() + Math.floor(Math.random() * 10500) + 300;
   }
 
   _rollRetryTime() {
@@ -280,20 +280,23 @@ export class NpcService {
       if (!npc.enabled) continue;
       const lang = npc.language || 'en';
 
-      // --- Random bet (30-60 min interval, 1 coin, random side/pick, no insurance) ---
+      // --- Random bet (5-180 min interval, 1 coin red + 1 coin green, random picks, no insurance) ---
       if (nowSecVal >= npc.nextBetAt) {
         let betOk = false;
         try {
-          // Check balance first
+          // Check balance first (need 2 coins: 1 red + 1 green)
           const acc = await this.store.getAccount(npc.uid).catch(() => null);
-          if (acc && acc.available >= BET_AMOUNT) {
-            const side = Math.random() < 0.5 ? 'red' : 'green';
-            const pick = Math.floor(Math.random() * 10);
-            await this.game.bet(npc.uid, side, 1, pick, nowSecVal); // bet 1 coin (game handles unit conversion)
-            actions.bets.push({ npc: npc.name, side, pick });
+          if (acc && acc.available >= BET_AMOUNT * 2n) {
+            // Bet red 1 coin with random number
+            const pickRed = Math.floor(Math.random() * 10);
+            await this.game.bet(npc.uid, 'red', 1, pickRed, nowSecVal);
+            // Bet green 1 coin with random number
+            const pickGreen = Math.floor(Math.random() * 10);
+            await this.game.bet(npc.uid, 'green', 1, pickGreen, nowSecVal);
+            actions.bets.push({ npc: npc.name, side: 'both', redPick: pickRed, greenPick: pickGreen });
             betOk = true;
           }
-          // If balance < 1 coin, skip (admin must manually recharge)
+          // If balance < 2 coins, skip (admin must manually recharge)
         } catch (e) {
           console.error('[npc:bet] FAILED', npc.name, e.name, e.message);
           // ROUND_LOCKED: round in last 30s, give up and wait next interval

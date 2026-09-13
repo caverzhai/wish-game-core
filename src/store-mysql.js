@@ -426,11 +426,24 @@ export class MysqlStore {
     return r[0] && r[0].last_win ? Number(r[0].last_win) : null;
   }
 
-  // Check if user is eligible for commission (has a win in last 24h)
+  // Check if user is eligible for commission
+  // Regional agents: always eligible (no activity requirement)
+  // Regular users: must have placed at least one bet (win or lose) in last 24h
   async isCommissionEligible(uid, nowSec, windowSec) {
-    const lastWin = await this.getLastWinAt(uid);
-    if (!lastWin) return false;
-    return (nowSec - lastWin) <= windowSec;
+    // Regional agents are always eligible
+    try {
+      const user = await this.getUser(uid);
+      if (user && user.wallet) {
+        const w = String(user.wallet).toLowerCase();
+        const ra = await this.exec('SELECT id FROM regional_agents WHERE wallet=? LIMIT 1', [w]);
+        if (ra.length > 0) return true;
+      }
+    } catch (e) { /* fall through to regular check */ }
+    // Regular users: any settled bet in last 24h (win or lose)
+    const r = await this.exec('SELECT MAX(at) last_bet FROM bets WHERE uid=? AND settled=1', [uid]);
+    const lastBet = r[0] && r[0].last_bet ? Number(r[0].last_bet) : null;
+    if (!lastBet) return false;
+    return (nowSec - lastBet) <= windowSec;
   }
 
   async saveRoom(room) {

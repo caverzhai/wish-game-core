@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.3'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.35.4'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -852,34 +852,6 @@ route('GET', '/debug/npc', async (b, _, req) => {
 });
 
 
-
-// TEMP DEBUG: query user commission info by wallet
-route('GET', /^\/debug\/user\/(.+)$/, async (b, m) => {
-  const wallet = String(m[1] || '').toLowerCase();
-  if (!wallet) return { error: 'wallet required' };
-  const user = await store.getUserByWallet(wallet);
-  if (!user) return { error: 'user not found', wallet };
-  const uid = user.uid;
-  const acc = await store.getAccount(uid).catch(() => null);
-  const validInvites = await store.countValidInvitees(uid);
-  const lastWin = await store.getLastWinAt(uid);
-  const nowSec = Math.floor(Date.now() / 1000);
-  const eligible = lastWin ? (nowSec - lastWin) <= 86400 : false;
-  const ra = await store.exec('SELECT * FROM regional_agents WHERE wallet=? LIMIT 1', [wallet]).catch(() => []);
-  const downlines = await store.exec('SELECT uid, wallet FROM users WHERE inviter_uid=? ORDER BY created_at DESC LIMIT 20', [uid]).catch(() => []);
-  const recentCommission = await store.exec('SELECT * FROM referral_logs WHERE inviter_uid=? ORDER BY at DESC LIMIT 10', [uid]).catch(() => []);
-  return {
-    uid, wallet: user.wallet, inviterUid: user.inviterUid,
-    account: acc ? { avail: String(acc.available), frozen: String(acc.frozen) } : null,
-    validInvites, lastWin, lastWinAgoSec: lastWin ? nowSec - lastWin : null,
-    commissionEligible24h: eligible,
-    regionalAgent: ra.length > 0 ? { name: ra[0].name, perMille: ra[0].per_mille, regions: ra[0].regions } : null,
-    downlineCount: downlines.length,
-    downlines: downlines.map(d => ({ uid: d.uid, wallet: d.wallet })),
-    recentCommissionCount: recentCommission.length,
-    recentCommission: recentCommission.map(r => ({ round: r.round_id, from: r.from_uid, perMille: r.per_mille, reward: r.reward })),
-  };
-});
 
 const server = http.createServer(async (req, res) => {
   // #19 Security headers

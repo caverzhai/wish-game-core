@@ -1480,18 +1480,12 @@ function openRegionModal(amount) {
       try { modal.scrollIntoView(); } catch (e2) {}
     }
   }, 50);
-  // Bind country change event if not already bound (old phone compat)
+  // Ensure country change event is bound (use onchange property, no addEventListener for old phone compat)
   const countrySel = $('regionCountry');
-  if (countrySel && !countrySel._changeBound) {
-    countrySel._changeBound = true;
-    const handler = function() {
+  if (countrySel) {
+    countrySel.onchange = function() {
       try { toggleRegionInputs(); } catch (e) { console.warn('toggleRegionInputs error:', e); }
     };
-    if (countrySel.addEventListener) {
-      countrySel.addEventListener('change', handler, false);
-    } else if (countrySel.attachEvent) {
-      countrySel.attachEvent('onchange', handler);
-    }
   }
   // Delay toggle to ensure DOM ready on old phones
   setTimeout(function() {
@@ -2143,7 +2137,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.35.5';
+const FE_BUILD = '2.35.6';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

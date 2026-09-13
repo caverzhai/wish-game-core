@@ -8,7 +8,7 @@ import { mulDivFloor } from './money.js';
 
 /**
  * @param bets  [{uid, side:'red'|'green', amount:bigint, pick:number}]
- * @param ctx   { insActiveByUid:Map, inviterByUid:Map(uid->inviterUid|null), memberRateByUid:Map(uid->perMille bigint), commissionEligibleByUid:Map(uid->bool), regionalAgentByUid:Map(uid->{perMille,name,agentWallet}) }
+ * @param ctx   { insActiveByUid:Map, inviterByUid:Map(uid->inviterUid|null), memberRateByUid:Map(uid->perMille bigint), commissionEligibleByUid:Map(uid->bool), regionalAgentsByUid:Map(uid->Array<{perMille,name,agentWallet}>), walletByUid:Map(uid->wallet) }
  * @param cfg   global config
  * @returns Settlement plan (posted by GameService)
  */
@@ -64,30 +64,39 @@ export function planSettlement(bets, ctx, cfg) {
     }
     row.winCredit = row.winRaw - row.insCut;
 
-    // New commission system: direct inviter first, then regional agent gets the difference
+    // Commission system v2: direct inviter gets FULL rate, non-direct agents get tiered difference
     if (row.totalStake > 0n) {
-      // 1. Direct inviter gets their rate first
+      // 1. Direct inviter always gets their FULL rate first (never changes)
       const directInviter = ctx.inviterByUid.get(row.uid);
-      let directInviterRate = 0n;
+      let lastRate = 0n;
+      let directInviterWallet = '';
       if (directInviter) {
         const inviterRate = ctx.memberRateByUid.get(directInviter) || 0n;
         const inviterEligible = ctx.commissionEligibleByUid.get(directInviter) === true;
+        if (ctx.walletByUid) directInviterWallet = ctx.walletByUid.get(directInviter) || '';
         if (inviterRate > 0n && inviterEligible) {
-          directInviterRate = inviterRate;
+          lastRate = inviterRate;
           const reward = mulDivFloor(row.totalStake, inviterRate, cfg.referralDen);
           if (reward > 0n) referral.push({ inviterUid: directInviter, fromUid: row.uid, stake: row.totalStake, perMille: inviterRate, reward, depth: 1 });
         }
       }
-      // 2. Regional agent gets the difference (regional agent rate - direct inviter rate)
-      const regionalAgent = ctx.regionalAgentByUid ? ctx.regionalAgentByUid.get(row.uid) : null;
-      if (regionalAgent && regionalAgent.perMille > directInviterRate) {
-        const effectiveRate = regionalAgent.perMille - directInviterRate;
-        if (effectiveRate > 0n) {
-          const reward = mulDivFloor(row.totalStake, effectiveRate, cfg.referralDen);
-          if (reward > 0n) referral.push({ inviterUid: 'regional_' + regionalAgent.agentWallet, fromUid: row.uid, stake: row.totalStake, perMille: effectiveRate, reward, depth: 0, regionalAgent: true, agentName: regionalAgent.name });
+      // 2. Non-direct regional agents get tiered difference (sorted low to high)
+      const agents = ctx.regionalAgentsByUid ? ctx.regionalAgentsByUid.get(row.uid) : null;
+      if (agents && agents.length > 0) {
+        for (const agent of agents) {
+          // Skip if this agent IS the direct inviter (already got full rate)
+          if (directInviterWallet && agent.agentWallet && String(agent.agentWallet).toLowerCase() === directInviterWallet) continue;
+          // Tiered difference
+          if (agent.perMille > lastRate) {
+            const diff = agent.perMille - lastRate;
+            if (diff > 0n) {
+              const reward = mulDivFloor(row.totalStake, diff, cfg.referralDen);
+              if (reward > 0n) referral.push({ inviterUid: 'regional_' + agent.agentWallet, fromUid: row.uid, stake: row.totalStake, perMille: diff, reward, depth: 0, regionalAgent: true, agentName: agent.name });
+              lastRate = agent.perMille;
+            }
+          }
         }
       }
-      // If no regional agent, the difference is not distributed (goes to platform)
     }
   }
 

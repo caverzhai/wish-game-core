@@ -95,39 +95,40 @@ export class GameService {
       insActiveByUid.set(b.uid, { insActive: await this.insurance.isActive(b.uid) });
       await loadChain(b.uid);
     }
-    // Load regional agents and match users by region
-    const regionalAgentByUid = new Map();
+    // Load regional agents and match users by region (multiple agents can cover one user)
+    const regionalAgentsByUid = new Map();
+    const walletByUid = new Map();
     try {
       const allAgents = await s.listRegionalAgents();
       const uniqueUids = [...new Set(bets.map(b => b.uid))];
       for (const uid of uniqueUids) {
         const user = await s.getUser(uid);
-        if (user) {
-          // Build user region string from country/region/city fields
-          const parts = [];
-          if (user.country) parts.push(String(user.country));
-          if (user.region) parts.push(String(user.region));
-          if (user.city) parts.push(String(user.city));
-          const regionStr = parts.join('-');
-          if (regionStr) {
-            for (const agent of allAgents) {
-              const agentRegions = agent.regions || [];
-              for (const ar of agentRegions) {
-                const arStr = String(ar);
-                // Prefix match: user region starts with agent region, or vice versa
-                if (regionStr.startsWith(arStr) || arStr.startsWith(regionStr)) {
-                  regionalAgentByUid.set(uid, { perMille: BigInt(agent.perMille), name: agent.name, agentWallet: agent.wallet });
-                  break;
-                }
-              }
-              if (regionalAgentByUid.has(uid)) break;
+        if (!user) continue;
+        if (user.wallet) walletByUid.set(uid, String(user.wallet).toLowerCase());
+        const parts = [];
+        if (user.country) parts.push(String(user.country));
+        if (user.region) parts.push(String(user.region));
+        if (user.city) parts.push(String(user.city));
+        const regionStr = parts.join('-');
+        if (!regionStr) continue;
+        const matched = [];
+        for (const agent of allAgents) {
+          const agentRegions = agent.regions || [];
+          for (const ar of agentRegions) {
+            const arStr = String(ar);
+            if (arStr && (regionStr.startsWith(arStr) || arStr.startsWith(regionStr))) {
+              matched.push({ perMille: BigInt(agent.perMille), name: agent.name, agentWallet: agent.wallet });
+              break;
             }
           }
         }
+        // Sort by rate ascending for tiered commission
+        matched.sort((a, b) => Number(a.perMille - b.perMille));
+        if (matched.length > 0) regionalAgentsByUid.set(uid, matched);
       }
     } catch (e) { console.log('[settle] regional agent load error:', e.message); }
     console.log('[settle] round', round.roundId, 'bets:', bets.length, 'redTotal:', bets.filter(b=>b.side==='red').reduce((s,b)=>s+Number(b.amount),0), 'greenTotal:', bets.filter(b=>b.side==='green').reduce((s,b)=>s+Number(b.amount),0), 'uids:', [...new Set(bets.map(b=>b.uid))].join(','), 'regionalAgentsMatched:', regionalAgentByUid.size);
-    const plan = planSettlement(bets, { insActiveByUid, inviterByUid, memberRateByUid, commissionEligibleByUid, regionalAgentByUid }, cfg);
+    const plan = planSettlement(bets, { insActiveByUid, inviterByUid, memberRateByUid, commissionEligibleByUid, regionalAgentsByUid, walletByUid }, cfg);
     console.log('[settle] plan status:', plan.status, plan.status==='cancelled' ? 'REFUND!' : 'winSide:'+plan.totals.winSide);
 
     return await s.transaction(async () => {
@@ -156,16 +157,31 @@ export class GameService {
         }
       }
 
+      // Resolve regional agent wallet addresses to uids for payout
+      const walletToUid = new Map();
+      const regionalWallets = [...new Set(plan.referral.filter(r => String(r.inviterUid).startsWith('regional_')).map(r => String(r.inviterUid).replace('regional_', '')))];
+      for (const w of regionalWallets) {
+        try {
+          const u = await s.getUserByWallet(w);
+          if (u) walletToUid.set(String(u.wallet).toLowerCase(), u.uid);
+        } catch (e) { console.log('[settle] failed to resolve agent wallet', w, e.message); }
+      }
       let referralTotal = 0n;
       for (const r of plan.referral) {
         if (r.reward <= 0n) continue;
+        let payoutUid = r.inviterUid;
+        if (String(r.inviterUid).startsWith('regional_')) {
+          const wallet = String(r.inviterUid).replace('regional_', '').toLowerCase();
+          const uid = walletToUid.get(wallet);
+          if (!uid) { console.log('[settle] WARNING: regional agent wallet not found, skipping', wallet); continue; }
+          payoutUid = uid;
+        }
         await s.applyLedger({ plat: -r.reward });
-        await s.applyAccount(r.inviterUid, { avail: r.reward });
-        await s.addReferralLog({ roundId: round.roundId, ...r, atSec });
-        await s.addFlow(r.inviterUid, 'REFERRAL', r.reward, { roundId: round.roundId, fromUid: r.fromUid });
+        await s.applyAccount(payoutUid, { avail: r.reward });
+        await s.addReferralLog({ roundId: round.roundId, ...r, inviterUid: payoutUid, atSec });
+        await s.addFlow(payoutUid, 'REFERRAL', r.reward, { roundId: round.roundId, fromUid: r.fromUid });
         referralTotal += r.reward;
       }
-
       await s.updateRound(round.roundId, {
         redTotal: t.redTotal, greenTotal: t.greenTotal, sumPick: t.sumPick, state: 'settled',
         result: { status: 'settled', winSide: t.winSide, total: t.total, fee: t.fee, feeIns: t.feeIns, feePlat: t.feePlat, pot: t.pot, dust: t.dust, referralTotal },

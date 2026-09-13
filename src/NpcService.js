@@ -133,6 +133,9 @@ export class NpcService {
     this.voice = app.voice;
     this._langIndex = 0;
     this._npcRoom = new Map(); // npcId -> current roomId
+    this._betting = new Set(); // lock: prevents duplicate bets from concurrent ticks
+    this._posting = new Set(); // lock: prevents duplicate posts
+    this._chatting = new Set(); // lock: prevents duplicate chats
   }
 
   async addNpc(name, wallet, language) {
@@ -281,7 +284,8 @@ export class NpcService {
       const lang = npc.language || 'en';
 
       // --- Random bet (5-180 min interval, 1 coin red + 1 coin green, random picks, no insurance) ---
-      if (nowSecVal >= npc.nextBetAt) {
+      if (nowSecVal >= npc.nextBetAt && !this._betting.has(npc.npcId)) {
+        this._betting.add(npc.npcId);
         let betOk = false;
         try {
           // Check balance first (need 2 coins: 1 red + 1 green)
@@ -308,10 +312,12 @@ export class NpcService {
             nextBetAt: betOk ? this._rollBetTime() : this._rollBetTime(),
           });
         } catch (e) { console.error('[npc:updateBet]', e.message); }
+        this._betting.delete(npc.npcId);
       }
 
       // --- Random BBS post ---
-      if (nowSecVal >= npc.nextPostAt) {
+      if (nowSecVal >= npc.nextPostAt && !this._posting.has(npc.npcId)) {
+        this._posting.add(npc.npcId);
         let ok = false;
         try {
           const content = this._pickContent(lang);
@@ -325,10 +331,12 @@ export class NpcService {
             nextPostAt: ok ? this._rollNextTime() : this._rollRetryTime(),
           });
         } catch (e) { console.error('[npc:updatePost]', e.message); }
+        this._posting.delete(npc.npcId);
       }
 
       // --- Random chat room message (NPC stays in room, no immediate leave) ---
-      if (nowSecVal >= npc.nextChatAt) {
+      if (nowSecVal >= npc.nextChatAt && !this._chatting.has(npc.npcId)) {
+        this._chatting.add(npc.npcId);
         let ok = false;
         try {
           const rooms = this.voice.listRooms ? (await this.voice.listRooms()) : [];
@@ -360,6 +368,7 @@ export class NpcService {
             nextChatAt: ok ? this._rollNextTime() : this._rollRetryTime(),
           });
         } catch (e) { console.error('[npc:updateChat]', e.message); }
+        this._chatting.delete(npc.npcId);
       }
     }
     return actions;

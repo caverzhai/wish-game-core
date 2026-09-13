@@ -1,4 +1,5 @@
 // Lottery Service - lucky draw pools (persistent storage)
+import crypto from 'crypto';
 const SCALE = 1000000;
 
 export const LOTTERY_PRODUCTS = [

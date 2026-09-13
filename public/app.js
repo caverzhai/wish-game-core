@@ -1468,14 +1468,18 @@ function openRegionModal(amount) {
   pendingWithdrawAmount = amount;
   const modal = $('regionModal');
   if (!modal) {
-    alert('Region modal not found in page. Please refresh and try again.');
+    alert('Region form not found in page. Please refresh and try again.');
     return;
   }
-  // Use block display for old phone compatibility
+  // Inline form (old phone compatible: no fixed modal, no overlay)
   modal.style.display = 'block';
-  modal.style.zIndex = '99999';
-  modal.style.overflowY = 'auto';
-  console.log('[openRegionModal] modal displayed, amount=', amount);
+  console.log('[openRegionModal] inline form displayed, amount=', amount);
+  // Scroll to the form so user sees it
+  setTimeout(function() {
+    try { modal.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {
+      try { modal.scrollIntoView(); } catch (e2) {}
+    }
+  }, 50);
   // Bind country change event if not already bound (old phone compat)
   const countrySel = $('regionCountry');
   if (countrySel && !countrySel._changeBound) {
@@ -1493,10 +1497,6 @@ function openRegionModal(amount) {
   setTimeout(function() {
     try { toggleRegionInputs(); } catch (e) { console.warn('toggleRegionInputs error:', e); }
   }, 100);
-  // Focus country select after modal opens
-  setTimeout(function() {
-    try { if (countrySel) countrySel.focus(); } catch (e) {}
-  }, 300);
 }
 // Old phone compat: ensure country select works on tap
 (function() {
@@ -2143,7 +2143,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.35.4';
+const FE_BUILD = '2.35.5';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

@@ -1023,7 +1023,7 @@ async function showFrozenDetail() {
     html += data.matches ? t('frozenMatch') : t('frozenMismatch');
     html += '</div>';
     c.innerHTML = html;
-    modal.style.display = 'flex';
+    modal.style.display = 'block';
   } catch (e) {
     alert(t('frozenError') + ': ' + e.message);
   }
@@ -1471,11 +1471,51 @@ function openRegionModal(amount) {
     alert('Region modal not found in page. Please refresh and try again.');
     return;
   }
-  modal.style.display = 'flex';
+  // Use block display for old phone compatibility
+  modal.style.display = 'block';
   modal.style.zIndex = '99999';
+  modal.style.overflowY = 'auto';
   console.log('[openRegionModal] modal displayed, amount=', amount);
-  try { toggleRegionInputs(); } catch (e) { console.warn('toggleRegionInputs error:', e); }
+  // Bind country change event if not already bound (old phone compat)
+  const countrySel = $('regionCountry');
+  if (countrySel && !countrySel._changeBound) {
+    countrySel._changeBound = true;
+    const handler = function() {
+      try { toggleRegionInputs(); } catch (e) { console.warn('toggleRegionInputs error:', e); }
+    };
+    if (countrySel.addEventListener) {
+      countrySel.addEventListener('change', handler, false);
+    } else if (countrySel.attachEvent) {
+      countrySel.attachEvent('onchange', handler);
+    }
+  }
+  // Delay toggle to ensure DOM ready on old phones
+  setTimeout(function() {
+    try { toggleRegionInputs(); } catch (e) { console.warn('toggleRegionInputs error:', e); }
+  }, 100);
+  // Focus country select after modal opens
+  setTimeout(function() {
+    try { if (countrySel) countrySel.focus(); } catch (e) {}
+  }, 300);
 }
+// Old phone compat: ensure country select works on tap
+(function() {
+  function initCountryCompat() {
+    const sel = document.getElementById('regionCountry');
+    if (!sel || sel._oldPhoneCompat) return;
+    sel._oldPhoneCompat = true;
+    // Force re-render on touch to ensure old phones register the tap
+    sel.addEventListener('touchstart', function() {
+      try { this.focus(); } catch (e) {}
+    }, { passive: true });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCountryCompat);
+  } else {
+    initCountryCompat();
+  }
+})();
+
 // China provinces and major cities (cascading selection)
 const CHINA_PROVINCES = {
   "Beijing": ["Beijing"],
@@ -2103,7 +2143,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.34.0';
+const FE_BUILD = '2.34.1';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

@@ -404,19 +404,28 @@ export class MysqlStore {
         levelName = lv.name;
       }
     }
-    // Regional agent overrides member level rate
+    // Priority: Whitelist (leader) > Regional Agent > Member Level
     try {
       const user = await this.getUser(uid);
       if (user && user.wallet) {
         const w = String(user.wallet).toLowerCase();
-        const ra = await this.exec('SELECT per_mille, name FROM regional_agents WHERE wallet=? LIMIT 1', [w]);
-        if (ra.length > 0) {
-          perMille = BigInt(ra[0].per_mille);
-          levelName = 'Regional Agent (' + ra[0].name + ')';
-          level = 99;
+        // 1. Whitelist check (highest priority)
+        const wl = await this.exec('SELECT per_mille FROM whitelist WHERE wallet=? LIMIT 1', [w]);
+        if (wl.length > 0) {
+          perMille = BigInt(wl[0].per_mille);
+          levelName = 'Whitelist Leader';
+          level = 98;
+        } else {
+          // 2. Regional agent check (second priority)
+          const ra = await this.exec('SELECT per_mille, name FROM regional_agents WHERE wallet=? LIMIT 1', [w]);
+          if (ra.length > 0) {
+            perMille = BigInt(ra[0].per_mille);
+            levelName = 'Regional Agent (' + ra[0].name + ')';
+            level = 99;
+          }
         }
       }
-    } catch (e) { /* ignore regional agent lookup errors */ }
+    } catch (e) { /* ignore lookup errors */ }
     return { validInvites, level, perMille, levelName };
   }
 

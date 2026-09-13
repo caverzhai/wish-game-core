@@ -263,8 +263,8 @@ export class NpcService {
   }
 
   _rollBetTime() {
-    // 5-180 min for bets
-    return nowSec() + Math.floor(Math.random() * 10500) + 300;
+    // 10-300 min for bets
+    return nowSec() + Math.floor(Math.random() * 17400) + 600;
   }
 
   _rollRetryTime() {
@@ -283,33 +283,62 @@ export class NpcService {
       if (!npc.enabled) continue;
       const lang = npc.language || 'en';
 
-      // --- Random bet (5-180 min interval, 1 coin red + 1 coin green, random picks, no insurance) ---
+      // --- Random bet (10-300 min interval, paired with another NPC, different colors, 1 coin each) ---
       if (nowSecVal >= npc.nextBetAt && !this._betting.has(npc.npcId)) {
         this._betting.add(npc.npcId);
         let betOk = false;
+        let partnerNpc = null;
         try {
-          // Check balance first (need 2 coins: 1 red + 1 green)
+          // Check self balance first (need 1 coin)
           const acc = await this.store.getAccount(npc.uid).catch(() => null);
-          if (acc && acc.available >= BET_AMOUNT * 2n) {
-            // Bet red 1 coin with random number
-            const pickRed = Math.floor(Math.random() * 10);
-            await this.game.bet(npc.uid, 'red', 1, pickRed, nowSecVal);
-            // Bet green 1 coin with random number
-            const pickGreen = Math.floor(Math.random() * 10);
-            await this.game.bet(npc.uid, 'green', 1, pickGreen, nowSecVal);
-            actions.bets.push({ npc: npc.name, side: 'both', redPick: pickRed, greenPick: pickGreen });
-            betOk = true;
+          if (!acc || acc.available < BET_AMOUNT) {
+            throw new Error('INSUFFICIENT_BALANCE');
           }
-          // If balance < 2 coins, skip (admin must manually recharge)
+          // Find a partner NPC (enabled, not currently betting, balance >= 1 coin, not self)
+          const allNpcs = await this.store.listNpcs();
+          const partners = [];
+          for (const c of allNpcs) {
+            if (!c.enabled || c.npcId === npc.npcId || this._betting.has(c.npcId)) continue;
+            try {
+              const cAcc = await this.store.getAccount(c.uid);
+              if (cAcc && cAcc.available >= BET_AMOUNT) partners.push(c);
+            } catch {}
+          }
+          if (partners.length === 0) {
+            throw new Error('NO_PARTNER');
+          }
+          partnerNpc = partners[Math.floor(Math.random() * partners.length)];
+          this._betting.add(partnerNpc.npcId);
+          // Randomly assign colors: one red, one green
+          const npcColor = Math.random() < 0.5 ? 'red' : 'green';
+          const partnerColor = npcColor === 'red' ? 'green' : 'red';
+          // NPC bets 1 coin with random number
+          const npcPick = Math.floor(Math.random() * 10);
+          await this.game.bet(npc.uid, npcColor, 1, npcPick, nowSecVal);
+          // Partner bets 1 coin with random number
+          const partnerPick = Math.floor(Math.random() * 10);
+          await this.game.bet(partnerNpc.uid, partnerColor, 1, partnerPick, nowSecVal);
+          actions.bets.push({ npc: npc.name, side: npcColor, pick: npcPick, partner: partnerNpc.name, partnerSide: partnerColor, partnerPick });
+          betOk = true;
+          // Update partner's bet schedule
+          try {
+            await this.store.updateNpc(partnerNpc.npcId, {
+              lastBetAt: nowSecVal,
+              nextBetAt: this._rollBetTime(),
+            });
+          } catch (e) { console.error('[npc:updatePartnerBet]', e.message); }
         } catch (e) {
           console.error('[npc:bet] FAILED', npc.name, e.name, e.message);
-          // ROUND_LOCKED: round in last 30s, give up and wait next interval
+          // ROUND_LOCKED: round in last 10s, give up and wait next interval
           // INSUFFICIENT_BALANCE: skip, wait for admin recharge
+          // NO_PARTNER: no available partner, skip
+        } finally {
+          if (partnerNpc) this._betting.delete(partnerNpc.npcId);
         }
         try {
           await this.store.updateNpc(npc.npcId, {
             lastBetAt: betOk ? nowSecVal : npc.lastBetAt,
-            nextBetAt: betOk ? this._rollBetTime() : this._rollBetTime(),
+            nextBetAt: this._rollBetTime(),
           });
         } catch (e) { console.error('[npc:updateBet]', e.message); }
         this._betting.delete(npc.npcId);

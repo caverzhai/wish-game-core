@@ -1597,6 +1597,8 @@ function loadTownsForDistrict(districtName) {
 }
 
 function initChinaCascade() {
+  if (window._chinaCascadeInited) return;
+  window._chinaCascadeInited = true;
   const provinceSelect = $('regionProvince');
   const citySelect = $('regionCitySelect');
   const districtSelect = $('regionDistrict');
@@ -1729,42 +1731,48 @@ async function submitRegion() {
   const vals = getRegionValues();
   console.log('[submitRegion] vals:', vals);
   if (!vals.country || !vals.region || !vals.city) {
-    alert(t('regionRequired') + ' (country=' + vals.country + ', region=' + vals.region + ', city=' + vals.city + ')');
+    alert('Please fill in all required fields: Country, State/Province, and City');
     return;
   }
-  const country = vals.country;
-  const region = vals.region;
-  const city = vals.city;
   const btn = $('regionSubmitBtn');
-  if (!btn) { alert('Submit button not found'); return; }
-  btn.disabled = true; btn.textContent = '...';
+  if (!btn) { alert('Submit button not found. Please refresh the page.'); return; }
+  const originalText = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Submitting...';
   try {
-    const r = await api('/user/region', { uid: state.uid, country, region, city });
+    const r = await api('/user/region', { uid: state.uid, country: vals.country, region: vals.region, city: vals.city });
     console.log('[submitRegion] API response:', r);
     if (r && r.user) {
       state.me.user = r.user;
       $('regionModal').style.display = 'none';
       const v = pendingWithdrawAmount;
       pendingWithdrawAmount = 0;
+      // Proceed with withdrawal - alignWallet failure should not block
       const wdBtn = $('wdBtn');
-      if (wdBtn) { wdBtn.disabled = true; wdBtn.textContent = t('withdrawing'); }
+      if (wdBtn) { wdBtn.disabled = true; wdBtn.textContent = 'Processing...'; }
       try {
-        await alignWallet();
+        try { await alignWallet(); } catch (e) { console.log('[submitRegion] alignWallet skipped:', e.message); }
         const res = await api('/withdraw', { uid: state.uid, amount: v });
-        if (res.paid === true) alert(t('wdOk') + '\n' + t('wdCheckReceive') + (res.txHash ? '\n' + res.txHash : ''));
-        else if (res.paid === false) alert((res.broadcast ? '⚠ ' : '') + (res.payoutError || 'pending') + (res.txHash ? '\n' + res.txHash : ''));
-        else alert(t('wdPending'));
-        $('wdInput').value = ''; refresh();
-      } catch (e) { alert('Withdraw error: ' + e.message); }
-      finally { if (wdBtn) { wdBtn.disabled = false; wdBtn.textContent = t('withdraw'); } }
+        console.log('[submitRegion] withdraw result:', res);
+        if (res.paid === true) alert('Withdrawal successful! Please check your wallet.');
+        else if (res.paid === false) alert('Withdrawal failed: ' + (res.payoutError || 'Unknown error'));
+        else alert('Withdrawal submitted, processing...');
+        $('wdInput').value = '';
+        try { await refresh(); } catch (e) {}
+      } catch (e) {
+        console.error('[submitRegion] withdraw error:', e);
+        alert('Withdrawal error: ' + e.message);
+      } finally {
+        if (wdBtn) { wdBtn.disabled = false; wdBtn.textContent = 'Withdraw'; }
+      }
     } else {
-      alert('Region update failed: no user returned. Response: ' + JSON.stringify(r));
+      alert('Location update failed. Please try again.');
     }
   } catch (e) {
     console.error('[submitRegion] error:', e);
-    alert('Region submit error: ' + e.message);
+    alert('Error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = originalText || 'Submit & Continue';
   }
-  finally { btn.disabled = false; btn.textContent = t('regionSubmit'); }
 }
 
 
@@ -2095,7 +2103,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.33.0';
+const FE_BUILD = '2.34.0';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

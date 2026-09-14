@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.18'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.35.19'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -203,17 +203,17 @@ route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
   // Insurance node survival status (7-day revive window)
   const insuranceStatus = await safe('insuranceStatus', async () => {
     const nowSec = Math.floor(Date.now() / 1000);
-    const currentSeq = Math.floor(nowSec / cfg.insurance.payoutEverySec);
+    const currentSeq = Math.floor(nowSec / cfg.payoutEverySec);
     let newestSeq = null, newestAt = null;
     for (const n of nodes) {
       const bs = Number(n.batchSeq);
       if (isNaN(bs) || bs <= 0) continue; // skip nodes without batchSeq
       if (newestSeq === null || bs > newestSeq) { newestSeq = bs; newestAt = n.createdAtSec; }
     }
-    const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.insurance.surviveWindowBatches;
+    const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.surviveWindowBatches;
     const batchesSinceNewest = newestSeq != null ? (currentSeq - newestSeq) : null;
     const hoursSinceNewest = batchesSinceNewest != null ? batchesSinceNewest * 6 : null;
-    const batchesUntilDead = alive ? (cfg.insurance.surviveWindowBatches - batchesSinceNewest) : 0;
+    const batchesUntilDead = alive ? (cfg.surviveWindowBatches - batchesSinceNewest) : 0;
     const hoursUntilDead = alive ? batchesUntilDead * 6 : 0;
     return {
       hasNodes: nodes.length > 0,
@@ -224,7 +224,7 @@ route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
       alive,
       hoursSinceNewest,
       hoursUntilDead,
-      surviveWindowHours: cfg.insurance.surviveWindowBatches * 6,
+      surviveWindowHours: cfg.surviveWindowBatches * 6,
     };
   }, { hasNodes: false, activeNodeCount: 0, alive: false, hoursSinceNewest: null, hoursUntilDead: 0, surviveWindowHours: 168 });
   return {
@@ -350,7 +350,40 @@ route('GET', '/insurance/pool', () => insurance.poolPublic());
 
 // Admin: insurance diagnose - check node status and pool balance
 route('GET', '/admin/insurance/diagnose', async (q) => {
-  return { ok: true, uid: q.uid, cfgInsurance: !!cfg.insurance, test: 'diagnose api works' };
+  const uid = Number(q.uid);
+  if (!uid) throw new GameError(Codes.BAD_INPUT, 'uid required');
+  const toStr = (v) => v == null ? '0' : (typeof v === 'bigint' ? v.toString() : String(v));
+  let nodes = [], ledger = null, batches = [];
+  try { nodes = await store.listNodes({ uid }); } catch(e) { console.log('[diagnose] nodes error:', e.message); }
+  try { ledger = await store.getLedger(); } catch(e) { console.log('[diagnose] ledger error:', e.message); }
+  try { batches = await store.exec('SELECT * FROM payout_batches ORDER BY id DESC LIMIT 10'); } catch(e) { console.log('[diagnose] batches error:', e.message); }
+  const nowSec = Math.floor(Date.now() / 1000);
+  const currentSeq = Math.floor(nowSec / cfg.payoutEverySec);
+  let newestSeq = null;
+  for (const n of nodes) {
+    const bs = Number(n.batchSeq);
+    if (isNaN(bs) || bs <= 0) continue;
+    if (newestSeq === null || bs > newestSeq) newestSeq = bs;
+  }
+  const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.surviveWindowBatches;
+  return {
+    uid, currentSeq, newestSeq, alive,
+    surviveWindow: cfg.surviveWindowBatches,
+    hoursSinceNewest: newestSeq != null ? (currentSeq - newestSeq) * 6 : null,
+    insurancePool: ledger ? toStr(ledger.insurancePool) : 'error',
+    nodeCount: nodes.length,
+    activeNodeCount: nodes.filter(n => n.state === 'active').length,
+    nodes: nodes.map(n => ({
+      nodeId: n.nodeId, state: n.state, periodN: n.periodN,
+      batchSeq: n.batchSeq, createdAtSec: n.createdAtSec,
+      total: toStr(n.total), paidToUser: toStr(n.paidToUserAmount),
+      forfeited: toStr(n.forfeitedAmount),
+    })),
+    recentBatches: batches.map(b => ({
+      seq: b.seq, state: b.state, dueTotal: toStr(b.due_total),
+      paidToUser: toStr(b.paid_to_user), forfeited: toStr(b.forfeited), at: b.at,
+    })),
+  };
 });
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium
 route('POST', '/insurance/deposit/onchain', async (b) => {

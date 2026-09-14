@@ -1,4 +1,4 @@
-﻿// =============================================================
+// =============================================================
 // Scheduler.js - async tick: auto-settle expired rounds + run 6h payouts
 // No auto new round: after settlement, a new round starts only on first bet via GameService.bet
 // Production: cron/queue + single-instance leader lock; single container: setInterval calling this tick
@@ -21,12 +21,27 @@ export class Scheduler {
     }
 
     const targetSeq = batchSeqAt(nowSec, cfg);
-    if (this.lastPayoutSeq === null) this.lastPayoutSeq = targetSeq;
-    else {
-      for (let seq = this.lastPayoutSeq + 1; seq <= targetSeq; seq++) {
-        out.payouts.push(await insurance.runPayoutBatch(seq * cfg.payoutEverySec + 1));
+    if (this.lastPayoutSeq === null) {
+      // Initialize from database: find the last paid or deferred batch seq
+      try {
+        const lastBatch = await this.app.store.exec('SELECT seq FROM payout_batches WHERE state IN (?,?) ORDER BY seq DESC LIMIT 1', ['paid', 'deferred']);
+        if (lastBatch && lastBatch[0]) {
+          this.lastPayoutSeq = Number(lastBatch[0].seq);
+        } else {
+          this.lastPayoutSeq = targetSeq - 1;
+        }
+      } catch (e) {
+        console.log('[scheduler] init lastPayoutSeq error:', e.message);
+        this.lastPayoutSeq = targetSeq - 1;
       }
-      this.lastPayoutSeq = targetSeq;
+    }
+    for (let seq = this.lastPayoutSeq + 1; seq <= targetSeq; seq++) {
+      try {
+        out.payouts.push(await insurance.runPayoutBatch(seq * cfg.payoutEverySec + 1));
+      } catch (e) {
+        console.log('[scheduler] payout batch error seq=' + seq + ':', e.message);
+      }
+      this.lastPayoutSeq = seq;
     }
     return out;
   }

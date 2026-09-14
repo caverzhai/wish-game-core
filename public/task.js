@@ -206,11 +206,11 @@
 
     // Validation
     if (!title) { alert(t('taskTitleRequired')); return; }
-    if (title.length < 50) { alert(t('taskTitleMin')); return; }
+    if (title.length < 16) { alert(t('taskTitleMin')); return; }
     // No punctuation or spaces allowed
     if (/[\s\p{P}\p{S}]/u.test(title)) { alert(t('taskTitleNoPunct')); return; }
     if (!description) { alert(t('taskDescRequired')); return; }
-    if (description.length < 100) { alert(t('taskDescMin')); return; }
+    if (description.length < 30) { alert(t('taskDescMin')); return; }
     if (!reward || reward < 1) { alert(t('taskRewardInvalid')); return; }
     if (!image) { alert(t('taskImageRequired')); return; }
 

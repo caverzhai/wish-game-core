@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.20'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.35.21'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -347,6 +347,18 @@ route('POST', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
 route('POST', '/insurance/switch', (b) => insurance.setSwitch(b.uid, !!b.on));
 route('POST', '/insurance/deposit', (b) => insurance.depositPremium(b.uid, coin(Number(b.amount))));
 route('GET', '/insurance/pool', () => insurance.poolPublic());
+
+// Debug: check uid formats
+route('GET', '/admin/debug/uid', async (q) => {
+  const bets = await store.exec('SELECT uid FROM bets LIMIT 5');
+  const accounts = await store.exec('SELECT uid FROM accounts LIMIT 5');
+  const nodes = await store.exec('SELECT uid FROM nodes LIMIT 5');
+  return {
+    betUids: bets.map(b => ({ uid: b.uid, type: typeof b.uid })),
+    accountUids: accounts.map(a => ({ uid: a.uid, type: typeof a.uid })),
+    nodeUids: nodes.map(n => ({ uid: n.uid, type: typeof n.uid })),
+  };
+});
 
 // Admin: insurance diagnose - check node status and pool balance
 route('GET', '/admin/insurance/diagnose', async (q) => {

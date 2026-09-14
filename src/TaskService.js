@@ -19,7 +19,7 @@ class TaskService {
 
   // ---- Create task (escrow full reward) ----
   async createJob(uid, data) {
-    const { title, description, location, deadline, reward } = data;
+    const { title, description, location, deadline, reward, image } = data;
     const missing = [];
     if (!title) missing.push('Title');
     if (!description) missing.push('Description');

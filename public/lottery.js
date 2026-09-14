@@ -417,6 +417,9 @@ async function topUpAndBuy(amount, totalCost) {
       Charity.renderCharitySection();
     }
   }
+    if (typeof Task !== 'undefined' && Task.renderTaskSection) {
+      Task.renderTaskSection();
+    }
 
   function refresh() {
     if (currentProduct) {

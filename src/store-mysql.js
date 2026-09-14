@@ -152,6 +152,54 @@ CREATE TABLE IF NOT EXISTS charity_comments (
   donor_amount BIGINT DEFAULT 0, created_at BIGINT,
   KEY idx_project(project_id)
 );
+CREATE TABLE IF NOT EXISTS task_jobs (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, job_id VARCHAR(16) UNIQUE,
+  uid VARCHAR(16), title VARCHAR(200), description TEXT,
+  location VARCHAR(200), deadline BIGINT, reward BIGINT,
+  status VARCHAR(20) DEFAULT 'open',
+  assigned_uid VARCHAR(16) NULL,
+  created_at BIGINT, assigned_at BIGINT NULL,
+  delivered_at BIGINT NULL, completed_at BIGINT NULL,
+  auto_release_at BIGINT NULL,
+  KEY idx_status(status), KEY idx_uid(uid), KEY idx_assigned(assigned_uid)
+);
+CREATE TABLE IF NOT EXISTS task_applications (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, application_id VARCHAR(16) UNIQUE,
+  job_id VARCHAR(16), uid VARCHAR(16), message VARCHAR(1000),
+  status VARCHAR(16) DEFAULT 'pending', created_at BIGINT,
+  KEY idx_job(job_id), KEY idx_uid(uid)
+);
+CREATE TABLE IF NOT EXISTS task_messages (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, message_id VARCHAR(16) UNIQUE,
+  job_id VARCHAR(16), uid VARCHAR(16), content VARCHAR(1000),
+  created_at BIGINT, KEY idx_job(job_id)
+);
+CREATE TABLE IF NOT EXISTS task_deliveries (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, delivery_id VARCHAR(16) UNIQUE,
+  job_id VARCHAR(16), uid VARCHAR(16), content TEXT,
+  proof MEDIUMTEXT, created_at BIGINT,
+  KEY idx_job(job_id)
+);
+CREATE TABLE IF NOT EXISTS task_disputes (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, dispute_id VARCHAR(16) UNIQUE,
+  job_id VARCHAR(16), type VARCHAR(16), initiator_uid VARCHAR(16),
+  reason TEXT, proof MEDIUMTEXT, status VARCHAR(16) DEFAULT 'open',
+  support_votes INT DEFAULT 0, oppose_votes INT DEFAULT 0,
+  admin_decision VARCHAR(16) NULL, admin_uid VARCHAR(16) NULL,
+  created_at BIGINT, resolved_at BIGINT NULL,
+  KEY idx_job(job_id), KEY idx_status(status)
+);
+CREATE TABLE IF NOT EXISTS task_votes (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, vote_id VARCHAR(16) UNIQUE,
+  dispute_id VARCHAR(16), uid VARCHAR(16), support TINYINT DEFAULT 1,
+  created_at BIGINT, UNIQUE KEY uid_dispute(uid, dispute_id)
+);
+CREATE TABLE IF NOT EXISTS task_reviews (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, review_id VARCHAR(16) UNIQUE,
+  job_id VARCHAR(16), reviewer_uid VARCHAR(16), reviewee_uid VARCHAR(16),
+  rating INT, content VARCHAR(500), created_at BIGINT,
+  KEY idx_job(job_id), KEY idx_reviewer(reviewer_uid), KEY idx_reviewee(reviewee_uid)
+);
 `;
 
 export class MysqlStore {
@@ -739,6 +787,126 @@ export class MysqlStore {
   async listCharityComments(projectId, limit = 50) {
     const rows = await this.exec('SELECT * FROM charity_comments WHERE project_id=? ORDER BY id DESC LIMIT ?', [projectId, limit]);
     return rows.map(r => ({ commentId: r.comment_id, projectId: r.project_id, uid: r.uid, content: r.content, donorAmount: BigInt(r.donor_amount), createdAt: Number(r.created_at) }));
+  }
+
+  // -------- Task (Find the Right Person) --------
+  _taskRow(r) {
+    if (!r) return null;
+    return {
+      jobId: r.job_id, uid: r.uid, title: r.title, description: r.description,
+      location: r.location, deadline: Number(r.deadline), reward: BigInt(r.reward),
+      status: r.status, assignedUid: r.assigned_uid,
+      createdAt: Number(r.created_at), assignedAt: r.assigned_at ? Number(r.assigned_at) : null,
+      deliveredAt: r.delivered_at ? Number(r.delivered_at) : null,
+      completedAt: r.completed_at ? Number(r.completed_at) : null,
+      autoReleaseAt: r.auto_release_at ? Number(r.auto_release_at) : null,
+    };
+  }
+  async insertTaskJob(j) {
+    await this.exec('INSERT INTO task_jobs(job_id,uid,title,description,location,deadline,reward,status,created_at) VALUES(?,?,?,?,?,?,?,?,?)',
+      [j.jobId, j.uid, j.title, j.description, j.location, j.deadline, j.reward.toString(), j.status, j.createdAt]);
+  }
+  async listTaskJobs(limit = 50, offset = 0, status = null) {
+    let sql = 'SELECT * FROM task_jobs';
+    const params = [];
+    if (status) { sql += ' WHERE status=?'; params.push(status); }
+    sql += ' ORDER BY FIELD(status, \'open\', \'assigned\', \'in_progress\', \'delivered\', \'disputed\', \'completed\', \'cancelled\'), created_at DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+    const rows = await this.exec(sql, params);
+    return rows.map(r => this._taskRow(r));
+  }
+  async listTaskJobsByUid(uid, limit = 50) {
+    const rows = await this.exec('SELECT * FROM task_jobs WHERE uid=? OR assigned_uid=? ORDER BY created_at DESC LIMIT ?', [uid, uid, limit]);
+    return rows.map(r => this._taskRow(r));
+  }
+  async getTaskJob(jobId) {
+    const r = await this.exec('SELECT * FROM task_jobs WHERE job_id=? LIMIT 1', [jobId]);
+    return this._taskRow(r[0]);
+  }
+  async getTaskJobForUpdate(jobId) {
+    const forUpdate = this.tx.getStore() ? ' FOR UPDATE' : '';
+    const r = await this.exec(`SELECT * FROM task_jobs WHERE job_id=? LIMIT 1${forUpdate}`, [jobId]);
+    return this._taskRow(r[0]);
+  }
+  async updateTaskJob(jobId, p = {}) {
+    const col = { status: 'status', assignedUid: 'assigned_uid', assignedAt: 'assigned_at', deliveredAt: 'delivered_at', completedAt: 'completed_at', autoReleaseAt: 'auto_release_at', title: 'title', description: 'description', location: 'location', deadline: 'deadline' };
+    const sets = [], vals = [];
+    for (const k of Object.keys(p)) {
+      if (col[k]) { sets.push(`${col[k]}=?`); vals.push(p[k]); }
+    }
+    if (sets.length) { vals.push(jobId); await this.exec(`UPDATE task_jobs SET ${sets.join(',')} WHERE job_id=?`, vals); }
+  }
+  async insertTaskApplication(a) {
+    await this.exec('INSERT INTO task_applications(application_id,job_id,uid,message,status,created_at) VALUES(?,?,?,?,?,?)',
+      [a.applicationId, a.jobId, a.uid, a.message, a.status, a.createdAt]);
+  }
+  async listTaskApplications(jobId) {
+    const rows = await this.exec('SELECT * FROM task_applications WHERE job_id=? ORDER BY created_at DESC', [jobId]);
+    return rows.map(r => ({ applicationId: r.application_id, jobId: r.job_id, uid: r.uid, message: r.message, status: r.status, createdAt: Number(r.created_at) }));
+  }
+  async getTaskApplication(applicationId) {
+    const r = await this.exec('SELECT * FROM task_applications WHERE application_id=? LIMIT 1', [applicationId]);
+    return r[0] ? { applicationId: r[0].application_id, jobId: r[0].job_id, uid: r[0].uid, message: r[0].message, status: r[0].status, createdAt: Number(r[0].created_at) } : null;
+  }
+  async updateTaskApplication(applicationId, p = {}) {
+    const col = { status: 'status' };
+    const sets = [], vals = [];
+    for (const k of Object.keys(p)) {
+      if (col[k]) { sets.push(`${col[k]}=?`); vals.push(p[k]); }
+    }
+    if (sets.length) { vals.push(applicationId); await this.exec(`UPDATE task_applications SET ${sets.join(',')} WHERE application_id=?`, vals); }
+  }
+  async insertTaskMessage(m) {
+    await this.exec('INSERT INTO task_messages(message_id,job_id,uid,content,created_at) VALUES(?,?,?,?,?)',
+      [m.messageId, m.jobId, m.uid, m.content, m.createdAt]);
+  }
+  async listTaskMessages(jobId, limit = 100) {
+    const rows = await this.exec('SELECT * FROM task_messages WHERE job_id=? ORDER BY created_at ASC LIMIT ?', [jobId, limit]);
+    return rows.map(r => ({ messageId: r.message_id, jobId: r.job_id, uid: r.uid, content: r.content, createdAt: Number(r.created_at) }));
+  }
+  async insertTaskDelivery(d) {
+    await this.exec('INSERT INTO task_deliveries(delivery_id,job_id,uid,content,proof,created_at) VALUES(?,?,?,?,?,?)',
+      [d.deliveryId, d.jobId, d.uid, d.content, d.proof, d.createdAt]);
+  }
+  async listTaskDeliveries(jobId) {
+    const rows = await this.exec('SELECT * FROM task_deliveries WHERE job_id=? ORDER BY created_at DESC', [jobId]);
+    return rows.map(r => ({ deliveryId: r.delivery_id, jobId: r.job_id, uid: r.uid, content: r.content, proof: r.proof, createdAt: Number(r.created_at) }));
+  }
+  async insertTaskDispute(d) {
+    await this.exec('INSERT INTO task_disputes(dispute_id,job_id,type,initiator_uid,reason,proof,status,created_at) VALUES(?,?,?,?,?,?,?,?)',
+      [d.disputeId, d.jobId, d.type, d.initiatorUid, d.reason, d.proof, d.status, d.createdAt]);
+  }
+  async getTaskDispute(disputeId) {
+    const r = await this.exec('SELECT * FROM task_disputes WHERE dispute_id=? LIMIT 1', [disputeId]);
+    return r[0] ? { disputeId: r[0].dispute_id, jobId: r[0].job_id, type: r[0].type, initiatorUid: r[0].initiator_uid, reason: r[0].reason, proof: r[0].proof, status: r[0].status, supportVotes: r[0].support_votes, opposeVotes: r[0].oppose_votes, adminDecision: r[0].admin_decision, adminUid: r[0].admin_uid, createdAt: Number(r[0].created_at), resolvedAt: r[0].resolved_at ? Number(r[0].resolved_at) : null } : null;
+  }
+  async getTaskDisputeByJob(jobId) {
+    const r = await this.exec('SELECT * FROM task_disputes WHERE job_id=? AND status IN (?,?) ORDER BY created_at DESC LIMIT 1', [jobId, 'open', 'voting']);
+    return r[0] ? { disputeId: r[0].dispute_id, jobId: r[0].job_id, type: r[0].type, initiatorUid: r[0].initiator_uid, reason: r[0].reason, proof: r[0].proof, status: r[0].status, supportVotes: r[0].support_votes, opposeVotes: r[0].oppose_votes, adminDecision: r[0].admin_decision, adminUid: r[0].admin_uid, createdAt: Number(r[0].created_at), resolvedAt: r[0].resolved_at ? Number(r[0].resolved_at) : null } : null;
+  }
+  async updateTaskDispute(disputeId, p = {}) {
+    const col = { status: 'status', supportVotes: 'support_votes', opposeVotes: 'oppose_votes', adminDecision: 'admin_decision', adminUid: 'admin_uid', resolvedAt: 'resolved_at', reason: 'reason', proof: 'proof' };
+    const sets = [], vals = [];
+    for (const k of Object.keys(p)) {
+      if (col[k]) { sets.push(`${col[k]}=?`); vals.push(p[k]); }
+    }
+    if (sets.length) { vals.push(disputeId); await this.exec(`UPDATE task_disputes SET ${sets.join(',')} WHERE dispute_id=?`, vals); }
+  }
+  async getTaskVote(uid, disputeId) {
+    const r = await this.exec('SELECT * FROM task_votes WHERE uid=? AND dispute_id=? LIMIT 1', [uid, disputeId]);
+    return r[0] ? { voteId: r[0].vote_id, disputeId: r[0].dispute_id, uid: r[0].uid, support: !!r[0].support, createdAt: Number(r[0].created_at) } : null;
+  }
+  async insertTaskVote(v) {
+    await this.exec('INSERT INTO task_votes(vote_id,dispute_id,uid,support,created_at) VALUES(?,?,?,?,?)',
+      [v.voteId, v.disputeId, v.uid, v.support ? 1 : 0, v.createdAt]);
+  }
+  async insertTaskReview(r) {
+    await this.exec('INSERT INTO task_reviews(review_id,job_id,reviewer_uid,reviewee_uid,rating,content,created_at) VALUES(?,?,?,?,?,?,?)',
+      [r.reviewId, r.jobId, r.reviewerUid, r.revieweeUid, r.rating, r.content, r.createdAt]);
+  }
+  async listTaskReviews(jobId) {
+    const rows = await this.exec('SELECT * FROM task_reviews WHERE job_id=? ORDER BY created_at DESC', [jobId]);
+    return rows.map(r => ({ reviewId: r.review_id, jobId: r.job_id, reviewerUid: r.reviewer_uid, revieweeUid: r.reviewee_uid, rating: r.rating, content: r.content, createdAt: Number(r.created_at) }));
   }
   async removeNpc(npcId) {
     await this.exec('DELETE FROM npcs WHERE npc_id=?', [npcId]);

@@ -27,9 +27,16 @@ export class MemoryStore {
     this.admins = []; // admin wallet addresses
     this.lotteryRounds = new Map();
     this.lotteryEntries = [];
-    this.lotteryComments = [];
+    this.lotteryComments = [];
+    this.taskJobs = [];
+    this.taskApplications = [];
+    this.taskMessages = [];
+    this.taskDeliveries = [];
+    this.taskDisputes = [];
+    this.taskVotes = [];
+    this.taskReviews = [];
     this.ledger = { insurancePool: 0n, platform: 0n, pendingWithdraw: 0n, issued: 0n, withdrawn: 0n };
-    this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0, npc: 0 };
+    this._seq = { user: 0, round: 0, bet: 0, node: 0, flow: 0, withdraw: 0, batch: 0, post: 0, reply: 0, npc: 0, task: 0, tapply: 0, tmsg: 0, tdeliv: 0, tdispute: 0, tvote: 0, treview: 0 };
   }
 
   async init() { /* in-memory version needs no tables */ }
@@ -333,6 +340,63 @@ export class MemoryStore {
   async updateNpc(npcId, p = {}) {
     const i = this.npcs.findIndex((n) => n.npcId === npcId);
     if (i >= 0) Object.assign(this.npcs[i], p);
+  }
+
+
+  // -------- Task Marketplace --------
+  async insertTaskJob(job) { this.taskJobs.push({ ...job }); }
+  async listTaskJobs(limit = 50, offset = 0, status = null) {
+    let list = [...this.taskJobs];
+    if (status) list = list.filter(j => j.status === status);
+    return list.sort((a, b) => b.createdAt - a.createdAt).slice(offset, offset + limit);
+  }
+  async listTaskJobsByUid(uid, limit = 50) {
+    return [...this.taskJobs].filter(j => j.uid === uid || j.assignedUid === uid)
+      .sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+  }
+  async getTaskJob(jobId) { return this.taskJobs.find(j => j.jobId === jobId) || null; }
+  async getTaskJobForUpdate(jobId) { return this.getTaskJob(jobId); }
+  async updateTaskJob(jobId, p = {}) {
+    const i = this.taskJobs.findIndex(j => j.jobId === jobId);
+    if (i >= 0) Object.assign(this.taskJobs[i], p);
+  }
+  async insertTaskApplication(app) { this.taskApplications.push({ ...app }); }
+  async listTaskApplications(jobId) {
+    return [...this.taskApplications].filter(a => a.jobId === jobId).sort((a, b) => a.createdAt - b.createdAt);
+  }
+  async getTaskApplication(applicationId) {
+    return this.taskApplications.find(a => a.applicationId === applicationId) || null;
+  }
+  async updateTaskApplication(applicationId, p = {}) {
+    const i = this.taskApplications.findIndex(a => a.applicationId === applicationId);
+    if (i >= 0) Object.assign(this.taskApplications[i], p);
+  }
+  async insertTaskMessage(msg) { this.taskMessages.push({ ...msg }); }
+  async listTaskMessages(jobId, limit = 100) {
+    return [...this.taskMessages].filter(m => m.jobId === jobId).sort((a, b) => a.createdAt - b.createdAt).slice(0, limit);
+  }
+  async insertTaskDelivery(delivery) { this.taskDeliveries.push({ ...delivery }); }
+  async listTaskDeliveries(jobId) {
+    return [...this.taskDeliveries].filter(d => d.jobId === jobId).sort((a, b) => a.createdAt - b.createdAt);
+  }
+  async insertTaskReview(review) { this.taskReviews.push({ ...review }); }
+  async listTaskReviews(jobId) {
+    return [...this.taskReviews].filter(r => r.jobId === jobId);
+  }
+  async insertTaskDispute(dispute) { this.taskDisputes.push({ ...dispute }); }
+  async getTaskDispute(disputeId) {
+    return this.taskDisputes.find(d => d.disputeId === disputeId) || null;
+  }
+  async getTaskDisputeByJob(jobId) {
+    return this.taskDisputes.find(d => d.jobId === jobId && d.status !== 'resolved') || null;
+  }
+  async updateTaskDispute(disputeId, p = {}) {
+    const i = this.taskDisputes.findIndex(d => d.disputeId === disputeId);
+    if (i >= 0) Object.assign(this.taskDisputes[i], p);
+  }
+  async insertTaskVote(vote) { this.taskVotes.push({ ...vote }); }
+  async getTaskVote(uid, disputeId) {
+    return this.taskVotes.find(v => v.uid === uid && v.disputeId === disputeId) || null;
   }
 
   // -------- Admin wallets --------

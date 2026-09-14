@@ -206,6 +206,8 @@
       </div>
       <button id="charityApplyBtn" class="charity-apply-btn" onclick="Charity.openApply()" data-i18n="charityApplyBtn">困难慈善救助申请</button>
       <div id="charitySection" class="charity-section"></div>
+
+      <div id="taskSection" class="task-section"></div>
       <div id="lotteryListWrap">
         <div id="lotteryList" class="lottery-grid"></div>
         <div class="lottery-rules">
@@ -310,6 +312,59 @@
         <button onclick="Charity.backToList()" class="lottery-back-btn" data-i18n="charityBack">← Back</button>
       </div>
       <div id="charityDetailContent"></div>
+    </section>
+
+
+    <!-- Task Marketplace -->
+    <section id="taskList" class="panel">
+      <div class="lottery-detail-topbar">
+        <button onclick="Task.backToList()" class="lottery-back-btn">← Back</button>
+        <button onclick="Task.showMyTasks()" class="lottery-back-btn" style="margin-left:auto;">My Tasks</button>
+      </div>
+      <h3 style="color:var(--gold);text-align:center;margin:10px 0;">Find the Right Person</h3>
+      <div id="taskListContent"></div>
+    </section>
+
+    <section id="taskCreate" class="panel">
+      <div class="lottery-detail-topbar">
+        <button onclick="Task.backToList()" class="lottery-back-btn">← Back</button>
+      </div>
+      <h3 style="color:var(--gold);text-align:center;margin:10px 0;">Post a Task</h3>
+      <form id="taskCreateForm" class="charity-form" onsubmit="event.preventDefault();Task.submitCreate();">
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" name="taskTitle" required maxlength="200" placeholder="e.g. Need a local guide in Hokkaido" />
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" name="taskLocation" maxlength="200" placeholder="e.g. Hokkaido, Japan (or Remote)" />
+        </div>
+        <div class="form-group">
+          <label>Reward (coins) *</label>
+          <input type="number" name="taskReward" min="1" required placeholder="Full payment amount" />
+        </div>
+        <div class="form-group">
+          <label>Description *</label>
+          <textarea name="taskDesc" required rows="6" placeholder="Describe what you need done, timeline, requirements..."></textarea>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;">Post Task (Escrow Reward)</button>
+        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">Reward is escrowed immediately. Released after confirmed delivery.</p>
+      </form>
+    </section>
+
+    <section id="taskDetail" class="panel">
+      <div class="lottery-detail-topbar">
+        <button onclick="Task.backToList()" class="lottery-back-btn">← Back</button>
+      </div>
+      <div id="taskDetailContent"></div>
+    </section>
+
+    <section id="taskMy" class="panel">
+      <div class="lottery-detail-topbar">
+        <button onclick="Task.backToList()" class="lottery-back-btn">← Back</button>
+      </div>
+      <h3 style="color:var(--gold);text-align:center;margin:10px 0;">My Tasks</h3>
+      <div id="taskMyContent"></div>
     </section>
 
     <!-- Insurance -->
@@ -569,5 +624,6 @@
 
 
 
+  <script src="task.js?v=2.36.0"></script>
 </body>
 </html>

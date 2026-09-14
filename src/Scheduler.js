@@ -9,8 +9,8 @@ export class Scheduler {
   constructor(app) { this.app = app; this.lastPayoutSeq = null; }
 
   async tick(nowSec) {
-    const { game, insurance, cfg } = this.app;
-    const out = { settled: [], payouts: [] };
+    const { game, insurance, cfg, task } = this.app;
+    const out = { settled: [], payouts: [], taskReleases: [] };
 
     // Auto-settle expired rounds (only existing & expired rounds, no auto-restart after)
     let guard = 0;
@@ -20,11 +20,23 @@ export class Scheduler {
       out.settled.push(await game.settle(nowSec));
     }
 
+    // Auto-release task payments (delivered > 15 days)
+    try {
+      const allDelivered = await this.app.store.listTaskJobs(100, 0, 'delivered');
+      const overdueJobs = allDelivered.filter(j => j.autoReleaseAt && j.autoReleaseAt <= nowSec);
+      for (const job of overdueJobs) {
+        try {
+          const res = await task.autoRelease(job.jobId);
+          if (res) out.taskReleases.push(res);
+        } catch (e) { console.log('[scheduler] task auto-release error:', e.message); }
+      }
+    } catch (e) { console.log('[scheduler] task release scan error:', e.message); }
+
     const targetSeq = batchSeqAt(nowSec, cfg);
     if (this.lastPayoutSeq === null) {
       // Initialize from database: find the last paid or deferred batch seq
       try {
-        const lastBatch = await this.app.store.exec('SELECT seq FROM payout_batches WHERE state IN (?,?) ORDER BY seq DESC LIMIT 1', ['paid', 'deferred']);
+        const lastBatch = await this.app.store.listPayoutBatches ? await this.app.store.listPayoutBatches(1) : [];
         if (lastBatch && lastBatch[0]) {
           this.lastPayoutSeq = Number(lastBatch[0].seq);
         } else {

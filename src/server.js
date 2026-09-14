@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.22'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.36.0'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -76,7 +76,7 @@ function readBody(req) {
 }
 
 const app = await createApp();
-const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery, charity } = app;
+const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery, charity, task } = app;
 const scheduler = new Scheduler(app);
 setInterval(() => {
   scheduler.tick(now()).catch((e) => console.error('[tick]', e.message));
@@ -873,6 +873,87 @@ route('POST', '/charity/upload', async (b, _, req) => {
   if (!isJpeg && !isPng && !isGif) throw new Error('File content does not match image format');
   const safeExt = ext === 'jpeg' ? 'jpg' : ext;
   const filename = 'charity_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + safeExt;
+  fs.writeFileSync(path.join(PUBLIC_DIR, filename), buf);
+  return { url: '/' + filename };
+});
+
+// Task (Find the Right Person)
+route('GET', '/task/jobs', async (b) => {
+  const limit = parseInt(b.limit) || 50;
+  const offset = parseInt(b.offset) || 0;
+  const status = b.status || null;
+  return { list: await task.listJobs(limit, offset, status) };
+});
+route('GET', '/task/my', async (b) => {
+  await assertNotBanned(b.uid);
+  return { list: await task.myJobs(b.uid, parseInt(b.limit) || 50) };
+});
+route('GET', /^\/task\/job\/(.+)$/, async (_, m) => task.getJob(m[1]));
+route('POST', '/task/create', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.createJob(b.uid, b);
+});
+route('POST', '/task/apply', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.apply(b.uid, b.jobId, b.message);
+});
+route('GET', /^\/task\/applications\/(.+)$/, async (_, m) => ({ list: await task.listApplications(m[1]) }));
+route('POST', '/task/accept', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.acceptApplication(b.uid, b.jobId, b.applicationId);
+});
+route('POST', '/task/message', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.postMessage(b.uid, b.jobId, b.content);
+});
+route('GET', /^\/task\/messages\/(.+)$/, async (_, m) => ({ list: await task.listMessages(m[1]) }));
+route('POST', '/task/deliver', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.submitDelivery(b.uid, b.jobId, b.content, b.proof);
+});
+route('GET', /^\/task\/deliveries\/(.+)$/, async (_, m) => ({ list: await task.listDeliveries(m[1]) }));
+route('POST', '/task/confirm', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.confirmDelivery(b.uid, b.jobId, parseInt(b.rating), b.reviewContent);
+});
+route('POST', '/task/refund', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.requestRefund(b.uid, b.jobId, b.reason);
+});
+route('POST', '/task/refund/agree', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.agreeRefund(b.uid, b.jobId);
+});
+route('POST', '/task/refund/dispute', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.disputeRefund(b.uid, b.jobId, b.reason, b.proof);
+});
+route('POST', '/task/refuse', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.refusePayment(b.uid, b.jobId, b.reason, b.proof);
+});
+route('GET', /^\/task\/dispute\/(.+)$/, async (_, m) => task.store.getTaskDisputeByJob(m[1]));
+route('POST', '/task/vote', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.vote(b.uid, b.disputeId, b.support);
+});
+route('POST', '/task/admin/rule', async (b) => {
+  await requireAdmin(b.uid);
+  return await task.adminRule(b.uid, b.disputeId, b.decision);
+});
+route('GET', /^\/task\/reviews\/(.+)$/, async (_, m) => ({ list: await task.listReviews(m[1]) }));
+route('POST', '/task/upload', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await assertNotBanned(uid);
+  const dataUrl = b.photo || b.proof || '';
+  if (!dataUrl || !dataUrl.startsWith('data:image/')) throw new GameError(Codes.BAD_INPUT, 'Invalid image');
+  const m = dataUrl.match(/^data:image\/(png|jpeg|jpg|gif);base64,(.+)$/);
+  if (!m) throw new GameError(Codes.BAD_INPUT, 'Invalid image format');
+  const ext = m[1] === 'jpg' ? 'jpeg' : m[1];
+  const buf = Buffer.from(m[2], 'base64');
+  if (buf.length > 5 * 1024 * 1024) throw new GameError(Codes.BAD_INPUT, 'Image too large (max 5MB)');
+  const safeExt = ext === 'jpeg' ? 'jpg' : ext;
+  const filename = 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + safeExt;
   fs.writeFileSync(path.join(PUBLIC_DIR, filename), buf);
   return { url: '/' + filename };
 });

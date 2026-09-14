@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.11'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.35.12'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -199,8 +199,34 @@ route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
   const isAdmin = await safe('isAdminWallet', () => isAdminWallet(user.wallet), false);
   const perMilleStr = (memberLevel.perMille != null && typeof memberLevel.perMille.toString === 'function') ? memberLevel.perMille.toString() : '0';
   console.log('[user/' + uid + '] OK -> user:', !!user, 'account:', !!account, 'flows:', flows.length, 'isAdmin:', isAdmin);
+
+  // Insurance node survival status (7-day revive window)
+  const insuranceStatus = await safe('insuranceStatus', async () => {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const currentSeq = Math.floor(nowSec / cfg.insurance.payoutEverySec);
+    let newestSeq = null, newestAt = null;
+    for (const n of nodes) {
+      if (newestSeq === null || n.batchSeq > newestSeq) { newestSeq = n.batchSeq; newestAt = n.createdAtSec; }
+    }
+    const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.insurance.surviveWindowBatches;
+    const batchesSinceNewest = newestSeq != null ? (currentSeq - newestSeq) : null;
+    const hoursSinceNewest = batchesSinceNewest != null ? batchesSinceNewest * 6 : null;
+    const batchesUntilDead = alive ? (cfg.insurance.surviveWindowBatches - batchesSinceNewest) : 0;
+    const hoursUntilDead = alive ? batchesUntilDead * 6 : 0;
+    return {
+      hasNodes: nodes.length > 0,
+      activeNodeCount: nodes.filter(n => n.state === 'active').length,
+      newestNodeAt: newestAt,
+      newestNodeSeq: newestSeq,
+      currentSeq,
+      alive,
+      hoursSinceNewest,
+      hoursUntilDead,
+      surviveWindowHours: cfg.insurance.surviveWindowBatches * 6,
+    };
+  }, { hasNodes: false, activeNodeCount: 0, alive: false, hoursSinceNewest: null, hoursUntilDead: 0, surviveWindowHours: 168 });
   return {
-    user, account, nodes, isAdmin,
+    user, account, nodes, isAdmin, insuranceStatus,
     invite: {
       code: uid,
       memberLevel: memberLevel.level || 0,

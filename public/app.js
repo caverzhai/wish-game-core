@@ -38,6 +38,7 @@ const I18N = {
     whitelistTitle: 'Invite Whitelist', addWhitelist: 'Add', wlTip: 'You are on the official whitelist. You earn commission on ALL generations of downlines, at your set rate. If a downline is also whitelisted, you earn only the rate difference.', wlScope: 'Scope', wlAllDepth: 'All generations', normalInvTip: 'Standard users earn 0.1% on direct referrals only. Contact admin to apply for whitelist (multi-level commission).', normalDirect: 'Direct referrals only', applyWhitelistTip: 'If you have a strong team and understand our platform vision, post in the Board so the official team can find you.',
     myNodes: 'My payout nodes', poolTotal: 'Insurance pool', poolNext: 'Next release total', poolNextAt: 'Next release at', nextReleaseIn: 'Next in', poolActiveNodes: 'Active nodes',
     poolSufficient: 'Sufficient', poolShort: 'Shortfall', poolCover: 'Coverage',
+    insReleaseTitle: 'Insurance Release Status', insReleaseActive: 'Releasing normally', insReleaseStopped: 'RELEASE STOPPED', insReleaseLastNode: 'Last node created', insReleaseHoursAgo: 'hours ago', insReleaseRemain: 'Time to revive', insReleaseHours: 'hours', insReleaseDeadTip: 'Your nodes have stopped releasing. Create a new payout node (accumulate 100 coins net loss with insurance ON) to revive all nodes within 168h.', insReleaseNoNode: 'No payout nodes yet. Lose 100 coins with insurance ON to create your first node.', insReleaseWarning: 'Less than 24h to stop! Create a new node soon.',
     meWallet: 'Wallet', meInvite: 'Invite', copy: 'Copy', scanQr: 'Scan QR to join', qualifiedInvitees: 'Qualified', curRate: 'Rate', invTotal: 'Total',
     directInvitees: 'Direct invites', downlineTotal: 'Total downline',
     invTierTip: 'Tier is set by how many direct friends ever generated a payout node; commission on their wish volume:', invColPeople: 'Qualified friends', invColRate: 'Rate', invPeopleUnit: '',
@@ -899,6 +900,36 @@ function renderMe() {
     const insBar = $('insStatusBar');
     if (insBar) { insBar.classList.toggle('on', insActive); insBar.classList.toggle('off', !insActive); insBar.textContent = insActive ? t('insOnBar') : t('insOffBar'); }
   } catch (e) { console.log('[renderMe] step2 insurance error:', e.message); }
+
+  // Step 2b: insurance release status (7-day revive window)
+  try {
+    const insBox = $('insReleaseStatus');
+    const insContent = $('insReleaseContent');
+    if (insBox && insContent && me.insuranceStatus) {
+      const st = me.insuranceStatus;
+      insBox.style.display = 'block';
+      if (!st.hasNodes) {
+        insContent.innerHTML = '<div class="ins-release-dead"><div class="dead-title">' + t('insReleaseNoNode') + '</div></div>';
+      } else if (st.alive) {
+        const pct = Math.min(100, Math.round((st.hoursUntilDead / st.surviveWindowHours) * 100));
+        const warning = st.hoursUntilDead <= 24;
+        const barColor = warning ? '#f59e0b' : '#22c55e';
+        insContent.innerHTML =
+          '<div class="ins-release-alive"><span class="label">' + t('insReleaseLastNode') + '</span>' +
+          '<span class="value">' + (st.hoursSinceNewest != null ? st.hoursSinceNewest + ' ' + t('insReleaseHoursAgo') : '-') + '</span></div>' +
+          '<div class="ins-release-alive"><span class="label">' + t('insReleaseRemain') + '</span>' +
+          '<span class="value ' + (warning ? 'warning' : '') + '">' + st.hoursUntilDead + ' ' + t('insReleaseHours') + (warning ? ' ⚠ ' + t('insReleaseWarning') : '') + '</span></div>' +
+          '<div class="ins-release-bar"><i style="width:' + pct + '%;background:' + barColor + '"></i></div>' +
+          '<div class="ins-release-alive"><span class="label">' + t('insReleaseActive') + '</span><span class="value">✓</span></div>';
+      } else {
+        insContent.innerHTML =
+          '<div class="ins-release-dead">' +
+          '<div class="dead-title">' + t('insReleaseStopped') + '</div>' +
+          '<div class="dead-tip">' + t('insReleaseDeadTip') + '</div>' +
+          '</div>';
+      }
+    }
+  } catch (e) { console.log('[renderMe] step2b insurance release status error:', e.message); }
 
   // Step 3: invite rate
   try {
@@ -2137,7 +2168,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.35.9';
+const FE_BUILD = '2.35.12';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

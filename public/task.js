@@ -1,4 +1,4 @@
-// task.js - Find the Right Person (Task Marketplace) Frontend
+// task.js - ${t('taskSectionTitle')} (Task Marketplace) Frontend
 (function () {
   const $ = (id) => document.getElementById(id);
   let currentJob = null;
@@ -49,8 +49,8 @@
 
   function statusLabel(s) {
     const map = {
-      open: 'Open', assigned: 'Assigned', in_progress: 'In Progress',
-      delivered: 'Delivered', disputed: 'Disputed', completed: 'Completed', cancelled: 'Cancelled'
+      open: t('taskStatusOpen'), assigned: t('taskStatusAssigned'), in_progress: t('taskStatusInProgress'),
+      delivered: t('taskStatusDelivered'), disputed: t('taskStatusDisputed'), completed: t('taskStatusCompleted'), cancelled: t('taskStatusCancelled')
     };
     return map[s] || s;
   }
@@ -65,10 +65,10 @@
       const cu = coinUnit();
       container.innerHTML = `
         <div class="task-section-header">
-          <span class="task-section-title">Find the Right Person</span>
-          <button onclick="Task.openCreate()" class="task-post-btn">+ Post Task</button>
+          <span class="task-section-title">t('taskSectionTitle')</span>
+          <button onclick="Task.openCreate()" class="task-post-btn">+ ${t('taskPostBtn')}</button>
         </div>
-        ${jobs.length === 0 ? `<div style="text-align:center;padding:15px;color:var(--muted);font-size:13px;">No tasks yet. Be the first to post!</div>` : `
+        ${jobs.length === 0 ? `<div style="text-align:center;padding:15px;color:var(--muted);font-size:13px;">${t('taskNoTasks')}</div>` : `
         <div class="task-grid">
           ${jobs.map(j => `
             <div class="task-card" onclick="Task.openDetail('${j.jobId}')">
@@ -80,11 +80,11 @@
           `).join('')}
         </div>`}
         <div style="text-align:center;margin-top:8px;">
-          <button onclick="Task.showAll()" class="task-view-all-btn">View All Tasks →</button>
+          <button onclick="Task.showAll()" class="task-view-all-btn">${t('taskViewAll')} →</button>
         </div>
       `;
     } catch (e) {
-      container.innerHTML = `<div style="text-align:center;padding:15px;color:var(--muted);">Failed to load tasks</div>`;
+      container.innerHTML = `<div style="text-align:center;padding:15px;color:var(--muted);">${t('taskLoadFail')}</div>`;
     }
   }
 
@@ -136,13 +136,13 @@
       const data = await api('/task/my');
       const jobs = data.list || [];
       const cu = coinUnit();
-      $('taskMyContent').innerHTML = jobs.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--muted);">No tasks yet</div>` : `
+      $('taskMyContent').innerHTML = jobs.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--muted);">${t('taskNoTasks')}</div>` : `
         <div class="task-list">
           ${jobs.map(j => `
             <div class="task-list-item" onclick="Task.openDetail('${j.jobId}')">
               <div class="task-list-main">
                 <div class="task-list-title">${j.title}</div>
-                <div class="task-list-meta">${j.uid === getUid() ? 'Posted by me' : 'Assigned to me'} · ${statusLabel(j.status)}</div>
+                <div class="task-list-meta">${j.uid === getUid() ? t('taskPostedByMe') : t('taskAssignedToMe')} · ${statusLabel(j.status)}</div>
               </div>
               <div class="task-list-right">
                 <div class="task-list-reward">${Number(j.reward).toFixed(0)} ${cu}</div>
@@ -170,7 +170,7 @@
     const file = input.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert('Image too large, max 2MB');
+      alert(t('taskImageTooLarge'));
       input.value = '';
       return;
     }
@@ -205,24 +205,24 @@
     const image = $('taskImageData').value;
 
     // Validation
-    if (!title) { alert('Title is required'); return; }
-    if (title.length < 50) { alert('Title must be at least 50 characters'); return; }
+    if (!title) { alert(t('taskTitleRequired')); return; }
+    if (title.length < 50) { alert(t('taskTitleMin')); return; }
     // No punctuation or spaces allowed
-    if (/[\s\p{P}\p{S}]/u.test(title)) { alert('Title cannot contain punctuation or spaces'); return; }
-    if (!description) { alert('Description is required'); return; }
-    if (description.length < 100) { alert('Description must be at least 100 characters'); return; }
-    if (!reward || reward < 1) { alert('Reward must be a positive integer'); return; }
-    if (!image) { alert('At least one image is required'); return; }
+    if (/[\s\p{P}\p{S}]/u.test(title)) { alert(t('taskTitleNoPunct')); return; }
+    if (!description) { alert(t('taskDescRequired')); return; }
+    if (description.length < 100) { alert(t('taskDescMin')); return; }
+    if (!reward || reward < 1) { alert(t('taskRewardInvalid')); return; }
+    if (!image) { alert(t('taskImageRequired')); return; }
 
     try {
       const res = await api('/task/create', {
         uid: getUid(), title, description, location, reward, image,
       });
-      alert('Task posted successfully! Reward escrowed: ' + reward + ' ' + coinUnit());
+      alert(t('taskPostedSuccess') + ' ' + reward + ' ' + coinUnit());
       backToList();
       renderTaskSection();
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskPostFail') + ': ' + e.message);
     }
   }
 
@@ -234,7 +234,7 @@
       showView('taskDetail');
       await renderDetail(job);
     } catch (e) {
-      alert('Failed to load task: ' + e.message);
+      alert(t('taskLoadFail') + ': ' + e.message);
     }
   }
 
@@ -259,12 +259,12 @@
     if (job.status === 'open' && isPoster && applications.length > 0) {
       actionHtml = `
         <div class="task-applications-box">
-          <div class="task-box-title">Applications (${applications.length})</div>
+          <div class="task-box-title">${t('taskApplications')} (${applications.length})</div>
           ${applications.map(a => `
             <div class="task-application">
               <div class="task-applicant">${a.uid.slice(0, 8)}...${a.uid.slice(-6)}</div>
               <div class="task-apply-msg">${a.message || '-'}</div>
-              ${a.status === 'pending' ? `<button onclick="Task.accept('${a.applicationId}')" class="btn-primary" style="padding:4px 12px;font-size:12px;">Accept</button>` : `<span class="task-apply-status">${a.status}</span>`}
+              ${a.status === 'pending' ? `<button onclick="Task.accept('${a.applicationId}')" class="btn-primary" style="padding:4px 12px;font-size:12px;">${t('taskAccept')}</button>` : `<span class="task-apply-status">${a.status}</span>`}
             </div>
           `).join('')}
         </div>`;
@@ -272,52 +272,52 @@
     if (job.status === 'assigned' && isWorker) {
       actionHtml = `
         <div class="task-action-box">
-          <div class="task-box-title">Submit Delivery</div>
-          <textarea id="taskDeliveryContent" placeholder="Describe what you delivered..." rows="3"></textarea>
+          <div class="task-box-title">${t('taskDeliverTitle')}</div>
+          <textarea id="taskDeliveryContent" placeholder="${t('taskDeliveryPh')}" rows="3"></textarea>
           <input type="file" id="taskDeliveryProof" accept="image/*" style="margin:8px 0;font-size:12px;" />
-          <button onclick="Task.submitDelivery()" class="btn-primary" style="width:100%;">Submit Delivery Proof</button>
+          <button onclick="Task.submitDelivery()" class="btn-primary" style="width:100%;">${t('taskSubmitDelivery')}</button>
         </div>`;
     }
     if (job.status === 'delivered' && isPoster) {
       actionHtml = `
         <div class="task-action-box">
-          <div class="task-box-title">Confirm Delivery</div>
-          <p style="font-size:13px;color:var(--muted);">Auto-release in 15 days if no action.</p>
+          <div class="task-box-title">${t('taskConfirmTitle')}</div>
+          <p style="font-size:13px;color:var(--muted);">${t('taskAutoReleaseNote')}</p>
           <div style="display:flex;gap:8px;">
-            <button onclick="Task.confirmDelivery()" class="btn-primary" style="flex:1;background:#16a34a;">Confirm & Release Payment</button>
-            <button onclick="Task.refusePayment()" class="btn-primary" style="flex:1;background:#ef4444;">Dispute</button>
+            <button onclick="Task.confirmDelivery()" class="btn-primary" style="flex:1;background:#16a34a;">${t('taskConfirmRelease')}</button>
+            <button onclick="Task.refusePayment()" class="btn-primary" style="flex:1;background:#ef4444;">${t('taskDispute')}</button>
           </div>
         </div>`;
     }
     if ((job.status === 'assigned' || job.status === 'open') && isPoster) {
       actionHtml += `
         <div style="margin-top:10px;">
-          <button onclick="Task.requestRefund()" class="btn-primary" style="width:100%;background:#f59e0b;font-size:13px;">Cancel & Request Refund</button>
+          <button onclick="Task.requestRefund()" class="btn-primary" style="width:100%;background:#f59e0b;font-size:13px;">${t('taskCancelRefund')}</button>
         </div>`;
     }
     if (job.status === 'disputed' && dispute) {
       const myVote = await api('/task/vote/check', { disputeId: dispute.disputeId }).catch(() => null);
       actionHtml = `
         <div class="task-dispute-box">
-          <div class="task-box-title">Dispute: ${dispute.type}</div>
+          <div class="task-box-title">${t('taskDisputeTitle')}: ${dispute.type}</div>
           <p style="font-size:13px;">${dispute.reason}</p>
           <div style="display:flex;gap:10px;margin:10px 0;">
-            <span>👍 Support: ${dispute.supportVotes}</span>
-            <span>👎 Oppose: ${dispute.opposeVotes}</span>
+            <span>👍 ${t('taskVoteSupport')}: ${dispute.supportVotes}</span>
+            <span>👎 ${t('taskVoteOppose')}: ${dispute.opposeVotes}</span>
           </div>
           ${dispute.status === 'voting' ? `
             <div style="display:flex;gap:8px;">
-              <button onclick="Task.voteDispute('${dispute.disputeId}', true)" class="btn-primary" style="flex:1;background:#16a34a;">👍 Support</button>
-              <button onclick="Task.voteDispute('${dispute.disputeId}', false)" class="btn-primary" style="flex:1;background:#ef4444;">👎 Oppose</button>
+              <button onclick="Task.voteDispute('${dispute.disputeId}', true)" class="btn-primary" style="flex:1;background:#16a34a;">👍 ${t('taskVoteSupport')}</button>
+              <button onclick="Task.voteDispute('${dispute.disputeId}', false)" class="btn-primary" style="flex:1;background:#ef4444;">👎 ${t('taskVoteOppose')}</button>
             </div>
-            <p style="font-size:11px;color:var(--muted);margin-top:5px;">Only users with insurance nodes can vote. One vote per dispute.</p>
-          ` : `<div style="color:var(--gold);">Admin decision: ${dispute.adminDecision || 'pending'}</div>`}
+            <p style="font-size:11px;color:var(--muted);margin-top:5px;">${t('taskVoteNote')}</p>
+          ` : `<div style="color:var(--gold);">${t('taskAdminDecision')}: ${dispute.adminDecision || 'pending'}</div>`}
         </div>`;
     }
     if (job.status === 'assigned' && isWorker) {
       actionHtml += `
         <div style="margin-top:10px;">
-          <button onclick="Task.agreeRefund()" class="btn-primary" style="width:100%;background:#f59e0b;font-size:13px;">Agree to Refund (cancel task)</button>
+          <button onclick="Task.agreeRefund()" class="btn-primary" style="width:100%;background:#f59e0b;font-size:13px;">${t('taskAgreeRefund')}</button>
         </div>`;
     }
 
@@ -330,18 +330,18 @@
           <span class="status-${job.status}">${statusLabel(job.status)}</span>
         </div>
         <div class="task-detail-parties">
-          <span>Poster: ${job.uid.slice(0, 8)}...${job.uid.slice(-6)}</span>
-          ${job.assignedUid ? `<span>Worker: ${job.assignedUid.slice(0, 8)}...${job.assignedUid.slice(-6)}</span>` : ''}
+          <span>${t('taskPoster')}: ${job.uid.slice(0, 8)}...${job.uid.slice(-6)}</span>
+          ${job.assignedUid ? `<span>${t('taskWorker')}: ${job.assignedUid.slice(0, 8)}...${job.assignedUid.slice(-6)}</span>` : ''}
         </div>
       </div>
       ${job.image ? `<img src="${job.image}" style="width:100%;border-radius:12px;margin-bottom:12px;" alt="Task image" />` : ''}
       <div class="task-desc-box">
-        <div class="task-box-title">Description</div>
+        <div class="task-box-title">${t('taskDescription')}</div>
         <p>${job.description}</p>
       </div>
       ${deliveries.length > 0 ? `
       <div class="task-desc-box">
-        <div class="task-box-title">Delivery Proof</div>
+        <div class="task-box-title">${t('taskDeliveryProof')}</div>
         ${deliveries.map(d => `
           <div class="task-delivery">
             <div style="font-size:12px;color:var(--muted);">${formatTime(d.createdAt)}</div>
@@ -352,18 +352,18 @@
       </div>` : ''}
       ${actionHtml}
       <div class="task-messages-box">
-        <div class="task-box-title">Discussion (${messages.length})</div>
+        <div class="task-box-title">${t('taskDiscussion')} (${messages.length})</div>
         <div id="taskMessagesList" class="task-messages-list">
           ${messages.map(m => `
             <div class="task-message">
               <span class="task-msg-user">${m.uid.slice(0, 6)}...${m.uid.slice(-4)}</span>
               <span class="task-msg-text">${m.content}</span>
             </div>
-          `).join('') || '<div style="color:var(--muted);font-size:12px;">No messages yet</div>'}
+          `).join('') || '<div style="color:var(--muted);font-size:12px;">' + t('taskNoMessages') + '</div>'}
         </div>
         <div class="task-msg-input">
-          <input type="text" id="taskMsgInput" placeholder="Say something..." maxlength="1000" />
-          <button onclick="Task.postMessage()" class="btn-primary" style="padding:6px 14px;">Send</button>
+          <input type="text" id="taskMsgInput" placeholder="${t('taskMsgPh')}" maxlength="1000" />
+          <button onclick="Task.postMessage()" class="btn-primary" style="padding:6px 14px;">${t('taskSend')}</button>
         </div>
       </div>
     `;
@@ -374,7 +374,7 @@
     const msg = $('taskApplyMsg').value.trim();
     try {
       await api('/task/apply', { uid: getUid(), jobId: currentJob.jobId, message: msg });
-      alert('Application submitted!');
+      alert(t('taskApplySuccess'));
       await renderDetail(currentJob);
     } catch (e) {
       alert('Failed: ' + e.message);
@@ -386,7 +386,7 @@
     if (!confirm('Accept this applicant? The reward will be locked to this worker.')) return;
     try {
       await api('/task/accept', { uid: getUid(), jobId: currentJob.jobId, applicationId });
-      alert('Applicant accepted!');
+      alert(t('taskAcceptSuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
       alert('Failed: ' + e.message);
@@ -408,7 +408,7 @@
     if (!content && !proof) { alert('Please provide delivery description or proof'); return; }
     try {
       await api('/task/deliver', { uid: getUid(), jobId: currentJob.jobId, content, proof });
-      alert('Delivery submitted!');
+      alert(t('taskDeliverySuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
       alert('Failed: ' + e.message);
@@ -475,7 +475,7 @@
   async function voteDispute(disputeId, support) {
     try {
       await api('/task/vote', { uid: getUid(), disputeId, support });
-      alert('Vote recorded!');
+      alert(t('taskVoteSuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
       alert('Failed: ' + e.message);

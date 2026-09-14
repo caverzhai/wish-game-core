@@ -327,25 +327,25 @@
 
     <section id="taskCreate" class="panel">
       <div class="lottery-detail-topbar">
-        <button onclick="Task.backToList()" class="lottery-back-btn">← Back</button>
+        <button onclick="Task.backToList()" class="lottery-back-btn" data-i18n="taskBack">← Back</button>
       </div>
-      <h3 style="color:var(--gold);text-align:center;margin:10px 0;">Post a Task</h3>
+      <h3 style="color:var(--gold);text-align:center;margin:10px 0;" data-i18n="taskCreateTitle">Post a Task</h3>
       <form id="taskCreateForm" class="charity-form" onsubmit="event.preventDefault();Task.submitCreate();">
         <div class="form-group">
           <label data-i18n="taskTitle">Title * (min 50 chars, no punctuation or spaces)</label>
-          <input type="text" name="taskTitle" required maxlength="200" placeholder="Describe your task clearly in at least 50 characters..." />
+          <input type="text" name="taskTitle" required maxlength="200" data-i18n-placeholder="taskTitlePh" placeholder="Describe your task clearly in at least 50 characters..." />
         </div>
         <div class="form-group">
           <label data-i18n="taskLocation">Location</label>
-          <input type="text" name="taskLocation" maxlength="200" placeholder="e.g. Hokkaido, Japan (or Remote)" />
+          <input type="text" name="taskLocation" maxlength="200" data-i18n-placeholder="taskLocationPh" placeholder="e.g. Hokkaido, Japan (or Remote)" />
         </div>
         <div class="form-group">
           <label data-i18n="taskReward">Reward (coins) *</label>
-          <input type="number" name="taskReward" min="1" required placeholder="Full payment amount" />
+          <input type="number" name="taskReward" min="1" required data-i18n-placeholder="taskRewardPh" placeholder="Full payment amount" />
         </div>
         <div class="form-group">
           <label data-i18n="taskDesc">Description * (min 100 chars)</label>
-          <textarea name="taskDesc" required rows="6" placeholder="Describe what you need done, timeline, requirements... (at least 100 characters)"></textarea>
+          <textarea name="taskDesc" required rows="6" data-i18n-placeholder="taskDescPh" placeholder="Describe what you need done, timeline, requirements... (at least 100 characters)"></textarea>
         </div>
         <div class="form-group">
           <label data-i18n="taskImage">Image * (at least one)</label>
@@ -612,14 +612,14 @@
     <button id="disclaimerConfirm" class="btn-primary big" data-i18n="disclaimerAgree">I have read and agree</button>
   </div>
 </div>
-<script src="/qrcode.min.js?v=2368"></script>
-<script src="/china-districts.js?v=2368"></script>
-  <script src="/china-towns.js?v=2368"></script>
-  <script src="/app.js?v=2368"></script>
-<script src="/task.js?v=2.36.1"></script>
-<script src="/lottery.js?v=2368"></script>
-<script src="/charity.js?v=2368"></script>
-<script src="/voice.js?v=2368"></script>
+<script src="/qrcode.min.js?v=2369"></script>
+<script src="/china-districts.js?v=2369"></script>
+  <script src="/china-towns.js?v=2369"></script>
+  <script src="/app.js?v=2369"></script>
+<script src="/task.js?v=2.36.2"></script>
+<script src="/lottery.js?v=2369"></script>
+<script src="/charity.js?v=2369"></script>
+<script src="/voice.js?v=2369"></script>
 
 <!-- Frozen detail modal -->
 <div id="frozenModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:20px;">

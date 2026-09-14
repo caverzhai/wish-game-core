@@ -32,6 +32,7 @@
     document.querySelectorAll('.panel').forEach(v => v.classList.remove('active'));
     const el = $(viewId);
     if (el) el.classList.add('active');
+    if (typeof applyI18n === 'function') applyI18n();
   }
 
   function backToList() {
@@ -252,8 +253,8 @@
     if (job.status === 'open' && !isPoster) {
       actionHtml = `
         <div class="task-action-box">
-          <textarea id="taskApplyMsg" placeholder="Introduce yourself and why you're the right person..." rows="3"></textarea>
-          <button onclick="Task.apply()" class="btn-primary" style="width:100%;margin-top:8px;">Apply for This Task</button>
+          <textarea id="taskApplyMsg" placeholder="${t('taskApplyMsg')}" rows="3"></textarea>
+          <button onclick="Task.apply()" class="btn-primary" style="width:100%;margin-top:8px;">${t('taskApply')}</button>
         </div>`;
     }
     if (job.status === 'open' && isPoster && applications.length > 0) {
@@ -372,24 +373,25 @@
   // ---- Apply ----
   async function apply() {
     const msg = $('taskApplyMsg').value.trim();
+    if (currentJob.uid === getUid()) { alert(t('taskCannotApplyOwn')); return; }
     try {
       await api('/task/apply', { uid: getUid(), jobId: currentJob.jobId, message: msg });
       alert(t('taskApplySuccess'));
       await renderDetail(currentJob);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 
   // ---- Accept application ----
   async function accept(applicationId) {
-    if (!confirm('Accept this applicant? The reward will be locked to this worker.')) return;
+    if (!confirm(t('taskAcceptConfirm'))) return;
     try {
       await api('/task/accept', { uid: getUid(), jobId: currentJob.jobId, applicationId });
       alert(t('taskAcceptSuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 
@@ -405,69 +407,69 @@
         reader.readAsDataURL(fileInput.files[0]);
       });
     }
-    if (!content && !proof) { alert('Please provide delivery description or proof'); return; }
+    if (!content && !proof) { alert(t('taskDeliveryRequired')); return; }
     try {
       await api('/task/deliver', { uid: getUid(), jobId: currentJob.jobId, content, proof });
       alert(t('taskDeliverySuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 
   // ---- Confirm delivery ----
   async function confirmDelivery() {
-    const rating = prompt('Rate the worker (1-5):', '5');
+    const rating = prompt(t('taskRateWorker'), '5');
     if (!rating) return;
-    const review = prompt('Leave a review (optional):', '') || '';
+    const review = prompt(t('taskLeaveReview'), '') || '';
     try {
       await api('/task/confirm', { uid: getUid(), jobId: currentJob.jobId, rating: parseInt(rating), reviewContent: review });
-      alert('Payment released successfully!');
+      alert(t('taskConfirmSuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 
   // ---- Refuse payment (dispute) ----
   async function refusePayment() {
-    const reason = prompt('Why are you disputing this delivery?');
+    const reason = prompt(t('taskDisputeReason'));
     if (!reason) return;
     try {
       await api('/task/refuse', { uid: getUid(), jobId: currentJob.jobId, reason });
-      alert('Dispute opened! Community voting begins.');
+      alert(t('taskDisputeSuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 
   // ---- Request refund (poster cancels) ----
   async function requestRefund() {
-    const reason = prompt('Why do you want to cancel and request a refund?');
+    const reason = prompt(t('taskRefundReason'));
     if (!reason) return;
     try {
       const res = await api('/task/refund', { uid: getUid(), jobId: currentJob.jobId, reason });
       if (res.status === 'cancelled') {
-        alert('Task cancelled, refund processed.');
+        alert(t('taskRefundCancelled'));
       } else {
-        alert('Refund request sent. Worker must agree, or it goes to community vote.');
+        alert(t('taskRefundSent'));
       }
       await openDetail(currentJob.jobId);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 
   // ---- Worker agrees to refund ----
   async function agreeRefund() {
-    if (!confirm('Agree to refund? The task will be cancelled and reward returned to poster.')) return;
+    if (!confirm(t('taskAgreeRefundConfirm'))) return;
     try {
       await api('/task/refund/agree', { uid: getUid(), jobId: currentJob.jobId });
-      alert('Refund agreed. Task cancelled.');
+      alert(t('taskAgreeRefundSuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 
@@ -478,7 +480,7 @@
       alert(t('taskVoteSuccess'));
       await openDetail(currentJob.jobId);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 
@@ -492,7 +494,7 @@
       input.value = '';
       await openDetail(currentJob.jobId);
     } catch (e) {
-      alert('Failed: ' + e.message);
+      alert(t('taskError') + ': ' + e.message);
     }
   }
 

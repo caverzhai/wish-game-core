@@ -164,6 +164,10 @@
     if (preview) preview.style.display = 'none';
     const data = $('taskImageData');
     if (data) data.value = '';
+    const err = $('taskCreateError');
+    if (err) err.style.display = 'none';
+    updateCharCount('taskTitle', 'titleCount', 16);
+    updateCharCount('taskDesc', 'descCount', 30);
   }
 
   // ---- Image upload ----
@@ -196,6 +200,27 @@
     reader.readAsDataURL(file);
   }
 
+  // ---- Char count helper ----
+  function updateCharCount(inputName, countId, min) {
+    const form = $('taskCreateForm');
+    if (!form) return;
+    const val = form[inputName] ? form[inputName].value : '';
+    const el = $(countId);
+    if (el) {
+      el.textContent = val.length;
+      el.style.color = val.length >= min ? '#22c55e' : 'var(--muted)';
+    }
+  }
+
+  function showCreateError(msg) {
+    const el = $('taskCreateError');
+    if (el) {
+      el.textContent = msg;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+  }
+
   // ---- Submit create ----
   async function submitCreate() {
     const form = $('taskCreateForm');
@@ -206,14 +231,14 @@
     const image = $('taskImageData').value;
 
     // Validation
-    if (!title) { alert(t('taskTitleRequired')); return; }
-    if (title.length < 16) { alert(t('taskTitleMin')); return; }
+    if (!title) { showCreateError(t('taskTitleRequired')); return; }
+    if (title.length < 16) { showCreateError(t('taskTitleMin') + ' (' + title.length + '/16)'); return; }
     // No punctuation or spaces allowed
-    if (/[\s\p{P}\p{S}]/u.test(title)) { alert(t('taskTitleNoPunct')); return; }
-    if (!description) { alert(t('taskDescRequired')); return; }
-    if (description.length < 30) { alert(t('taskDescMin')); return; }
-    if (!reward || reward < 1) { alert(t('taskRewardInvalid')); return; }
-    if (!image) { alert(t('taskImageRequired')); return; }
+    if (/[\s\p{P}\p{S}]/u.test(title)) { showCreateError(t('taskTitleNoPunct')); return; }
+    if (!description) { showCreateError(t('taskDescRequired')); return; }
+    if (description.length < 30) { showCreateError(t('taskDescMin') + ' (' + description.length + '/30)'); return; }
+    if (!reward || reward < 1) { showCreateError(t('taskRewardInvalid')); return; }
+    if (!image) { showCreateError(t('taskImageRequired')); return; }
 
     try {
       const res = await api('/task/create', {
@@ -223,7 +248,7 @@
       backToList();
       renderTaskSection();
     } catch (e) {
-      alert(t('taskPostFail') + ': ' + e.message);
+      showCreateError(t('taskPostFail') + ': ' + e.message);
     }
   }
 
@@ -517,5 +542,6 @@
     voteDispute,
     postMessage,
     backToList,
+    updateCharCount,
   };
 })();

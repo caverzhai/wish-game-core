@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.16'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.35.17'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -353,12 +353,12 @@ route('GET', '/admin/insurance/diagnose', async (q) => {
   const uid = Number(q.uid);
   if (!uid) throw new GameError(Codes.BAD_INPUT, 'uid required');
   const toStr = (v) => v == null ? '0' : (typeof v === 'bigint' ? v.toString() : String(v));
-  const nodes = await store.listNodes({ uid });
-  const ledger = await store.getLedger();
+  let nodes = [], ledger = null, batches = [];
+  try { nodes = await store.listNodes({ uid }); } catch(e) { console.log('[diagnose] nodes error:', e.message); }
+  try { ledger = await store.getLedger(); } catch(e) { console.log('[diagnose] ledger error:', e.message); }
+  try { batches = await store.exec('SELECT * FROM payout_batches ORDER BY id DESC LIMIT 5'); } catch(e) { console.log('[diagnose] batches error:', e.message); }
   const nowSec = Math.floor(Date.now() / 1000);
   const currentSeq = Math.floor(nowSec / cfg.insurance.payoutEverySec);
-  let batches = [];
-  try { batches = await store.exec('SELECT * FROM payout_batches ORDER BY id DESC LIMIT 10'); } catch(e) { console.log('[diagnose] batches error:', e.message); }
   let newestSeq = null;
   for (const n of nodes) {
     const bs = Number(n.batchSeq);
@@ -370,19 +370,18 @@ route('GET', '/admin/insurance/diagnose', async (q) => {
     uid, currentSeq, newestSeq, alive,
     surviveWindow: cfg.insurance.surviveWindowBatches,
     hoursSinceNewest: newestSeq != null ? (currentSeq - newestSeq) * 6 : null,
-    insurancePool: toStr(ledger.insurancePool),
+    insurancePool: ledger ? toStr(ledger.insurancePool) : 'error',
     nodeCount: nodes.length,
     activeNodeCount: nodes.filter(n => n.state === 'active').length,
     nodes: nodes.map(n => ({
       nodeId: n.nodeId, state: n.state, periodN: n.periodN,
-      batchSeq: n.batchSeq, createdAt: new Date(Number(n.createdAtSec) * 1000).toISOString(),
+      batchSeq: n.batchSeq, createdAtSec: n.createdAtSec,
       total: toStr(n.total), paidToUser: toStr(n.paidToUserAmount),
       forfeited: toStr(n.forfeitedAmount),
     })),
     recentBatches: batches.map(b => ({
       seq: b.seq, state: b.state, dueTotal: toStr(b.due_total),
-      paidToUser: toStr(b.paid_to_user), forfeited: toStr(b.forfeited),
-      at: new Date(Number(b.at) * 1000).toISOString(),
+      paidToUser: toStr(b.paid_to_user), forfeited: toStr(b.forfeited), at: b.at,
     })),
   };
 });

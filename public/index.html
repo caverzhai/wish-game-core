@@ -332,23 +332,32 @@
       <h3 style="color:var(--gold);text-align:center;margin:10px 0;">Post a Task</h3>
       <form id="taskCreateForm" class="charity-form" onsubmit="event.preventDefault();Task.submitCreate();">
         <div class="form-group">
-          <label>Title *</label>
-          <input type="text" name="taskTitle" required maxlength="200" placeholder="e.g. Need a local guide in Hokkaido" />
+          <label data-i18n="taskTitle">Title * (min 50 chars, no punctuation or spaces)</label>
+          <input type="text" name="taskTitle" required maxlength="200" placeholder="Describe your task clearly in at least 50 characters..." />
         </div>
         <div class="form-group">
-          <label>Location</label>
+          <label data-i18n="taskLocation">Location</label>
           <input type="text" name="taskLocation" maxlength="200" placeholder="e.g. Hokkaido, Japan (or Remote)" />
         </div>
         <div class="form-group">
-          <label>Reward (coins) *</label>
+          <label data-i18n="taskReward">Reward (coins) *</label>
           <input type="number" name="taskReward" min="1" required placeholder="Full payment amount" />
         </div>
         <div class="form-group">
-          <label>Description *</label>
-          <textarea name="taskDesc" required rows="6" placeholder="Describe what you need done, timeline, requirements..."></textarea>
+          <label data-i18n="taskDesc">Description * (min 100 chars)</label>
+          <textarea name="taskDesc" required rows="6" placeholder="Describe what you need done, timeline, requirements... (at least 100 characters)"></textarea>
         </div>
-        <button type="submit" class="btn-primary" style="width:100%;">Post Task (Escrow Reward)</button>
-        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">Reward is escrowed immediately. Released after confirmed delivery.</p>
+        <div class="form-group">
+          <label data-i18n="taskImage">Image * (at least one)</label>
+          <input type="file" name="taskImage" accept="image/*" required onchange="Task.handleImageUpload(this)" />
+          <input type="hidden" name="taskImageData" id="taskImageData" />
+          <img id="taskImagePreview" style="max-width:100%;border-radius:8px;margin-top:8px;display:none;" />
+        </div>
+        <div style="background:rgba(34,197,94,0.1);border:1px solid #22c55e;border-radius:8px;padding:10px;margin-bottom:12px;text-align:center;">
+          <span style="color:#22c55e;font-weight:600;font-size:13px;" data-i18n="taskEscrowNotice">Platform has collected the full security deposit</span>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;" data-i18n="taskPostBtn">Post Task (Escrow Reward)</button>
+        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;" data-i18n="taskEscrowDesc">Reward is escrowed immediately. Released after confirmed delivery.</p>
       </form>
     </section>
 
@@ -603,14 +612,14 @@
     <button id="disclaimerConfirm" class="btn-primary big" data-i18n="disclaimerAgree">I have read and agree</button>
   </div>
 </div>
-<script src="/qrcode.min.js?v=2367"></script>
-<script src="/china-districts.js?v=2367"></script>
-  <script src="/china-towns.js?v=2367"></script>
-  <script src="/app.js?v=2367"></script>
-<script src="/task.js?v=2.36.0"></script>
-<script src="/lottery.js?v=2367"></script>
-<script src="/charity.js?v=2367"></script>
-<script src="/voice.js?v=2367"></script>
+<script src="/qrcode.min.js?v=2368"></script>
+<script src="/china-districts.js?v=2368"></script>
+  <script src="/china-towns.js?v=2368"></script>
+  <script src="/app.js?v=2368"></script>
+<script src="/task.js?v=2.36.1"></script>
+<script src="/lottery.js?v=2368"></script>
+<script src="/charity.js?v=2368"></script>
+<script src="/voice.js?v=2368"></script>
 
 <!-- Frozen detail modal -->
 <div id="frozenModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:20px;">

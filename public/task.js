@@ -159,6 +159,40 @@
   function openCreate() {
     showView('taskCreate');
     $('taskCreateForm').reset();
+    const preview = $('taskImagePreview');
+    if (preview) preview.style.display = 'none';
+    const data = $('taskImageData');
+    if (data) data.value = '';
+  }
+
+  // ---- Image upload ----
+  function handleImageUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image too large, max 2MB');
+      input.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxW = 600;
+        const scale = Math.min(1, maxW / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.8);
+        $('taskImagePreview').src = compressed;
+        $('taskImagePreview').style.display = 'block';
+        $('taskImageData').value = compressed;
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   // ---- Submit create ----
@@ -168,12 +202,21 @@
     const description = form.taskDesc.value.trim();
     const location = form.taskLocation.value.trim();
     const reward = parseInt(form.taskReward.value);
+    const image = $('taskImageData').value;
+
+    // Validation
     if (!title) { alert('Title is required'); return; }
+    if (title.length < 50) { alert('Title must be at least 50 characters'); return; }
+    // No punctuation or spaces allowed
+    if (/[\s\p{P}\p{S}]/u.test(title)) { alert('Title cannot contain punctuation or spaces'); return; }
     if (!description) { alert('Description is required'); return; }
+    if (description.length < 100) { alert('Description must be at least 100 characters'); return; }
     if (!reward || reward < 1) { alert('Reward must be a positive integer'); return; }
+    if (!image) { alert('At least one image is required'); return; }
+
     try {
       const res = await api('/task/create', {
-        uid: getUid(), title, description, location, reward,
+        uid: getUid(), title, description, location, reward, image,
       });
       alert('Task posted successfully! Reward escrowed: ' + reward + ' ' + coinUnit());
       backToList();
@@ -291,6 +334,7 @@
           ${job.assignedUid ? `<span>Worker: ${job.assignedUid.slice(0, 8)}...${job.assignedUid.slice(-6)}</span>` : ''}
         </div>
       </div>
+      ${job.image ? `<img src="${job.image}" style="width:100%;border-radius:12px;margin-bottom:12px;" alt="Task image" />` : ''}
       <div class="task-desc-box">
         <div class="task-box-title">Description</div>
         <p>${job.description}</p>
@@ -458,6 +502,7 @@
     loadTaskList,
     showMyTasks,
     openCreate,
+    handleImageUpload,
     submitCreate,
     openDetail,
     apply,

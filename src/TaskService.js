@@ -48,6 +48,7 @@ class TaskService {
         title: String(title).slice(0, 200),
         description: String(description).slice(0, 5000),
         location: location ? String(location).slice(0, 200) : '',
+        image: image ? String(image).slice(0, 500000) : '',
         deadline: deadline ? Number(deadline) : 0,
         reward: rewardCoin,
         status: 'open',

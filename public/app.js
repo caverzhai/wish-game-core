@@ -80,7 +80,7 @@ const I18N = {
     insGuideTitle: '保險玩法說明', insGuide1: '生效條件：開關打開且保費餘額≥20枚', insGuide2: '贏了：收益的10%進入保險池', insGuide3: '輸了：淨虧累計，每滿100枚生成一個賠付節點（扣20枚保費），分100期返還', insGuide4: '每6小時賠付一次（UTC 3/9/15/21點）。168小時內有新節點則全部續命，否則當期充公', insGuide5: '保險開關關閉時，可將保費提回餘額',
     whitelistTitle: '邀請白名單', addWhitelist: '添加', wlTip: '您在官方白名單中。可享所有下代的傭金，按設定比例。若下線也是白名單，只賺級差。', wlScope: '範圍', wlAllDepth: '所有代數', normalInvTip: '普通用戶僅享直推0.1%。聯繫管理員申請白名單（多級傭金）。', normalDirect: '僅直推', applyWhitelistTip: '如果你有優質團隊並且理解本平台理念，可以到廣場發貼，讓官方找到你。',
     myNodes: '我的賠付節點', poolTotal: '保險池總資金', poolNext: '下次應釋放總額', poolNextAt: '下次釋放時刻', nextReleaseIn: '距下次釋放', poolActiveNodes: '待釋放節點',
-    poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率',
+    poolSufficient: '資金充足', poolShort: '資金缺口', poolCover: '覆蓋率', insReleaseTitle: '保險釋放狀態', insReleaseActive: '正常釋放中', insReleaseStopped: '已停止釋放', insReleaseLastNode: '最後節點創建', insReleaseHoursAgo: '小時前', insReleaseRemain: '距離停止', insReleaseHours: '小時', insReleaseDeadTip: '您的節點已停止釋放。請在168小時內創建新的賠付節點（保險開啟狀態下累計虧損100枚）以復活所有節點。', insReleaseNoNode: '尚無賠付節點。保險開啟狀態下累計虧損100枚即可創建第一個節點。', insReleaseWarning: '不足24小時即將停止！請盡快創建新節點。',
     meWallet: '錢包', meInvite: '邀請返傭', copy: '複製', scanQr: '掃碼加入', qualifiedInvitees: '達標好友', curRate: '返傭率', invTotal: '累計返傭',
     directInvitees: '直推人數', downlineTotal: '下線總人數',
     invTierTip: '名下有「生成過賠付節點」的直邀好友數決定檔位，按好友許願流水返傭：', invColPeople: '達標好友', invColRate: '返傭率', invPeopleUnit: '人',
@@ -2168,7 +2168,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.35.13';
+const FE_BUILD = '2.35.15';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

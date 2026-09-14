@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.13'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.35.15'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -206,7 +206,9 @@ route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
     const currentSeq = Math.floor(nowSec / cfg.insurance.payoutEverySec);
     let newestSeq = null, newestAt = null;
     for (const n of nodes) {
-      if (newestSeq === null || n.batchSeq > newestSeq) { newestSeq = n.batchSeq; newestAt = n.createdAtSec; }
+      const bs = Number(n.batchSeq);
+      if (isNaN(bs) || bs <= 0) continue; // skip nodes without batchSeq
+      if (newestSeq === null || bs > newestSeq) { newestSeq = bs; newestAt = n.createdAtSec; }
     }
     const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.insurance.surviveWindowBatches;
     const batchesSinceNewest = newestSeq != null ? (currentSeq - newestSeq) : null;

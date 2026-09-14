@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.12'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.35.13'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -345,6 +345,39 @@ route('POST', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
 route('POST', '/insurance/switch', (b) => insurance.setSwitch(b.uid, !!b.on));
 route('POST', '/insurance/deposit', (b) => insurance.depositPremium(b.uid, coin(Number(b.amount))));
 route('GET', '/insurance/pool', () => insurance.poolPublic());
+
+// Admin: insurance diagnose - check node status and pool balance
+route('GET', '/admin/insurance/diagnose', async (q) => {
+  const uid = Number(q.uid);
+  if (!uid) throw new GameError(Codes.BAD_INPUT, 'uid required');
+  const nodes = await store.listNodes({ uid });
+  const ledger = await store.getLedger();
+  const nowSec = Math.floor(Date.now() / 1000);
+  const currentSeq = Math.floor(nowSec / cfg.insurance.payoutEverySec);
+  const batches = await store.exec('SELECT * FROM payout_batches ORDER BY id DESC LIMIT 10');
+  let newestSeq = null;
+  for (const n of nodes) if (newestSeq === null || n.batchSeq > newestSeq) newestSeq = n.batchSeq;
+  const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.insurance.surviveWindowBatches;
+  return {
+    uid, currentSeq, newestSeq, alive,
+    surviveWindow: cfg.insurance.surviveWindowBatches,
+    hoursSinceNewest: newestSeq != null ? (currentSeq - newestSeq) * 6 : null,
+    insurancePool: ledger.insurancePool.toString(),
+    nodeCount: nodes.length,
+    activeNodeCount: nodes.filter(n => n.state === 'active').length,
+    nodes: nodes.map(n => ({
+      nodeId: n.nodeId, state: n.state, periodN: n.periodN,
+      batchSeq: n.batchSeq, createdAt: new Date(n.createdAtSec * 1000).toISOString(),
+      total: n.total.toString(), paidToUser: n.paidToUserAmount.toString(),
+      forfeited: n.forfeitedAmount.toString(),
+    })),
+    recentBatches: batches.map(b => ({
+      seq: b.seq, state: b.state, dueTotal: b.due_total.toString(),
+      paidToUser: b.paid_to_user.toString(), forfeited: b.forfeited.toString(),
+      at: new Date(b.at * 1000).toISOString(),
+    })),
+  };
+});
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium
 route('POST', '/insurance/deposit/onchain', async (b) => {
   await assertNotBanned(b.uid);

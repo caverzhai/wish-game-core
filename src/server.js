@@ -1,4 +1,4 @@
-// =============================================================
+﻿// =============================================================
 // server.js - HTTP API + static frontend hosting + built-in auto settlement/payout scheduler
 // Run: node src/server.js (port from PORT env, default 8080)
 // BigInt amounts in responses converted to 'units' numbers for frontend
@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.36.2'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.36.3'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -469,8 +469,7 @@ route('POST', '/payout', (b) => insurance.runPayoutBatch(b.atSec ?? now()));
 route('GET', '/round/current', () => game.currentRound());
 route('GET', /^\/round\/(.+)$/, (b, m) => game.roundDetail(m[1]));
 route('GET', '/recent', () => game.recentRounds(100));
-// —— BBS ——
-route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
+// 鈥斺€?BBS 鈥斺€?route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
 route('POST', '/bbs/reply', (b) => social.reply(b.uid, b.postId, b.content));
 route('GET', '/bbs/list', () => social.list());
 // System announcement (admin-published, long text 8192 bytes, does not consume BBS quota)

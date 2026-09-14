@@ -65,7 +65,7 @@
       const cu = coinUnit();
       container.innerHTML = `
         <div class="task-section-header">
-          <span class="task-section-title">t('taskSectionTitle')</span>
+          <span class="task-section-title">${t('taskSectionTitle')}</span>
           <button onclick="Task.openCreate()" class="task-post-btn">+ ${t('taskPostBtn')}</button>
         </div>
         ${jobs.length === 0 ? `<div style="text-align:center;padding:15px;color:var(--muted);font-size:13px;">${t('taskNoTasks')}</div>` : `
@@ -102,13 +102,13 @@
       const cu = coinUnit();
       $('taskListContent').innerHTML = `
         <div class="task-filter-bar">
-          <button onclick="Task.loadTaskList(null)" class="task-filter-btn ${!status ? 'active' : ''}">All</button>
-          <button onclick="Task.loadTaskList('open')" class="task-filter-btn ${status === 'open' ? 'active' : ''}">Open</button>
-          <button onclick="Task.loadTaskList('assigned')" class="task-filter-btn ${status === 'assigned' ? 'active' : ''}">Assigned</button>
-          <button onclick="Task.loadTaskList('completed')" class="task-filter-btn ${status === 'completed' ? 'active' : ''}">Done</button>
-          <button onclick="Task.openCreate()" class="task-post-btn-inline">+ Post</button>
+          <button onclick="Task.loadTaskList(null)" class="task-filter-btn ${!status ? 'active' : ''}">${t('taskFilterAll')}</button>
+          <button onclick="Task.loadTaskList('open')" class="task-filter-btn ${status === 'open' ? 'active' : ''}">${t('taskFilterOpen')}</button>
+          <button onclick="Task.loadTaskList('assigned')" class="task-filter-btn ${status === 'assigned' ? 'active' : ''}">${t('taskFilterAssigned')}</button>
+          <button onclick="Task.loadTaskList('completed')" class="task-filter-btn ${status === 'completed' ? 'active' : ''}">${t('taskFilterDone')}</button>
+          <button onclick="Task.openCreate()" class="task-post-btn-inline">+ ${t('taskPostBtn')}</button>
         </div>
-        ${jobs.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--muted);">No tasks found</div>` : `
+        ${jobs.length === 0 ? `<div style="text-align:center;padding:30px;color:var(--muted);">${t('taskNoTasks')}</div>` : `
         <div class="task-list">
           ${jobs.map(j => `
             <div class="task-list-item" onclick="Task.openDetail('${j.jobId}')">
@@ -125,7 +125,7 @@
         </div>`}
       `;
     } catch (e) {
-      $('taskListContent').innerHTML = `<div style="text-align:center;padding:30px;color:#ef4444;">Error: ${e.message}</div>`;
+      $('taskListContent').innerHTML = `<div style="text-align:center;padding:30px;color:#ef4444;">${t('taskError')}: ${e.message}</div>`;
     }
   }
 

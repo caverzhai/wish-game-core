@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.35.19'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.35.20'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -379,6 +379,7 @@ route('GET', '/admin/insurance/diagnose', async (q) => {
       total: toStr(n.total), paidToUser: toStr(n.paidToUserAmount),
       forfeited: toStr(n.forfeitedAmount),
     })),
+    allNodesSummary: (await store.listNodes({})).map(n => ({ uid: n.uid, nodeId: n.nodeId, state: n.state, periodN: n.periodN, batchSeq: n.batchSeq })),
     recentBatches: batches.map(b => ({
       seq: b.seq, state: b.state, dueTotal: toStr(b.due_total),
       paidToUser: toStr(b.paid_to_user), forfeited: toStr(b.forfeited), at: b.at,

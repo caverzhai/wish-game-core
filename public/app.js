@@ -2118,6 +2118,30 @@ function init() {
   $('wdBtn').onclick = withdraw;
   $('regionSubmitBtn').onclick = submitRegion;
   $('regionCountry').onchange = toggleRegionInputs;
+  // Custom country dropdown for old phone compatibility
+  (function() {
+    const trigger = $('countryTrigger');
+    const menu = $('countryMenu');
+    const current = $('countryCurrent');
+    const hidden = $('regionCountry');
+    if (!trigger || !menu || !hidden) return;
+    trigger.onclick = function(e) {
+      e.stopPropagation();
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    };
+    document.querySelectorAll('.country-option').forEach(function(opt) {
+      opt.onclick = function(e) {
+        e.stopPropagation();
+        const val = this.dataset.value;
+        hidden.value = val;
+        current.textContent = val || '-- Select --';
+        current.style.color = val ? '#333' : '#999';
+        menu.style.display = 'none';
+        if (hidden.onchange) hidden.onchange();
+      };
+    });
+    document.addEventListener('click', function() { menu.style.display = 'none'; });
+  })();
   $('pendingVerifyBtn').onclick = async () => { $('pendingVerifyBtn').disabled = true; try { await creditPending(); } finally { $('pendingVerifyBtn').disabled = false; renderPending(); } };
   $('manualTxBtn').onclick = async () => {
     const txHash = $('manualTxInput').value.trim();
@@ -2162,7 +2186,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.36.7';
+const FE_BUILD = '2.36.9';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

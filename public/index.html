@@ -462,30 +462,12 @@
   <p style="font-size:12px;color:#8b97ab;margin-bottom:12px;" data-i18n="regionTip">All users must verify their location before the first withdrawal.</p>
 <div style="margin-bottom:12px;">
       <label style="display:block;font-size:13px;margin-bottom:4px;color:#333333;" data-i18n="regionCountry">Country</label>
-      <select id="regionCountry" style="width:100%;padding:12px 10px;border-radius:8px;border:1px solid #2a3446;background:#ffffff;color:#333333;font-size:15px;">
-        <option value="">-- Select --</option>
-        <option value="China">China</option>
-        <option value="United States">United States</option>
-        <option value="United Kingdom">United Kingdom</option>
-        <option value="Russia">Russia</option>
-        <option value="India">India</option>
-        <option value="Germany">Germany</option>
-        <option value="Japan">Japan</option>
-        <option value="France">France</option>
-        <option value="South Korea">South Korea</option>
-        <option value="Italy">Italy</option>
-        <option value="Brazil">Brazil</option>
-        <option value="Canada">Canada</option>
-        <option value="Australia">Australia</option>
-        <option value="Netherlands">Netherlands</option>
-        <option value="Indonesia">Indonesia</option>
-        <option value="Pakistan">Pakistan</option>
-        <option value="Mexico">Mexico</option>
-        <option value="Vietnam">Vietnam</option>
-        <option value="Thailand">Thailand</option>
-        <option value="Bangladesh">Bangladesh</option>
-        <option value="Other">Other</option>
-      </select>
+      <select id="regionCountry" style="display:none;"><option value="">-- Select --</option><option value="China">China</option><option value="United States">United States</option><option value="United Kingdom">United Kingdom</option><option value="Russia">Russia</option><option value="India">India</option><option value="Germany">Germany</option><option value="Japan">Japan</option><option value="France">France</option><option value="South Korea">South Korea</option><option value="Italy">Italy</option><option value="Brazil">Brazil</option><option value="Canada">Canada</option><option value="Australia">Australia</option><option value="Netherlands">Netherlands</option><option value="Indonesia">Indonesia</option><option value="Pakistan">Pakistan</option><option value="Mexico">Mexico</option><option value="Vietnam">Vietnam</option><option value="Thailand">Thailand</option><option value="Bangladesh">Bangladesh</option><option value="Other">Other</option></select>
+      <div id="countryTrigger" style="width:100%;padding:12px 10px;border-radius:8px;border:1px solid #2a3446;background:#ffffff;color:#333333;font-size:15px;box-sizing:border-box;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+        <span id="countryCurrent" style="color:#999;">-- Select --</span>
+        <span style="font-size:10px;color:#999;">▼</span>
+      </div>
+      <div id="countryMenu" style="display:none;position:absolute;z-index:100;background:#ffffff;border:1px solid #2a3446;border-radius:8px;margin-top:4px;max-height:240px;overflow-y:auto;width:calc(100% - 32px);box-shadow:0 4px 12px rgba(0,0,0,0.15);"><div class="country-option" data-value="" style="padding:10px 14px;font-size:14px;color:#999;cursor:pointer;border-bottom:1px solid #eee;">-- Select --</div><div class="country-option" data-value="China" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">China</div><div class="country-option" data-value="United States" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">United States</div><div class="country-option" data-value="United Kingdom" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">United Kingdom</div><div class="country-option" data-value="Russia" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Russia</div><div class="country-option" data-value="India" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">India</div><div class="country-option" data-value="Germany" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Germany</div><div class="country-option" data-value="Japan" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Japan</div><div class="country-option" data-value="France" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">France</div><div class="country-option" data-value="South Korea" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">South Korea</div><div class="country-option" data-value="Italy" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Italy</div><div class="country-option" data-value="Brazil" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Brazil</div><div class="country-option" data-value="Canada" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Canada</div><div class="country-option" data-value="Australia" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Australia</div><div class="country-option" data-value="Netherlands" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Netherlands</div><div class="country-option" data-value="Indonesia" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Indonesia</div><div class="country-option" data-value="Pakistan" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Pakistan</div><div class="country-option" data-value="Mexico" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Mexico</div><div class="country-option" data-value="Vietnam" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Vietnam</div><div class="country-option" data-value="Thailand" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Thailand</div><div class="country-option" data-value="Bangladesh" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;border-bottom:1px solid #eee;">Bangladesh</div><div class="country-option" data-value="Other" style="padding:10px 14px;font-size:14px;color:#333;cursor:pointer;">Other</div></div>
     </div>
     <div style="margin-bottom:12px;" id="regionRegionWrapper">
       <label style="display:block;font-size:13px;margin-bottom:4px;color:#333333;" data-i18n="regionRegion">Province/State</label>
@@ -615,14 +597,14 @@
     <button id="disclaimerConfirm" class="btn-primary big" data-i18n="disclaimerAgree">I have read and agree</button>
   </div>
 </div>
-<script src="/qrcode.min.js?v=2374"></script>
-<script src="/china-districts.js?v=2374"></script>
-  <script src="/china-towns.js?v=2374"></script>
-  <script src="/app.js?v=2374"></script>
+<script src="/qrcode.min.js?v=2375"></script>
+<script src="/china-districts.js?v=2375"></script>
+  <script src="/china-towns.js?v=2375"></script>
+  <script src="/app.js?v=2375"></script>
 <script src="/task.js?v=2.36.2"></script>
-<script src="/lottery.js?v=2374"></script>
-<script src="/charity.js?v=2374"></script>
-<script src="/voice.js?v=2374"></script>
+<script src="/lottery.js?v=2375"></script>
+<script src="/charity.js?v=2375"></script>
+<script src="/voice.js?v=2375"></script>
 
 <!-- Frozen detail modal -->
 <div id="frozenModal" class="modal-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9999;align-items:center;justify-content:center;padding:20px;">

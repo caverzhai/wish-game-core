@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.38.4'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.38.5'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 // In-memory log buffer for debugging
 const LOG_BUFFER = [];
@@ -471,6 +471,31 @@ route('GET', '/admin/scheduler/diagnose', async (q) => {
 route('GET', '/admin/logs', async (q) => {
   const limit = Math.min(Number(q.limit) || 50, MAX_LOGS);
   return { logs: LOG_BUFFER.slice(-limit).map(l => ({ time: new Date(l.t).toISOString(), msg: l.msg })) };
+});
+
+// Admin: fix node amounts based on periodN
+route('POST', '/admin/fix-node-amounts', async (q) => {
+  const nodes = await store.exec('SELECT * FROM nodes ORDER BY id');
+  const periodStep = cfg.periodStep;
+  const results = [];
+  for (const n of nodes) {
+    const periodN = Number(n.period_n);
+    let correctPaid = 0n;
+    if (periodN >= 100) {
+      correctPaid = BigInt(n.total);
+    } else {
+      correctPaid = periodStep * BigInt(periodN) * BigInt(periodN + 1) / 2n;
+    }
+    const oldPaid = BigInt(n.paid_amount);
+    const oldPaidToUser = BigInt(n.paid_to_user);
+    if (oldPaid !== correctPaid || oldPaidToUser !== correctPaid) {
+      await store.exec('UPDATE nodes SET paid_amount=?, paid_to_user=?, forfeited=0 WHERE node_id=?', [Number(correctPaid), Number(correctPaid), n.node_id]);
+      results.push({ nodeId: n.node_id, oldPaid: oldPaid.toString(), newPaid: correctPaid.toString(), oldPaidToUser: oldPaidToUser.toString(), fixed: true });
+    } else {
+      results.push({ nodeId: n.node_id, paid: correctPaid.toString(), fixed: false });
+    }
+  }
+  return { fixed: results.filter(r => r.fixed).length, results };
 });
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium
 route('POST', '/insurance/deposit/onchain', async (b) => {

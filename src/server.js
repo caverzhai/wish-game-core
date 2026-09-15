@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.38.3'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.38.4'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 // In-memory log buffer for debugging
 const LOG_BUFFER = [];
@@ -443,6 +443,18 @@ route('GET', '/admin/scheduler/diagnose', async (q) => {
   } catch (e) {
     lastBatchFromDb = { error: e.message };
   }
+  let tableStructure = null;
+  try {
+    tableStructure = await store.exec('DESCRIBE nodes');
+  } catch (e) {
+    tableStructure = { error: e.message };
+  }
+  let allNodes = null;
+  try {
+    allNodes = await store.exec('SELECT node_id, uid, period_n, paid_amount, paid_to_user, forfeited, state, total FROM nodes ORDER BY id');
+  } catch (e) {
+    allNodes = { error: e.message };
+  }
   return {
     lastPayoutSeq: scheduler.lastPayoutSeq,
     hasListPayoutBatches: typeof store.listPayoutBatches === 'function',
@@ -450,6 +462,8 @@ route('GET', '/admin/scheduler/diagnose', async (q) => {
     currentSeq: Math.floor(now() / cfg.payoutEverySec),
     nodeAccounts,
     lastBatchFromDb,
+    tableStructure,
+    allNodes,
   };
 });
 

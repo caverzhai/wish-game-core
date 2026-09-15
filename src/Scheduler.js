@@ -39,7 +39,7 @@ export class Scheduler {
         const hasMethod = typeof this.app.store.listPayoutBatches === 'function';
         console.log('[scheduler] init: listPayoutBatches exists=' + hasMethod);
         const lastBatch = hasMethod ? await this.app.store.listPayoutBatches(1) : [];
-        console.log('[scheduler] init: lastBatch=' + JSON.stringify(lastBatch));
+        console.log('[scheduler] init: lastBatch seq=' + (lastBatch && lastBatch[0] ? lastBatch[0].seq : 'null'));
         if (lastBatch && lastBatch[0]) {
           this.lastPayoutSeq = Number(lastBatch[0].seq);
         } else {
@@ -55,7 +55,7 @@ export class Scheduler {
       try {
         console.log('[scheduler] running payout batch seq=' + seq);
         const result = await insurance.runPayoutBatch(seq * cfg.payoutEverySec + 1);
-        console.log('[scheduler] payout batch seq=' + seq + ' result=' + JSON.stringify(result));
+        console.log('[scheduler] payout batch seq=' + seq + ' status=' + result.status + ' paidToUser=' + (result.paidToUser ? result.paidToUser.toString() : 'n/a'));
         out.payouts.push(result);
         this.lastPayoutSeq = seq;
       } catch (e) {

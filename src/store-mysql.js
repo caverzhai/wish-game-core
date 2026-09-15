@@ -252,7 +252,7 @@ export class MysqlStore {
 
   _c() { return this.tx.getStore() || this.pool; }
   async exec(sql, params = []) {
-    const [rows] = await this._c().execute(sql, params.map((p) => (typeof p === 'bigint' ? p.toString() : p)));
+    const [rows] = await this._c().execute(sql, params);
     return rows;
   }
 

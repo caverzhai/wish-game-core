@@ -132,6 +132,7 @@ export class InsuranceService {
           forfeited += due;
         }
         await s.updateNode(n.nodeId, { periodN: n.periodN + 1, paidAmount: n.paidAmount + due, state: n.periodN + 1 >= 100 ? 'done' : 'active' });
+        console.log('[insurance] updateNode ok: node=' + n.nodeId + ' periodN=' + (n.periodN + 1) + ' paidAmount=' + (n.paidAmount + due).toString() + ' due=' + due.toString());
         await s.addNodeLog({ nodeId: n.nodeId, uid: n.uid, periodN: n.periodN + 1, due, dest: alive ? 'user' : 'forfeit', seq: currentSeq });
       }
       await s.addPayoutBatch({ batchId: await s.nextId('batch', 'B'), seq: currentSeq, state: 'paid', dueTotal, paidToUser, forfeited, at: currentSec });

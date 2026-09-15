@@ -36,12 +36,16 @@ export class Scheduler {
     if (this.lastPayoutSeq === null) {
       // Initialize from database: find the last paid or deferred batch seq
       try {
-        const lastBatch = await this.app.store.listPayoutBatches ? await this.app.store.listPayoutBatches(1) : [];
+        const hasMethod = typeof this.app.store.listPayoutBatches === 'function';
+        console.log('[scheduler] init: listPayoutBatches exists=' + hasMethod);
+        const lastBatch = hasMethod ? await this.app.store.listPayoutBatches(1) : [];
+        console.log('[scheduler] init: lastBatch=' + JSON.stringify(lastBatch));
         if (lastBatch && lastBatch[0]) {
           this.lastPayoutSeq = Number(lastBatch[0].seq);
         } else {
           this.lastPayoutSeq = targetSeq - 1;
         }
+        console.log('[scheduler] init: lastPayoutSeq=' + this.lastPayoutSeq + ' targetSeq=' + targetSeq);
       } catch (e) {
         console.log('[scheduler] init lastPayoutSeq error:', e.message);
         this.lastPayoutSeq = targetSeq - 1;
@@ -49,7 +53,9 @@ export class Scheduler {
     }
     for (let seq = this.lastPayoutSeq + 1; seq <= targetSeq; seq++) {
       try {
+        console.log('[scheduler] running payout batch seq=' + seq);
         const result = await insurance.runPayoutBatch(seq * cfg.payoutEverySec + 1);
+        console.log('[scheduler] payout batch seq=' + seq + ' result=' + JSON.stringify(result));
         out.payouts.push(result);
         this.lastPayoutSeq = seq;
       } catch (e) {

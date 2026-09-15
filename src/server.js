@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.37.7'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.37.8'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -418,12 +418,20 @@ route('GET', '/admin/scheduler/diagnose', async (q) => {
       nodeAccounts.push({ uid: n.uid, nodeId: n.nodeId, error: e.message });
     }
   }
+  let lastBatchFromDb = null;
+  try {
+    const batches = await store.listPayoutBatches(3);
+    lastBatchFromDb = batches;
+  } catch (e) {
+    lastBatchFromDb = { error: e.message };
+  }
   return {
     lastPayoutSeq: scheduler.lastPayoutSeq,
     hasListPayoutBatches: typeof store.listPayoutBatches === 'function',
     currentTime: now(),
     currentSeq: Math.floor(now() / cfg.payoutEverySec),
     nodeAccounts,
+    lastBatchFromDb,
   };
 });
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium

@@ -49,11 +49,14 @@ export class Scheduler {
     }
     for (let seq = this.lastPayoutSeq + 1; seq <= targetSeq; seq++) {
       try {
-        out.payouts.push(await insurance.runPayoutBatch(seq * cfg.payoutEverySec + 1));
+        const result = await insurance.runPayoutBatch(seq * cfg.payoutEverySec + 1);
+        out.payouts.push(result);
+        this.lastPayoutSeq = seq;
       } catch (e) {
         console.log('[scheduler] payout batch error seq=' + seq + ':', e.message);
+        // Do NOT advance lastPayoutSeq on error - retry next tick
+        break;
       }
-      this.lastPayoutSeq = seq;
     }
     return out;
   }

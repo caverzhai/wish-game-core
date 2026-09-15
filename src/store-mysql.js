@@ -1002,6 +1002,9 @@ export class MysqlStore {
 
   async assertBalanced(t = '') {
     const inside = await this.totalInside(), source = await this.totalSource();
-    if (inside !== source) throw new GameError(Codes.LEDGER_UNBALANCED, `Ledger unbalanced[${t}]: delta=${inside - source}`);
+    if (inside !== source) {
+      console.log('[assertBalanced] UNBALANCED[' + t + ']: inside=' + inside.toString() + ' source=' + source.toString() + ' delta=' + (inside - source).toString());
+      throw new GameError(Codes.LEDGER_UNBALANCED, 'Ledger unbalanced[' + t + ']: delta=' + (inside - source));
+    }
   }
 }

@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.37.6'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.37.7'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -408,11 +408,22 @@ route('GET', '/admin/insurance/diagnose', async (q) => {
 
 // Admin: scheduler diagnose - check lastPayoutSeq and recent errors
 route('GET', '/admin/scheduler/diagnose', async (q) => {
+  const nodes = await store.listNodes({ active: true });
+  const nodeAccounts = [];
+  for (const n of nodes) {
+    try {
+      const acc = await store.getAccount(n.uid);
+      nodeAccounts.push({ uid: n.uid, nodeId: n.nodeId, accountExists: !!acc, available: acc ? acc.available.toString() : null });
+    } catch (e) {
+      nodeAccounts.push({ uid: n.uid, nodeId: n.nodeId, error: e.message });
+    }
+  }
   return {
     lastPayoutSeq: scheduler.lastPayoutSeq,
     hasListPayoutBatches: typeof store.listPayoutBatches === 'function',
     currentTime: now(),
     currentSeq: Math.floor(now() / cfg.payoutEverySec),
+    nodeAccounts,
   };
 });
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium

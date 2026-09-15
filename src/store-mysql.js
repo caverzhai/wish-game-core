@@ -394,6 +394,12 @@ export class MysqlStore {
       [b.batchId, b.seq, b.state, b.dueTotal || 0n, b.paidToUser || 0n, b.forfeited || 0n, b.at]);
   }
   async hasPaidBatch(seq) { return Number((await this.exec("SELECT COUNT(*) c FROM payout_batches WHERE seq=? AND state='paid'", [seq]))[0].c) > 0; }
+  async listPayoutBatches(limit = 10) {
+    return (await this.exec('SELECT * FROM payout_batches ORDER BY id DESC LIMIT ?', [limit])).map(r => ({
+      batchId: r.batch_id, seq: r.seq, state: r.state, dueTotal: B(r.due_total),
+      paidToUser: B(r.paid_to_user), forfeited: B(r.forfeited), at: Number(r.at),
+    }));
+  }
 
   async addReferralLog(x) { await this.exec('INSERT INTO referral_logs(round_id,inviter_uid,from_uid,stake,per_mille,reward,at) VALUES(?,?,?,?,?,?,?)', [x.roundId, x.inviterUid, x.fromUid, x.stake, Number(x.perMille), x.reward, x.atSec]); }
   async referralSummary(inviterUid) {

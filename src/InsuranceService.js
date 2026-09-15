@@ -118,6 +118,7 @@ export class InsuranceService {
       let paidToUser = 0n, forfeited = 0n;
       for (const n of active) {
         const due = dues.get(n.nodeId);
+        console.log('[insurance] node=' + n.nodeId + ' due=' + (due ? due.toString() : 'null') + ' paidAmount=' + n.paidAmount.toString() + ' type=' + typeof n.paidAmount + ' paidToUserAmount=' + n.paidToUserAmount.toString());
         if (due == null) { await s.updateNode(n.nodeId, { state: 'done' }); continue; }
         const alive = isAlive(newestSeq.get(n.uid), currentSeq, cfg);
         if (alive) {

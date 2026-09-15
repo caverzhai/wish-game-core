@@ -383,7 +383,7 @@ export class MysqlStore {
     const sets = [], vals = [];
     if ('periodN' in p) { sets.push('period_n=?'); vals.push(p.periodN); }
     if ('state' in p) { sets.push('state=?'); vals.push(p.state); }
-    for (const k of Object.keys(col)) if (k in p) { sets.push(`${col[k]}=${col[k]}+?`); vals.push(typeof p[k] === 'bigint' ? Number(p[k]) : p[k]); }
+    for (const k of Object.keys(col)) if (k in p) { sets.push(`${col[k]}=?`); vals.push(typeof p[k] === 'bigint' ? Number(p[k]) : p[k]); }
     if (sets.length) { vals.push(id); await this.exec(`UPDATE nodes SET ${sets.join(',')} WHERE node_id=?`, vals); }
   }
   async addNodeLog(x) { await this.exec('INSERT INTO node_logs(node_id,uid,period_n,due,dest,seq) VALUES(?,?,?,?,?,?)', [x.nodeId, x.uid, x.periodN, typeof x.due === 'bigint' ? Number(x.due) : x.due, x.dest, x.seq]); }

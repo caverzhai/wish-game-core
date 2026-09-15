@@ -15,7 +15,25 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.37.8'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.37.9'; // deploy version tag: visible in /health and frontend, for verifying online update
+
+// In-memory log buffer for debugging
+const LOG_BUFFER = [];
+const MAX_LOGS = 200;
+const origLog = console.log;
+console.log = function(...args) {
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+  LOG_BUFFER.push({ t: Date.now(), msg });
+  if (LOG_BUFFER.length > MAX_LOGS) LOG_BUFFER.shift();
+  origLog.apply(console, args);
+};
+const origError = console.error;
+console.error = function(...args) {
+  const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
+  LOG_BUFFER.push({ t: Date.now(), msg: 'ERROR: ' + msg });
+  if (LOG_BUFFER.length > MAX_LOGS) LOG_BUFFER.shift();
+  origError.apply(console, args);
+};
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -433,6 +451,12 @@ route('GET', '/admin/scheduler/diagnose', async (q) => {
     nodeAccounts,
     lastBatchFromDb,
   };
+});
+
+// Admin: view recent console logs
+route('GET', '/admin/logs', async (q) => {
+  const limit = Math.min(Number(q.limit) || 50, MAX_LOGS);
+  return { logs: LOG_BUFFER.slice(-limit).map(l => ({ time: new Date(l.t).toISOString(), msg: l.msg })) };
 });
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium
 route('POST', '/insurance/deposit/onchain', async (b) => {

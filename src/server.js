@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.37.1'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.37.2'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -378,11 +378,18 @@ route('GET', '/admin/insurance/diagnose', async (q) => {
     if (newestSeq === null || bs > newestSeq) newestSeq = bs;
   }
   const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.surviveWindowBatches;
+  let ledgerBalance = null;
+  try {
+    const inside = await store.totalInside();
+    const source = await store.totalSource();
+    ledgerBalance = { inside: toStr(inside), source: toStr(source), delta: toStr(inside - source), balanced: inside === source };
+  } catch(e) { console.log('[diagnose] ledgerBalance error:', e.message); }
   return {
     uid, currentSeq, newestSeq, alive,
     surviveWindow: cfg.surviveWindowBatches,
     hoursSinceNewest: newestSeq != null ? (currentSeq - newestSeq) * 6 : null,
     insurancePool: ledger ? toStr(ledger.insurancePool) : 'error',
+    ledgerBalance,
     nodeCount: nodes.length,
     activeNodeCount: nodes.filter(n => n.state === 'active').length,
     nodes: nodes.map(n => ({

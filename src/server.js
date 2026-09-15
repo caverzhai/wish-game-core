@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.37.4'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.37.5'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.resolve(__dirname, '../public');
@@ -403,6 +403,16 @@ route('GET', '/admin/insurance/diagnose', async (q) => {
       seq: b.seq, state: b.state, dueTotal: toStr(b.due_total),
       paidToUser: toStr(b.paid_to_user), forfeited: toStr(b.forfeited), at: b.at,
     })),
+  };
+});
+
+// Admin: scheduler diagnose - check lastPayoutSeq and recent errors
+route('GET', '/admin/scheduler/diagnose', async (q) => {
+  return {
+    lastPayoutSeq: scheduler.lastPayoutSeq,
+    hasListPayoutBatches: typeof store.listPayoutBatches === 'function',
+    currentTime: now(),
+    currentSeq: Math.floor(now() / cfg.payoutEverySec),
   };
 });
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium

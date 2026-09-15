@@ -252,7 +252,7 @@ export class MysqlStore {
 
   _c() { return this.tx.getStore() || this.pool; }
   async exec(sql, params = []) {
-    const [rows] = await this._c().execute(sql, params);
+    const [rows] = await this._c().execute(sql, params.map((p) => (typeof p === 'bigint' ? Number(p) : p)));
     return rows;
   }
 
@@ -378,15 +378,15 @@ export class MysqlStore {
       paidToUserAmount: B(r.paid_to_user), forfeitedAmount: B(r.forfeited), state: r.state, createdAtSec: Number(r.created_at), batchSeq: r.batch_seq,
     }));
   }
-  async updateNode(id, p = {}) {
+    async updateNode(id, p = {}) {
     const col = { paidAmount: 'paid_amount', paidToUserAmount: 'paid_to_user', forfeitedAmount: 'forfeited' };
     const sets = [], vals = [];
     if ('periodN' in p) { sets.push('period_n=?'); vals.push(p.periodN); }
     if ('state' in p) { sets.push('state=?'); vals.push(p.state); }
-    for (const k of Object.keys(col)) if (k in p) { sets.push(`${col[k]}=${col[k]}+?`); vals.push(p[k]); }
+    for (const k of Object.keys(col)) if (k in p) { sets.push(`${col[k]}=${col[k]}+?`); vals.push(typeof p[k] === 'bigint' ? Number(p[k]) : p[k]); }
     if (sets.length) { vals.push(id); await this.exec(`UPDATE nodes SET ${sets.join(',')} WHERE node_id=?`, vals); }
   }
-  async addNodeLog(x) { await this.exec('INSERT INTO node_logs(node_id,uid,period_n,due,dest,seq) VALUES(?,?,?,?,?,?)', [x.nodeId, x.uid, x.periodN, x.due, x.dest, x.seq]); }
+  async addNodeLog(x) { await this.exec('INSERT INTO node_logs(node_id,uid,period_n,due,dest,seq) VALUES(?,?,?,?,?,?)', [x.nodeId, x.uid, x.periodN, typeof x.due === 'bigint' ? Number(x.due) : x.due, x.dest, x.seq]); }
   async listNodeLogs(uid) { return (await this.exec('SELECT * FROM node_logs WHERE uid=? ORDER BY id', [uid])).map((r) => ({ nodeId: r.node_id, periodN: r.period_n, due: B(r.due), dest: r.dest, seq: r.seq })); }
 
   async addPayoutBatch(b) {

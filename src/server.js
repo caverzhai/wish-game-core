@@ -15,7 +15,7 @@ import { createWSServer } from './WSServer.js';
 import { ROOM_CFG } from './VoiceRoomService.js';
 import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
 
-const BUILD = '2.38.0'; // deploy version tag: visible in /health and frontend, for verifying online update
+const BUILD = '2.38.1'; // deploy version tag: visible in /health and frontend, for verifying online update
 
 // In-memory log buffer for debugging
 const LOG_BUFFER = [];

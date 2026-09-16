@@ -568,7 +568,8 @@ route('POST', '/payout', (b) => insurance.runPayoutBatch(b.atSec ?? now()));
 route('GET', '/round/current', () => game.currentRound());
 route('GET', /^\/round\/(.+)$/, (b, m) => game.roundDetail(m[1]));
 route('GET', '/recent', () => game.recentRounds(100));
-// 鈥斺€?BBS 鈥斺€?route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
+// ---- BBS ----
+route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
 route('POST', '/bbs/reply', (b) => social.reply(b.uid, b.postId, b.content));
 route('GET', '/bbs/list', () => social.list());
 // System announcement (admin-published, long text 8192 bytes, does not consume BBS quota)

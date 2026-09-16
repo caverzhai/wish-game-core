@@ -1396,9 +1396,14 @@ function renderLookupResult(r) {
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 async function postBbs() {
   const content = $('bbsInput').value.trim();
-  if (byteLen(content) < 1 || byteLen(content) > BBS_MAX_BYTES) return;
-  await api('/bbs/post', { uid: state.uid, content });
-  $('bbsInput').value = ''; $('bbsChar').textContent = '0/' + BBS_MAX_BYTES; await loadBbs();
+  if (byteLen(content) < 1 || byteLen(content) > BBS_MAX_BYTES) { alert('Content length invalid'); return; }
+  if (!state.uid) { alert('Not logged in'); return; }
+  try {
+    await api('/bbs/post', { uid: state.uid, content });
+    $('bbsInput').value = ''; $('bbsChar').textContent = '0/' + BBS_MAX_BYTES; await loadBbs();
+  } catch (e) {
+    alert('Post failed: ' + (e.message || e));
+  }
 }
 
 // ---------------- Actions ----------------
@@ -2186,7 +2191,7 @@ function init() {
     catch { localStorage.removeItem('uid'); localStorage.removeItem('wallet'); }
   })();
 }
-const FE_BUILD = '2.36.9';
+const FE_BUILD = '2.38.7';
 { const el = document.getElementById('feBuild'); if (el) el.textContent = 'Ver.' + FE_BUILD; }
 init();
 if (typeof Lottery !== 'undefined') Lottery.init();

@@ -1,4 +1,4 @@
-// =============================================================
+﻿// =============================================================
 // store-mysql.js - MySQL persistent store, interface identical to MemoryStore
 // Railway injects MYSQLHOST/PORT/USER/PASSWORD/DATABASE when MySQL added, auto-enabled
 // Amount columns use BIGINT for 1e-6 min unit; write as string, read converts to BigInt
@@ -297,15 +297,16 @@ export class MysqlStore {
   }
 
   async createUser(d) {
-    const exist = await this.getUserByWallet(d.wallet);
+    const wallet = String(d.wallet).toLowerCase();
+    const exist = await this.getUserByWallet(wallet);
     if (exist) throw new GameError(Codes.ALREADY_EXISTS, 'This wallet already registered');
     const id = await this.nextId('user', 'U');
     await this.exec('INSERT INTO users(uid,wallet,inviter_uid,ins_switch,created_at) VALUES(?,?,?,?,?)',
-      [id, d.wallet, d.inviterUid, 0, d.createdAt || 0]);
+      [id, wallet, d.inviterUid, 0, d.createdAt || 0]);
     await this.exec('INSERT INTO accounts(uid,available,frozen,premium,loss_accum) VALUES(?,0,0,0,0)', [id]);
     return this.getUser(id);
   }
-  async getUserByWallet(w) { const r = await this.exec('SELECT * FROM users WHERE wallet=? LIMIT 1', [w]); return this._userRow(r[0]); }
+  async getUserByWallet(w) { const r = await this.exec('SELECT * FROM users WHERE wallet=? LIMIT 1', [String(w).toLowerCase()]); return this._userRow(r[0]); }
   async getUser(uid) { const r = await this.exec('SELECT * FROM users WHERE uid=? LIMIT 1', [uid]); if (!r[0]) throw new GameError(Codes.NOT_FOUND, 'User not found'); return this._userRow(r[0]); }
   async listUsers() { return (await this.exec('SELECT * FROM users ORDER BY id')).map((r) => this._userRow(r)); }
   async setUserSwitch(uid, on) { await this.exec('UPDATE users SET ins_switch=? WHERE uid=?', [on ? 1 : 0, uid]); return on; }
@@ -463,7 +464,7 @@ export class MysqlStore {
       const user = await this.getUser(uid);
       if (user && user.wallet) {
         const w = String(user.wallet).toLowerCase();
-        const ra = await this.exec('SELECT per_mille, name FROM regional_agents WHERE wallet=? LIMIT 1', [w]);
+        const ra = await this.exec('SELECT per_mille, name FROM regional_agents WHERE wallet=? LIMIT 1', [String(w).toLowerCase()]);
         if (ra.length > 0) {
           perMille = BigInt(ra[0].per_mille);
           levelName = 'Regional Agent (' + ra[0].name + ')';
@@ -489,7 +490,7 @@ export class MysqlStore {
       const user = await this.getUser(uid);
       if (user && user.wallet) {
         const w = String(user.wallet).toLowerCase();
-        const ra = await this.exec('SELECT id FROM regional_agents WHERE wallet=? LIMIT 1', [w]);
+        const ra = await this.exec('SELECT id FROM regional_agents WHERE wallet=? LIMIT 1', [String(w).toLowerCase()]);
         if (ra.length > 0) return true;
       }
     } catch (e) { /* fall through to regular check */ }

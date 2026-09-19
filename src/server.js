@@ -106,12 +106,17 @@ const routesDemo = setupRoutes(appDemo, BUILD, true);
 // Schedulers for both instances
 const schedulerReal = new Scheduler(appReal);
 const schedulerDemo = new Scheduler(appDemo);
+let tickRunning = false;
 setInterval(() => {
-  schedulerReal.tick(now()).catch((e) => console.error('[tick-real]', e.message));
-  appReal.npc.tick(now()).catch((e) => console.error('[npc-tick-real]', e.message));
-  schedulerDemo.tick(now()).catch((e) => console.error('[tick-demo]', e.message));
-  appDemo.npc.tick(now()).catch((e) => console.error('[npc-tick-demo]', e.message));
-}, 2000);
+  if (tickRunning) return; // Prevent overlapping ticks
+  tickRunning = true;
+  Promise.all([
+    schedulerReal.tick(now()).catch((e) => console.error('[tick-real]', e.message)),
+    appReal.npc.tick(now()).catch((e) => console.error('[npc-tick-real]', e.message)),
+    schedulerDemo.tick(now()).catch((e) => console.error('[tick-demo]', e.message)),
+    appDemo.npc.tick(now()).catch((e) => console.error('[npc-tick-demo]', e.message)),
+  ]).finally(() => { tickRunning = false; });
+}, 10000);
 
 
 

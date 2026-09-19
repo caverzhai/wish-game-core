@@ -506,7 +506,7 @@ const DEMO_CLEANUP_SECRET = 'wish-demo-cleanup-2026-secure';
 route('GET', '/admin/demo/scan', async (b, req) => {
   const secret = b.secret || req.headers['x-cleanup-secret'];
   if (secret !== DEMO_CLEANUP_SECRET) throw new GameError(Codes.FORBIDDEN, 'Invalid secret');
-  const demoFlows = await store.exec('SELECT DISTINCT uid FROM flows WHERE type = ?', ['DEMO_BONUS']);
+  const demoFlows = await store.exec('SELECT DISTINCT uid FROM flows WHERE biz_type = ?', ['DEMO_BONUS']);
   const demoUids = demoFlows.map(r => r.uid);
   const result = { demoUserCount: demoUids.length, demoUids };
   if (demoUids.length > 0) {
@@ -523,7 +523,7 @@ route('POST', '/admin/demo/cleanup', async (b, req) => {
   const secret = b.secret || req.headers['x-cleanup-secret'];
   if (secret !== DEMO_CLEANUP_SECRET) throw new GameError(Codes.FORBIDDEN, 'Invalid secret');
   if (!b.confirm || b.confirm !== 'YES_DELETE_DEMO_DATA') throw new GameError(Codes.BAD_INPUT, 'Must confirm with YES_DELETE_DEMO_DATA');
-  const demoFlows = await store.exec('SELECT DISTINCT uid FROM flows WHERE type = ?', ['DEMO_BONUS']);
+  const demoFlows = await store.exec('SELECT DISTINCT uid FROM flows WHERE biz_type = ?', ['DEMO_BONUS']);
   const demoUids = demoFlows.map(r => r.uid);
   if (demoUids.length === 0) return { ok: true, message: 'No demo data found' };
   const placeholders = demoUids.map(() => '?').join(',');

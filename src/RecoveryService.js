@@ -1,8 +1,6 @@
-// =============================================================
+﻿// =============================================================
 // RecoveryService.js - Emergency insurance data rollback
 // =============================================================
-import { B } from './engine-bn.js';
-
 export class RecoveryService {
   constructor(store) { this.store = store; }
 
@@ -18,7 +16,7 @@ export class RecoveryService {
       
       let totalRollback = 0n;
       for (const row of payoutFlows) {
-        const amount = B(row.total);
+        const amount = BigInt(row.total);
         if (amount <= 0n) continue;
         // Deduct from user account (allow negative)
         await s.applyAccount(row.uid, { avail: -amount });

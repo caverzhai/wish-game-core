@@ -501,6 +501,41 @@ if (!isDemo) {
   });
 }
 
+// TEMP: Demo data cleanup endpoints
+const DEMO_CLEANUP_SECRET = 'wish-demo-cleanup-2026-secure';
+route('GET', '/admin/demo/scan', async (b, req) => {
+  const secret = b.secret || req.headers['x-cleanup-secret'];
+  if (secret !== DEMO_CLEANUP_SECRET) throw new GameError(Codes.FORBIDDEN, 'Invalid secret');
+  const demoFlows = await store.exec('SELECT DISTINCT uid FROM flows WHERE type = ?', ['DEMO_BONUS']);
+  const demoUids = demoFlows.map(r => r.uid);
+  const result = { demoUserCount: demoUids.length, demoUids };
+  if (demoUids.length > 0) {
+    const placeholders = demoUids.map(() => '?').join(',');
+    result.totalFlows = (await store.exec('SELECT COUNT(*) as cnt FROM flows WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
+    result.totalBets = (await store.exec('SELECT COUNT(*) as cnt FROM bets WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
+    result.totalAccounts = (await store.exec('SELECT COUNT(*) as cnt FROM accounts WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
+    result.totalNodes = (await store.exec('SELECT COUNT(*) as cnt FROM insurance_nodes WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
+  }
+  return result;
+});
+
+route('POST', '/admin/demo/cleanup', async (b, req) => {
+  const secret = b.secret || req.headers['x-cleanup-secret'];
+  if (secret !== DEMO_CLEANUP_SECRET) throw new GameError(Codes.FORBIDDEN, 'Invalid secret');
+  if (!b.confirm || b.confirm !== 'YES_DELETE_DEMO_DATA') throw new GameError(Codes.BAD_INPUT, 'Must confirm with YES_DELETE_DEMO_DATA');
+  const demoFlows = await store.exec('SELECT DISTINCT uid FROM flows WHERE type = ?', ['DEMO_BONUS']);
+  const demoUids = demoFlows.map(r => r.uid);
+  if (demoUids.length === 0) return { ok: true, message: 'No demo data found' };
+  const placeholders = demoUids.map(() => '?').join(',');
+  let deleted = {};
+  deleted.flows = (await store.exec('DELETE FROM flows WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
+  deleted.bets = (await store.exec('DELETE FROM bets WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
+  deleted.accounts = (await store.exec('DELETE FROM accounts WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
+  deleted.insuranceNodes = (await store.exec('DELETE FROM insurance_nodes WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
+  deleted.users = (await store.exec('DELETE FROM users WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
+  return { ok: true, deletedDemoUsers: demoUids.length, demoUids, deleted };
+});
+
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium
 route('POST', '/insurance/deposit/onchain', async (b) => {
   await assertNotBanned(b.uid);

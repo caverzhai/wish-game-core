@@ -409,6 +409,22 @@ async function api(url, body) {
 }
 
 // ---------------- 登录 ----------------
+// Generate browser fingerprint for demo mode
+function getBrowserFingerprint() {
+  const nav = navigator;
+  const screenInfo = screen.width + 'x' + screen.height + 'x' + screen.colorDepth;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const lang = nav.language || nav.userLanguage;
+  const platform = nav.platform;
+  const ua = nav.userAgent;
+  const raw = screenInfo + '|' + tz + '|' + lang + '|' + platform + '|' + ua + '|' + (nav.hardwareConcurrency || 0) + '|' + (nav.deviceMemory || 0);
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    hash = ((hash << 5) - hash + raw.charCodeAt(i)) | 0;
+  }
+  return 'fp_' + Math.abs(hash).toString(36) + '_' + raw.length;
+}
+
 function randomDemoAddr() { let h = ''; while (h.length < 40) h += Math.random().toString(16).slice(2); return '0x' + h.slice(0, 40); }
 // 读取钱包插件「当前激活账户」地址（eth_accounts 只读、不弹窗；无插件/未授权返回 null）
 async function activeWalletAddr() {
@@ -473,7 +489,17 @@ async function connectWallet() {
     await doLogin(accs[0]);
   } catch (e) { $('loginErr').textContent = e.message || String(e); }
 }
-async function demoEnter() { $('loginErr').textContent = ''; try { await doLogin(randomDemoAddr()); } catch (e) { $('loginErr').textContent = e.message; } }
+async function demoEnter() {
+  $('loginErr').textContent = '';
+  try {
+    const fingerprint = getBrowserFingerprint();
+    const ref = new URLSearchParams(location.search).get('ref');
+    const u = await api('/demo-login', { fingerprint, inviterUid: ref || undefined });
+    state.uid = u.uid; state.wallet = u.wallet; state.isAdmin = false; state.demoMode = true;
+    localStorage.setItem('uid', u.uid); localStorage.setItem('wallet', u.wallet); localStorage.setItem('token', u.token); localStorage.setItem('demoMode', '1');
+    enterMain();
+  } catch (e) { $('loginErr').textContent = e.message; }
+}
 let mainTimersStarted = false;
 function enterMain() {
   $('loginMask').classList.add('hide'); $('main').classList.remove('hide'); $('dock').classList.remove('hide');
@@ -2110,6 +2136,11 @@ function init() {
   document.querySelectorAll('.dock-item').forEach((d) => d.onclick = () => switchDock(d.dataset.dock));
   bindSwipe();
   $('disclaimerConfirm').onclick = confirmDisclaimer;
+  // Auto demo mode detection: if URL contains /demo, auto login
+  if (location.pathname === '/demo' || location.pathname.startsWith('/demo/')) {
+    setTimeout(() => { demoEnter(); }, 500);
+  }
+
   // System announcement publish (admin)
   $('announceInput').addEventListener('input', () => { $('announceChar').textContent = byteLen($('announceInput').value) + '/8192'; });
   $('announceSend').onclick = async () => {

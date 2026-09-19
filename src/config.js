@@ -1,4 +1,4 @@
-// =============================================================
+﻿// =============================================================
 // config.js - global rule parameters (single source of truth, all configurable in admin panel, do not hardcode in logic)
 // Amount unit: units
 // =============================================================
@@ -57,4 +57,14 @@ export const DEFAULT_CONFIG = {
   withdrawMin: coin(2),      // min 2 units (withdrawing 1 with 1 fee is pointless)
   withdrawMax: coin(500),    // max 500 units per withdrawal
   withdrawFee: coin(1),      // fixed 1 unit fee per withdrawal, to platform (not insurance pool)
+};
+
+// Demo mode config overrides (faster rounds for demo)
+export const DEMO_CONFIG_OVERRIDES = {
+  // Round timing: 1 minute rounds for demo
+  lockAfterSec: 50,          // lock at 50s (last 10s locked)
+  settleAfterSec: 60,        // settle at 60s
+  // Insurance payout every 30 minutes for demo
+  payoutEverySec: 30 * 60,
+  surviveWindowBatches: 336, // 168 hours = 336 * 30min batches
 };

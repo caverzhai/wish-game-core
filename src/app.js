@@ -1,7 +1,7 @@
 ﻿// App assembly: MySQL persistence if Railway env vars present, otherwise in-memory store (local/demo)
 import { MemoryStore } from './store.js';
 import { MysqlStore } from './store-mysql.js';
-import { DEFAULT_CONFIG } from './config.js';
+import { DEFAULT_CONFIG, DEMO_CONFIG_OVERRIDES } from './config.js';
 import { InsuranceService } from './InsuranceService.js';
 import { GameService } from './GameService.js';
 import { WalletService } from './WalletService.js';
@@ -21,16 +21,16 @@ export function useMysql(env = process.env) {
 export async function createApp(cfg = DEFAULT_CONFIG, env = process.env, databaseOverride = null) {
   const store = useMysql(env) ? new MysqlStore(env, databaseOverride) : new MemoryStore();
   await store.init();
-  const insurance = new InsuranceService(store, cfg);
-  const game = new GameService(store, cfg, insurance);
-  const wallet = new WalletService(store, cfg);
+  const insurance = new InsuranceService(store, effectiveCfg);
+  const game = new GameService(store, effectiveCfg, insurance);
+  const wallet = new WalletService(store, effectiveCfg);
   const social = new SocialService(store);
   const chain = new ChainService(env); // On-chain adapter (disabled if unconfigured, falls back to in-site balance)
   const voice = new VoiceRoomService(store);
   const npc = new NpcService({ store, game, social, voice });
   const lottery = new LotteryService(store);
-  const charity = new CharityService(store, cfg, insurance);
-  const task = new TaskService(store, cfg, insurance);
+  const charity = new CharityService(store, effectiveCfg, insurance);
+  const task = new TaskService(store, effectiveCfg, insurance);
   // Fix historical voice room unrecorded platform revenue (pre-v2.2.5 room creation deducted user balance but not platform, causing ledger imbalance)
   try {
     const inside = await store.totalInside();
@@ -42,5 +42,5 @@ export async function createApp(cfg = DEFAULT_CONFIG, env = process.env, databas
       console.log(`[ledger-fix] backfill voice room platform revenue diff=${diff} inside=${inside} source=${source}`);
     }
   } catch (e) { console.error('[ledger-fix] error', e.message); }
-  return { store, cfg, insurance, game, wallet, social, chain, voice, npc, lottery, charity, task, storeKind: store.kind };
+  return { store, cfg: effectiveCfg, insurance, game, wallet, social, chain, voice, npc, lottery, charity, task, storeKind: store.kind };
 }

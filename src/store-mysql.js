@@ -200,7 +200,14 @@ CREATE TABLE IF NOT EXISTS task_reviews (
   rating INT, content VARCHAR(500), created_at BIGINT,
   KEY idx_job(job_id), KEY idx_reviewer(reviewer_uid), KEY idx_reviewee(reviewee_uid)
 );
-`;
+
+CREATE TABLE IF NOT EXISTS backups (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY, backup_id VARCHAR(16) UNIQUE,
+  name VARCHAR(128), type VARCHAR(16) DEFAULT 'manual',
+  data LONGTEXT, size BIGINT DEFAULT 0, table_count INT DEFAULT 0,
+  created_at BIGINT, expires_at BIGINT NULL,
+  KEY idx_type(type), KEY idx_created(created_at), KEY idx_expires(expires_at)
+);`;
 
 export class MysqlStore {
   constructor(env = process.env, databaseOverride = null) {

@@ -18,8 +18,8 @@ export function useMysql(env = process.env) {
   return MYSQL_KEYS.some((k) => env[k]);
 }
 
-export async function createApp(cfg = DEFAULT_CONFIG, env = process.env) {
-  const store = useMysql(env) ? new MysqlStore(env) : new MemoryStore();
+export async function createApp(cfg = DEFAULT_CONFIG, env = process.env, databaseOverride = null) {
+  const store = useMysql(env) ? new MysqlStore(env, databaseOverride) : new MemoryStore();
   await store.init();
   const insurance = new InsuranceService(store, cfg);
   const game = new GameService(store, cfg, insurance);

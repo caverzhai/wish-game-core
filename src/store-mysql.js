@@ -203,9 +203,10 @@ CREATE TABLE IF NOT EXISTS task_reviews (
 `;
 
 export class MysqlStore {
-  constructor(env = process.env) {
+  constructor(env = process.env, databaseOverride = null) {
     this.tx = new AsyncLocalStorage();
     this.env = env;
+    this.databaseOverride = databaseOverride;
     this.pool = null;
   }
   get kind() { return 'mysql'; }
@@ -216,8 +217,9 @@ export class MysqlStore {
     catch { throw new Error('MySQL requires mysql2 dependency (npm i mysql2), Railway build installs it automatically'); }
     const e = this.env;
     const opts = { supportBigNumbers: true, bigNumberStrings: false, connectionLimit: 10, enableKeepAlive: true };
+    const dbName = this.databaseOverride || e.MYSQLDATABASE || e.MYSQL_DATABASE || 'railway';
     const url = e.DATABASE_URL || e.MYSQL_URL || e.MYSQL_PRIVATE_URL || e.MYSQL_PUBLIC_URL;
-    if (url) {
+    if (url && !this.databaseOverride) {
       this.pool = mysql.createPool(url, opts);
     } else {
       this.pool = mysql.createPool({
@@ -226,7 +228,7 @@ export class MysqlStore {
         port: Number(e.MYSQLPORT || e.MYSQL_PORT || 3306),
         user: e.MYSQLUSER || e.MYSQL_USER || 'root',
         password: e.MYSQLPASSWORD || e.MYSQL_PASSWORD || e.MYSQL_ROOT_PASSWORD || '',
-        database: e.MYSQLDATABASE || e.MYSQL_DATABASE || 'railway',
+        database: dbName,
       });
     }
     for (const stmt of SCHEMA.split(';').map((s) => s.trim()).filter(Boolean)) {

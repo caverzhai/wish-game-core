@@ -1,0 +1,1017 @@
+﻿// Routes setup - supports both real and demo instances
+import { GameError, Codes } from './errors.js';
+import { generateNonce, consumeNonce, buildSignMessage, verifySignature, signJwt, verifyJwt, extractToken } from './auth.js';
+import { coin, SCALE, needTopUp } from './money.js';
+import { ROOM_CFG } from './VoiceRoomService.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = path.resolve(__dirname, '../public');
+
+const now = () => Math.floor(Date.now() / 1000);
+const coinNum = (v) => Number(BigInt(v)) / Number(SCALE);
+
+export function setupRoutes(app, BUILD, isDemo = false) {
+  const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery, charity, task } = app;
+  const routes = [];
+  const route = (method, p, h) => routes.push({ method, p, h });
+
+  // Admin cache
+  let _adminCache = { wallets: new Set(), updatedAt: 0 };
+  async function isAdminWallet(w) {
+    if (!w) return false;
+    const lw = String(w).toLowerCase();
+    const now = Date.now();
+    if (now - _adminCache.updatedAt > 30000) {
+      try {
+        const dbAdmins = await store.listAdmins();
+        _adminCache.wallets = new Set(dbAdmins);
+        _adminCache.updatedAt = now;
+      } catch { /* store may not have listAdmins yet */ }
+    }
+    return _adminCache.wallets.has(lw);
+  }
+  async function requireAdmin(uid) {
+    const u = await store.getUser(uid);
+    if (!(await isAdminWallet(u.wallet))) throw new GameError(Codes.FORBIDDEN, 'Admin privileges required');
+    return u;
+  }
+  async function assertNotBanned(uid) {
+    const u = await store.getUser(uid);
+    if (u.banned) throw new GameError(Codes.BANNED, 'Account banned');
+    return u;
+  }
+  function authUid(b, req) {
+    const token = extractToken(req);
+    if (token) {
+      const payload = verifyJwt(token);
+      if (payload && payload.uid) return payload.uid;
+    }
+    return b.uid || null;
+  }
+
+  // Auth: nonce endpoint for wallet signature login
+route('GET', '/auth/nonce', async (b, _, req) => {
+  const wallet = (b.wallet || '').trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) throw new Error('Invalid wallet address');
+  const nonce = generateNonce(wallet);
+  const domain = (req.headers.host || 'wishtree.up.railway.app').split(':')[0];
+  const message = buildSignMessage(wallet, nonce, domain, BUILD);
+  return { nonce, message };
+});
+
+// Account
+route('POST', '/login', async (b, _, req) => {
+  const wallet = (b.wallet || '').trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) throw new Error('Invalid wallet address');
+  // Signature verification (required when signature provided)
+  if (b.signature && b.nonce) {
+    if (!consumeNonce(b.nonce, wallet)) throw new Error('Invalid or expired nonce');
+    const domain = (req.headers.host || 'wishtree.up.railway.app').split(':')[0];
+    const message = b.message || buildSignMessage(wallet, b.nonce, domain, BUILD);
+    const recovered = verifySignature(message, b.signature);
+    if (!recovered || recovered !== wallet.toLowerCase()) {
+      throw new GameError(Codes.FORBIDDEN, 'Signature verification failed');
+    }
+  }
+  const ex = await store.getUserByWallet(wallet);
+  const u = ex || await game.register(wallet, b.inviterUid ?? null, now());
+  // Admin only via ADMIN_WALLETS env or DB admin table (no auto-promote)
+  const token = signJwt({ uid: u.uid, wallet: u.wallet });
+  return { ...u, isAdmin: await isAdminWallet(u.wallet), token };
+});
+route('POST', '/register', async (b) => {
+  const u = await game.register(b.wallet, b.inviterUid ?? null, now());
+  // Admin only via ADMIN_WALLETS env or DB admin table
+  return u;
+});
+route('GET', /^\/user\/(.+)$/, async (b, m, req) => {
+  const uid = m[1];
+  const authUidVal = authUid(b, req);
+  if (!authUidVal) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  if (authUidVal !== uid) {
+    try {
+      const authUser = await store.getUser(authUidVal);
+      if (!(await isAdminWallet(authUser.wallet))) throw new GameError(Codes.FORBIDDEN, 'Cannot view other user profile');
+    } catch (e) {
+      if (e.code === Codes.FORBIDDEN) throw e;
+      console.log('[user/' + uid + '] auth check failed:', e.message);
+      throw new GameError(Codes.FORBIDDEN, 'Cannot view other user profile');
+    }
+  }
+  // EVERYTHING below is protected - no single failure can blank the profile
+  const safe = async (label, fn, fallback) => {
+    try { return await fn(); }
+    catch (e) { console.log('[user/' + uid + '] ' + label + ' FAILED:', e.message); return fallback; }
+  };
+  const user = await safe('getUser', () => store.getUser(uid), { uid, wallet: '', inviterUid: null, insSwitch: false, banned: false, createdAt: 0, country: '', region: '', city: '' });
+  const account = await safe('getAccount', () => store.getAccount(uid), { available: 0n, frozen: 0n, premium: 0n, lossAccum: 0n });
+  const nodes = await safe('listNodes', () => store.listNodes({ uid }), []);
+  const referral = await safe('referralSummary', () => store.referralSummary(uid), { total: 0n, activeInvitees: 0 });
+  const flows = await safe('listFlows', () => store.listFlows(uid, 50), []);
+  const memberLevel = await safe('getMemberLevelInfo', () => store.getMemberLevelInfo(uid, cfg.memberLevels), { validInvites: 0, level: 0, perMille: 0n, levelName: 'None' });
+  const directCount = await safe('countDirectInvitees', () => store.countDirectInvitees(uid), 0);
+  const downlineTotal = await safe('countTotalDownline', () => store.countTotalDownline(uid), 0);
+  const validInvites = memberLevel.validInvites || 0;
+  const nowSec = Math.floor(Date.now() / 1000);
+  const commissionEligible = await safe('isCommissionEligible', () => store.isCommissionEligible(uid, nowSec, cfg.commissionActiveWindowSec), false);
+  const lastWinAt = await safe('getLastWinAt', () => store.getLastWinAt(uid), null);
+  const isAdmin = await safe('isAdminWallet', () => isAdminWallet(user.wallet), false);
+  const perMilleStr = (memberLevel.perMille != null && typeof memberLevel.perMille.toString === 'function') ? memberLevel.perMille.toString() : '0';
+  console.log('[user/' + uid + '] OK -> user:', !!user, 'account:', !!account, 'flows:', flows.length, 'isAdmin:', isAdmin);
+
+  // Insurance node survival status (7-day revive window)
+  const insuranceStatus = await safe('insuranceStatus', async () => {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const currentSeq = Math.floor(nowSec / cfg.payoutEverySec);
+    let newestSeq = null, newestAt = null;
+    for (const n of nodes) {
+      const bs = Number(n.batchSeq);
+      if (isNaN(bs) || bs <= 0) continue; // skip nodes without batchSeq
+      if (newestSeq === null || bs > newestSeq) { newestSeq = bs; newestAt = n.createdAtSec; }
+    }
+    const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.surviveWindowBatches;
+    const batchesSinceNewest = newestSeq != null ? (currentSeq - newestSeq) : null;
+    const hoursSinceNewest = batchesSinceNewest != null ? batchesSinceNewest * 6 : null;
+    const batchesUntilDead = alive ? (cfg.surviveWindowBatches - batchesSinceNewest) : 0;
+    const hoursUntilDead = alive ? batchesUntilDead * 6 : 0;
+    return {
+      hasNodes: nodes.length > 0,
+      activeNodeCount: nodes.filter(n => n.state === 'active').length,
+      newestNodeAt: newestAt,
+      newestNodeSeq: newestSeq,
+      currentSeq,
+      alive,
+      hoursSinceNewest,
+      hoursUntilDead,
+      surviveWindowHours: cfg.surviveWindowBatches * 6,
+    };
+  }, { hasNodes: false, activeNodeCount: 0, alive: false, hoursSinceNewest: null, hoursUntilDead: 0, surviveWindowHours: 168 });
+  return {
+    user, account, nodes, isAdmin, insuranceStatus,
+    invite: {
+      code: uid,
+      memberLevel: memberLevel.level || 0,
+      memberLevelName: memberLevel.levelName || 'None',
+      perMille: perMilleStr,
+      validInvites,
+      rewardTotal: referral.total || 0n,
+      rewardedInvitees: referral.activeInvitees || 0,
+      directCount,
+      downlineTotal,
+      commissionEligible,
+      lastWinAt,
+    },
+    flows,
+  };
+});
+// Frozen balance detail: show exactly what is frozen and why
+route('GET', '/frozen/detail', async (b) => {
+  const uid = b.uid;
+  const acc = await store.getAccount(uid);
+  // 1. Unsettled bets (money frozen during active round)
+  const unsettledBets = await store.exec(
+    'SELECT bet_id, round_id, side, amount, pick, at FROM bets WHERE uid=? AND settled=0 ORDER BY at DESC',
+    [uid]
+  );
+  // 2. Frozen charity donations (project not settled yet)
+  const frozenDonations = await store.exec(
+    'SELECT donation_id, project_id, amount, status, created_at FROM charity_donations WHERE uid=? AND status=?',
+    [uid, 'frozen']
+  );
+  // 3. Pending withdrawals (money frozen during on-chain payout)
+  const pendingWithdraws = await store.exec(
+    'SELECT withdraw_id, amount, fee, arrive, state, created_at FROM withdraws WHERE uid=? AND state=?',
+    [uid, 'pending']
+  );
+  // Calculate totals
+  const betTotal = unsettledBets.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const donationTotal = frozenDonations.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const withdrawTotal = pendingWithdraws.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
+  return {
+    frozenTotal: acc.frozen,
+    breakdown: {
+      unsettledBets: { count: unsettledBets.length, total: betTotal, items: unsettledBets },
+      frozenDonations: { count: frozenDonations.length, total: donationTotal, items: frozenDonations },
+      pendingWithdraws: { count: pendingWithdraws.length, total: withdrawTotal, items: pendingWithdraws },
+    },
+    calculatedTotal: betTotal + donationTotal + withdrawTotal,
+    matches: (betTotal + donationTotal + withdrawTotal) === acc.frozen,
+  };
+});
+// Admin: fix frozen anomalies - force mark all unsettled bets and pending withdraws, recalc frozen
+route('POST', '/admin/frozen/fix', async (b) => {
+  await requireAdmin(b.uid);
+  const targetUid = b.targetUid;
+  if (!targetUid) throw new GameError(Codes.BAD_INPUT, 'targetUid required');
+  const accBefore = await store.exec('SELECT * FROM accounts WHERE uid=?', [targetUid]);
+  if (accBefore.length === 0) throw new GameError(Codes.NOT_FOUND, 'Account not found: ' + targetUid);
+  // 1. Force mark all unsettled bets as settled
+  const betsResult = await store.exec('UPDATE bets SET settled=1 WHERE uid=? AND settled=0', [targetUid]);
+  const fixedBets = betsResult.affectedRows || 0;
+  // 2. Force mark all pending withdraws as completed
+  const wdResult = await store.exec('UPDATE withdraws SET state=? WHERE uid=? AND state=?', ['completed', targetUid, 'pending']);
+  const fixedWds = wdResult.affectedRows || 0;
+  // 3. Recalculate frozen - should be 0 after fixing
+  const remainingBets = await store.exec('SELECT amount FROM bets WHERE uid=? AND settled=0', [targetUid]);
+  const remainingWds = await store.exec('SELECT amount, fee FROM withdraws WHERE uid=? AND state=?', [targetUid, 'pending']);
+  const betTotal = remainingBets.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const withdrawTotal = remainingWds.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
+  const correctFrozen = betTotal + withdrawTotal;
+  // 4. Update account frozen directly
+  const oldFrozen = BigInt(accBefore[0].frozen);
+  await store.exec('UPDATE accounts SET frozen=? WHERE uid=?', [correctFrozen, targetUid]);
+  return {
+    targetUid,
+    fixedBets,
+    fixedWds,
+    oldFrozen: oldFrozen.toString(),
+    newFrozen: correctFrozen.toString(),
+    corrected: oldFrozen !== correctFrozen,
+  };
+});
+// Admin: query any user's frozen detail by uid
+route('POST', /^\/admin\/frozen\/(.+)$/, async (b, m) => {
+  await requireAdmin(b.uid);
+  const targetUid = m[1];
+  const acc = await store.getAccount(targetUid);
+  const user = await store.getUser(targetUid);
+  const unsettledBets = await store.exec(
+    'SELECT bet_id, round_id, side, amount, pick, at FROM bets WHERE uid=? AND settled=0 ORDER BY at DESC',
+    [targetUid]
+  );
+  const frozenDonations = await store.exec(
+    'SELECT donation_id, project_id, amount, status, created_at FROM charity_donations WHERE uid=? AND status=?',
+    [targetUid, 'frozen']
+  );
+  const pendingWithdraws = await store.exec(
+    'SELECT withdraw_id, amount, fee, arrive, state, created_at FROM withdraws WHERE uid=? AND state=?',
+    [targetUid, 'pending']
+  );
+  const betTotal = unsettledBets.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const donationTotal = frozenDonations.reduce((s, r) => s + BigInt(r.amount), 0n);
+  const withdrawTotal = pendingWithdraws.reduce((s, r) => s + BigInt(r.amount) + BigInt(r.fee), 0n);
+  return {
+    targetUid, wallet: user ? user.wallet : null,
+    frozenTotal: acc.frozen, available: acc.available, premium: acc.premium,
+    breakdown: {
+      unsettledBets: { count: unsettledBets.length, total: betTotal, items: unsettledBets },
+      frozenDonations: { count: frozenDonations.length, total: donationTotal, items: frozenDonations },
+      pendingWithdraws: { count: pendingWithdraws.length, total: withdrawTotal, items: pendingWithdraws },
+    },
+    calculatedTotal: betTotal + donationTotal + withdrawTotal,
+    matches: (betTotal + donationTotal + withdrawTotal) === acc.frozen,
+  };
+});
+// Insurance
+route('POST', '/insurance/switch', (b) => insurance.setSwitch(b.uid, !!b.on));
+route('POST', '/insurance/deposit', (b) => insurance.depositPremium(b.uid, coin(Number(b.amount))));
+route('GET', '/insurance/pool', () => insurance.poolPublic());
+
+// Debug: check uid formats
+route('GET', '/admin/debug/uid', async (q) => {
+  const bets = await store.exec('SELECT uid FROM bets LIMIT 5');
+  const accounts = await store.exec('SELECT uid FROM accounts LIMIT 5');
+  const nodes = await store.exec('SELECT uid FROM nodes LIMIT 5');
+  return {
+    betUids: bets.map(b => ({ uid: b.uid, type: typeof b.uid })),
+    accountUids: accounts.map(a => ({ uid: a.uid, type: typeof a.uid })),
+    nodeUids: nodes.map(n => ({ uid: n.uid, type: typeof n.uid })),
+  };
+});
+
+// Admin: insurance diagnose - check node status and pool balance
+route('GET', '/admin/insurance/diagnose', async (q) => {
+  const uid = Number(q.uid);
+  if (!uid) throw new GameError(Codes.BAD_INPUT, 'uid required');
+  const toStr = (v) => v == null ? '0' : (typeof v === 'bigint' ? v.toString() : String(v));
+  let nodes = [], ledger = null, batches = [];
+  try { nodes = await store.listNodes({ uid }); } catch(e) { console.log('[diagnose] nodes error:', e.message); }
+  try { ledger = await store.getLedger(); } catch(e) { console.log('[diagnose] ledger error:', e.message); }
+  try { batches = await store.exec('SELECT * FROM payout_batches ORDER BY id DESC LIMIT 10'); } catch(e) { console.log('[diagnose] batches error:', e.message); }
+  const nowSec = Math.floor(Date.now() / 1000);
+  const currentSeq = Math.floor(nowSec / cfg.payoutEverySec);
+  let newestSeq = null;
+  for (const n of nodes) {
+    const bs = Number(n.batchSeq);
+    if (isNaN(bs) || bs <= 0) continue;
+    if (newestSeq === null || bs > newestSeq) newestSeq = bs;
+  }
+  const alive = newestSeq != null && (currentSeq - newestSeq) <= cfg.surviveWindowBatches;
+  let ledgerBalance = null;
+  try {
+    const inside = await store.totalInside();
+    const source = await store.totalSource();
+    ledgerBalance = { inside: toStr(inside), source: toStr(source), delta: toStr(inside - source), balanced: inside === source };
+  } catch(e) { console.log('[diagnose] ledgerBalance error:', e.message); }
+  return {
+    uid, currentSeq, newestSeq, alive,
+    surviveWindow: cfg.surviveWindowBatches,
+    hoursSinceNewest: newestSeq != null ? (currentSeq - newestSeq) * 6 : null,
+    insurancePool: ledger ? toStr(ledger.insurancePool) : 'error',
+    ledgerBalance,
+    nodeCount: nodes.length,
+    activeNodeCount: nodes.filter(n => n.state === 'active').length,
+    nodes: nodes.map(n => ({
+      nodeId: n.nodeId, state: n.state, periodN: n.periodN,
+      batchSeq: n.batchSeq, createdAtSec: n.createdAtSec,
+      total: toStr(n.total), paidToUser: toStr(n.paidToUserAmount),
+      forfeited: toStr(n.forfeitedAmount),
+    })),
+    allNodesSummary: (await store.listNodes({})).map(n => ({ uid: n.uid, nodeId: n.nodeId, state: n.state, periodN: n.periodN, batchSeq: n.batchSeq })),
+    recentBatches: batches.map(b => ({
+      seq: b.seq, state: b.state, dueTotal: toStr(b.due_total),
+      paidToUser: toStr(b.paid_to_user), forfeited: toStr(b.forfeited), at: b.at,
+    })),
+  };
+});
+
+// Admin: scheduler diagnose - check lastPayoutSeq and recent errors
+route('GET', '/admin/scheduler/diagnose', async (q) => {
+  const nodes = await store.listNodes({ active: true });
+  const nodeAccounts = [];
+  for (const n of nodes) {
+    try {
+      const acc = await store.getAccount(n.uid);
+      nodeAccounts.push({ uid: n.uid, nodeId: n.nodeId, accountExists: !!acc, available: acc ? acc.available.toString() : null });
+    } catch (e) {
+      nodeAccounts.push({ uid: n.uid, nodeId: n.nodeId, error: e.message });
+    }
+  }
+  let lastBatchFromDb = null;
+  try {
+    const batches = await store.listPayoutBatches(3);
+    lastBatchFromDb = batches;
+  } catch (e) {
+    lastBatchFromDb = { error: e.message };
+  }
+  let tableStructure = null;
+  try {
+    tableStructure = await store.exec('DESCRIBE nodes');
+  } catch (e) {
+    tableStructure = { error: e.message };
+  }
+  let allNodes = null;
+  try {
+    allNodes = await store.exec('SELECT node_id, uid, period_n, paid_amount, paid_to_user, forfeited, state, total FROM nodes ORDER BY id');
+  } catch (e) {
+    allNodes = { error: e.message };
+  }
+  return {
+    lastPayoutSeq: scheduler.lastPayoutSeq,
+    hasListPayoutBatches: typeof store.listPayoutBatches === 'function',
+    currentTime: now(),
+    currentSeq: Math.floor(now() / cfg.payoutEverySec),
+    nodeAccounts,
+    lastBatchFromDb,
+    tableStructure,
+    allNodes,
+  };
+});
+
+// Admin: view recent console logs
+route('GET', '/admin/logs', async (q) => {
+  const limit = Math.min(Number(q.limit) || 50, MAX_LOGS);
+  return { logs: LOG_BUFFER.slice(-limit).map(l => ({ time: new Date(l.t).toISOString(), msg: l.msg })) };
+});
+
+// Admin: fix node amounts based on periodN
+route('POST', '/admin/fix-node-amounts', async (q) => {
+  const nodes = await store.exec('SELECT * FROM nodes ORDER BY id');
+  const periodStep = cfg.periodStep;
+  const results = [];
+  for (const n of nodes) {
+    const periodN = Number(n.period_n);
+    let correctPaid = 0n;
+    if (periodN >= 100) {
+      correctPaid = BigInt(n.total);
+    } else {
+      correctPaid = periodStep * BigInt(periodN) * BigInt(periodN + 1) / 2n;
+    }
+    const oldPaid = BigInt(n.paid_amount);
+    const oldPaidToUser = BigInt(n.paid_to_user);
+    if (oldPaid !== correctPaid || oldPaidToUser !== correctPaid) {
+      await store.exec('UPDATE nodes SET paid_amount=?, paid_to_user=?, forfeited=0 WHERE node_id=?', [Number(correctPaid), Number(correctPaid), n.node_id]);
+      results.push({ nodeId: n.node_id, oldPaid: oldPaid.toString(), newPaid: correctPaid.toString(), oldPaidToUser: oldPaidToUser.toString(), fixed: true });
+    } else {
+      results.push({ nodeId: n.node_id, paid: correctPaid.toString(), fixed: false });
+    }
+  }
+  return { fixed: results.filter(r => r.fixed).length, results };
+});
+// Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium
+route('POST', '/insurance/deposit/onchain', async (b) => {
+  await assertNotBanned(b.uid);
+  const total = Number(b.totalAmount ?? b.amount);
+  if (!Number.isInteger(total) || total <= 0) throw new GameError(Codes.BAD_INPUT, 'Premium must be a positive integer (units)');
+  const totalInner = coin(total);
+  const acc = await store.getAccount(b.uid);
+  const needInner = needTopUp(acc.available, totalInner);
+  const txKey = String(b.txHash || '').toLowerCase();
+  if (needInner > 0n) {
+    if (!txKey) throw new GameError(Codes.BAD_INPUT, 'In-site balance insufficient, on-chain wallet top-up required, but tx hash missing');
+    if (!(await store.isChainTxUsed(txKey))) {
+      const u = await store.getUser(b.uid);
+      await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner });
+      await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT');
+      await store.markChainTxUsed(txKey, b.uid, needInner);
+    }
+  }
+  return await insurance.depositPremium(b.uid, totalInner);
+});
+// Insurance off: withdraw premium back to available balance (no amount = all)
+route('POST', '/insurance/premium/withdraw', async (b) => {
+  await assertNotBanned(b.uid);
+  return await insurance.withdrawPremium(b.uid, b.amount == null ? null : coin(Number(b.amount)));
+});
+// Rounds
+route('POST', '/bet', async (b) => { await assertNotBanned(b.uid); return game.bet(b.uid, b.side, Number(b.amount), Number(b.pick), now()); });
+// Round (mixed payment): in-site balance first and fully used, on-chain wallet covers rest, balance zeroed exactly
+// totalAmount=bet total (integer units); top-up delta needInner recalculated from backend in-site available (6-decimal, allows decimals),
+// on-chain must transfer exactly needInner, then freeze full amount after credit, avoids frontend rounding residue/overcharge.
+route('POST', '/bet/onchain', async (b) => {
+  await assertNotBanned(b.uid);
+  const total = Number(b.totalAmount ?? b.amount), pick = Number(b.pick);
+  if (!Number.isInteger(total) || total < 1 || total > 99) throw new GameError(Codes.BAD_INPUT, 'Bet amount must be a positive integer 1-99 (units)');
+  const totalInner = coin(total);
+  const acc = await store.getAccount(b.uid);
+  const needInner = needTopUp(acc.available, totalInner); // actual shortfall (internal min unit, precise to 6 decimals)
+  const txKey = String(b.txHash || '').toLowerCase();
+  if (needInner > 0n) {
+    if (!txKey) throw new GameError(Codes.BAD_INPUT, 'In-site balance insufficient, on-chain wallet top-up required, but tx hash missing');
+    if (await store.isChainTxUsed(txKey)) return { dup: true, msg: 'This on-chain tx already used, cannot bet again' }; // idempotent fallback: same tx never double-bets
+    const u = await store.getUser(b.uid);
+    await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner }); // on-chain actual transfer must equal delta exactly
+    await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT'); // delta credited first (separate tx, even if bet fails later, money stays in balance, not lost)
+    await store.markChainTxUsed(txKey, b.uid, needInner);       // register only after successful credit, idempotent dedup
+  }
+  return await game.bet(b.uid, b.side, total, pick, now()); // after freezing full amount, original in-site balance fully used -> zeroed
+});
+// Missing-order recovery: when on-chain paid but bet failed, credit actual on-chain amount to in-site balance by txHash, idempotent
+route('POST', '/wallet/credit', async (b) => {
+  await assertNotBanned(b.uid);
+  const txKey = String(b.txHash || '').toLowerCase();
+  if (!txKey.startsWith('0x')) throw new GameError(Codes.BAD_INPUT, 'Invalid transaction hash format');
+  if (await store.isChainTxUsed(txKey)) { // already credited: idempotent return current balance, frontend can safely clear pending record
+    const a = await store.getAccount(b.uid);
+    return { already: true, credited: 0, available: a.available };
+  }
+  const u = await store.getUser(b.uid);
+  const hit = await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet }); // no fixed amount check, use actual received
+  const inner = BigInt(hit.inner);
+  if (inner <= 0n) throw new GameError(Codes.BAD_INPUT, 'This tx has no valid amount transferred to platform wallet');
+  await wallet.issueInner(b.uid, inner, 'CHAIN_DEPOSIT');
+  await store.markChainTxUsed(txKey, b.uid, inner);
+  const a = await store.getAccount(b.uid);
+  return { already: false, credited: inner, available: a.available, txHash: b.txHash };
+});
+route('POST', '/settle', (b) => game.settle(b.atSec ?? now()));
+route('POST', '/payout', (b) => insurance.runPayoutBatch(b.atSec ?? now()));
+route('GET', '/round/current', () => game.currentRound());
+route('GET', /^\/round\/(.+)$/, (b, m) => game.roundDetail(m[1]));
+route('GET', '/recent', () => game.recentRounds(100));
+// ---- BBS ----
+route('POST', '/bbs/post', (b) => social.post(b.uid, b.content));
+route('POST', '/bbs/reply', (b) => social.reply(b.uid, b.postId, b.content));
+route('GET', '/bbs/list', () => social.list());
+// System announcement (admin-published, long text 8192 bytes, does not consume BBS quota)
+route('GET', '/announcement', () => social.getAnnouncement());
+route('POST', '/announcement', async (b) => { await requireAdmin(b.uid); return social.setAnnouncement(b.uid, b.content); });
+// Voice rooms
+route('GET', '/voice/rooms', () => voice.listRooms());
+route('GET', /^\/voice\/room\/(.+)$/, (b, m) => voice.getRoomDetail(m[1]));
+route('POST', '/voice/create', async (b) => {
+  await assertNotBanned(b.uid);
+  return voice.createRoom(b.uid, b.type, b.name, coin(Number(b.amount)), b.description, b.password);
+});
+
+// Create room with on-chain wallet top-up (balance first, wallet covers shortfall)
+route('POST', '/voice/create/onchain', async (b) => {
+  await assertNotBanned(b.uid);
+  const total = Number(b.totalAmount ?? b.amount);
+  if (!Number.isInteger(total) || total < 1) throw new GameError(Codes.BAD_INPUT, 'Room open amount must be a positive integer');
+  const totalInner = coin(total);
+  const acc = await store.getAccount(b.uid);
+  const needInner = needTopUp(acc.available, totalInner);
+  const txKey = String(b.txHash || '').toLowerCase();
+  if (needInner > 0n) {
+    if (!txKey) throw new GameError(Codes.BAD_INPUT, 'In-site balance insufficient, on-chain wallet top-up required, but tx hash missing');
+    if (await store.isChainTxUsed(txKey)) return { dup: true, msg: 'This on-chain tx already used' };
+    const u = await store.getUser(b.uid);
+    await chain.verifyIncoming({ txHash: b.txHash, fromAddress: u.wallet, expectInner: needInner });
+    await wallet.issueInner(b.uid, needInner, 'CHAIN_DEPOSIT');
+    await store.markChainTxUsed(txKey, b.uid, needInner);
+  }
+  return voice.createRoom(b.uid, b.type, b.name, totalInner, b.description, b.password);
+});
+
+// Verify room password before entering
+route('POST', '/voice/verify-password', async (b) => {
+  const ok = voice.verifyPassword(b.roomId, b.password);
+  return { ok };
+});
+route('POST', '/voice/edit-description', async (b) => {
+  await assertNotBanned(b.uid);
+  return voice.editDescription(b.roomId, b.uid, b.description);
+});
+route('POST', '/voice/recharge', async (b) => {
+  await assertNotBanned(b.uid);
+  return voice.recharge(b.roomId, b.uid, coin(Number(b.amount)));
+});
+route('POST', '/voice/dissolve', async (b) => {
+  await assertNotBanned(b.uid);
+  await voice.dissolve(b.roomId, b.uid);
+  if (voice._broadcastClosed) voice._broadcastClosed(b.roomId);
+  return { dissolved: true };
+});
+// Upload voice/image (base64), returns filename, frontend accesses via /voice/media/:file
+route('POST', '/voice/upload', async (b) => {
+  await assertNotBanned(b.uid);
+  const mime = String(b.mime || '');
+  const ext = mime.includes('webm') ? 'webm' : mime.includes('ogg') ? 'ogg' : mime.includes('mp3') ? 'mp3' : mime.includes('png') ? 'png' : mime.includes('gif') ? 'gif' : 'jpg';
+  const buf = Buffer.from(String(b.data || ''), 'base64');
+  if (buf.length > 2 * 1024 * 1024) throw new GameError(Codes.BAD_INPUT, 'File too large (max 2MB)');
+  const file = voice.saveMedia(buf, ext);
+  return { file, mime, size: buf.length };
+});
+route('GET', /^\/voice\/media\/(.+)$/, (b, m, req, res) => {
+  const fp = voice.getMediaPath(m[1]);
+  if (!fs.existsSync(fp)) throw new GameError(Codes.NOT_FOUND, 'File not found');
+  const ext = path.extname(fp).toLowerCase();
+  const ct = { '.webm': 'audio/webm', '.ogg': 'audio/ogg', '.mp3': 'audio/mpeg', '.png': 'image/png', '.gif': 'image/gif', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' }[ext] || 'application/octet-stream';
+  res.writeHead(200, { 'content-type': ct, 'Cache-Control': 'public, max-age=3600' });
+  res.end(fs.readFileSync(fp));
+  return { __raw: true };
+});
+// BBS moderation (only admin wallets in ADMIN_WALLETS can operate)
+route('GET', '/admin/words', () => store.listBlockedWords());
+route('POST', '/admin/word/add', async (b) => { await requireAdmin(b.uid); return { words: await store.addBlockedWord(b.word) }; });
+route('POST', '/admin/word/remove', async (b) => { await requireAdmin(b.uid); return { words: await store.removeBlockedWord(b.word) }; });
+route('POST', '/admin/post/delete', async (b) => { await requireAdmin(b.uid); return social.deletePost(b.uid, b.postId); });
+route('POST', '/admin/user/ban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, b.banned !== false) }; });
+route('POST', '/admin/user/unban', async (b) => { await requireAdmin(b.uid); return { targetUid: b.targetUid, banned: await store.setBanned(b.targetUid, false) }; });
+// Admin: lookup user details (balance, deposits, withdrawals, betting profit)
+route('POST', '/admin/user/lookup', async (b) => {
+  await requireAdmin(b.uid);
+  const wallet = (b.targetWallet || b.wallet || '').trim().toLowerCase();
+  const targetUid = (b.targetUid || '').trim();
+  if (!wallet && !targetUid) throw new Error('Provide targetWallet or targetUid');
+  let user = null;
+  // Normalize UID: support U47, u47, 47
+  let normUid = targetUid;
+  if (normUid && !/^U\d+$/.test(normUid)) {
+    if (/^[Uu]\d+$/.test(normUid)) normUid = 'U' + normUid.slice(1);
+    else if (/^\d+$/.test(normUid)) normUid = 'U' + normUid;
+  }
+  if (wallet) {
+    user = await store.getUserByWallet(wallet);
+    if (!user && wallet.length >= 8) {
+      const suffix = wallet.slice(-8);
+      const all = await store.listUsers();
+      user = all.find(u => u.wallet && u.wallet.toLowerCase().endsWith(suffix)) || null;
+    }
+    // Last resort: if input looks like a UID, try UID lookup
+    if (!user && /^[Uu]?\d+$/.test(wallet)) {
+      const tryUid = wallet.startsWith('U') || wallet.startsWith('u') ? 'U' + wallet.slice(1) : 'U' + wallet;
+      try { user = await store.getUser(tryUid); } catch { /* ignore */ }
+    }
+    if (!user) throw new Error('User not found: ' + wallet);
+  } else {
+    try {
+      user = await store.getUser(normUid);
+    } catch (e) {
+      console.error('[admin-lookup] getUser failed for', normUid, ':', e.message);
+      throw new Error('User not found for UID: ' + normUid + ' (raw: ' + e.message + ')');
+    }
+  }
+  console.error('[admin-lookup] found user:', user.uid, user.wallet);
+  let account;
+  try {
+    account = await store.getAccount(user.uid);
+    console.error('[admin-lookup] account avail:', account.available?.toString());
+  } catch (e) {
+    console.error('[admin-lookup] getAccount failed:', e.message);
+    throw new Error('getAccount failed: ' + e.message);
+  }
+  const allFlows = await store.listFlows(user.uid, 500);
+  const deposits = allFlows.filter(f => ['DEPOSIT','ADMIN_RECHARGE'].includes(f.bizType));
+  const totalDeposited = deposits.reduce((s,f) => s + f.amount, 0n);
+  const withdrawals = await store.exec('SELECT * FROM withdraws WHERE uid=? ORDER BY id DESC LIMIT 100', [user.uid]);
+  const totalWithdrawn = withdrawals.reduce((s,r) => s + BigInt(r.arrive || 0), 0n);
+  const totalWithdrawFees = withdrawals.reduce((s,r) => s + BigInt(r.fee || 0), 0n);
+  const bets = await store.exec('SELECT * FROM bets WHERE uid=? ORDER BY id DESC', [user.uid]);
+  console.error('[admin-lookup] total bets found:', bets.length);
+  if (bets.length > 0) {
+    console.error('[admin-lookup] sample bet:', JSON.stringify({settled: bets[0].settled, settledType: typeof bets[0].settled, amount: bets[0].amount, win_credit: bets[0].win_credit}));
+  }
+  const totalBetAmount = bets.reduce((s,r) => s + BigInt(r.amount || 0), 0n);
+  const totalWinCredit = bets.reduce((s,r) => s + BigInt(r.win_credit || 0), 0n);
+  const totalInsCut = bets.reduce((s,r) => s + BigInt(r.ins_cut || 0), 0n);
+  const settledBets = bets.filter(b => Number(b.settled) === 1);
+  console.error('[admin-lookup] settled bets:', settledBets.length, 'of', bets.length);
+  const winCount = settledBets.filter(b => BigInt(b.win_credit || 0) > 0n).length;
+  console.error('[admin-lookup] win count:', winCount);
+  const settledBetAmount = settledBets.reduce((s,r) => s + BigInt(r.amount || 0), 0n);
+  const settledWinCredit = settledBets.reduce((s,r) => s + BigInt(r.win_credit || 0), 0n);
+  const netProfit = settledWinCredit - settledBetAmount;
+  return {
+    user: { uid: user.uid, wallet: user.wallet, createdAt: user.createdAt, banned: user.banned },
+    account: { avail: account.available.toString(), frozen: account.frozen.toString(), insurance: account.premium.toString(), insuranceEnabled: !!user.insSwitch },
+    deposits: { count: deposits.length, total: totalDeposited.toString(), records: deposits.slice(0,20).map(f => ({ ...f, amount: f.amount.toString() })) },
+    withdrawals: { count: withdrawals.length, totalArrived: totalWithdrawn.toString(), totalFees: totalWithdrawFees.toString(), records: withdrawals.slice(0,20).map(r => ({ id: r.withdraw_id, amount: r.amount, fee: r.fee, arrive: r.arrive, state: r.state, txhash: r.txhash, at: r.created_at })) },
+    betting: {
+      totalBets: bets.length,
+      settledBets: settledBets.length,
+      winCount: winCount,
+      totalBetAmount: totalBetAmount.toString(),
+      totalWinCredit: totalWinCredit.toString(),
+      totalInsuranceCut: totalInsCut.toString(),
+      netProfit: netProfit.toString(),
+      recentBets: bets.slice(0,20).map(r => ({ id: r.bet_id, round: r.round_id, side: r.side, amount: r.amount, pick: r.pick, winCredit: r.win_credit, settled: r.settled === 1, at: r.at }))
+    },
+    recentFlows: allFlows.slice(0,20).map(f => ({ ...f, amount: f.amount.toString() }))
+  };
+});
+
+// Whitelist (invite commission) management
+route('GET', '/admin/whitelist', async (b) => { await requireAdmin(b.uid); return { list: await store.listWhitelist() }; });
+route('POST', '/admin/whitelist/add', async (b) => { await requireAdmin(b.uid); return { list: await store.addWhitelist(b.wallet, b.perMille) }; });
+route('POST', '/admin/whitelist/remove', async (b) => { await requireAdmin(b.uid); return { list: await store.removeWhitelist(b.wallet) }; });
+// Regional agents management
+route('GET', '/admin/regional-agents', async (b) => { await requireAdmin(b.uid); return { list: await store.listRegionalAgents() }; });
+route('POST', '/admin/regional-agent/add', async (b) => { await requireAdmin(b.uid); return { list: await store.addRegionalAgent(b.name, b.wallet, b.perMille, b.regions) }; });
+route('POST', '/admin/regional-agent/remove', async (b) => { await requireAdmin(b.uid); return { list: await store.removeRegionalAgent(b.id) }; });
+// NPC bot management (social-only bots, no betting)
+route('GET', '/admin/npcs', async (b) => { await requireAdmin(b.uid); return { list: await npc.listNpcs() }; });
+route('POST', '/admin/npc/add', async (b) => { await requireAdmin(b.uid); return { npc: await npc.addNpc(b.name, b.wallet, b.language) }; });
+route('POST', '/admin/npc/remove', async (b) => { await requireAdmin(b.uid); return { removed: await npc.removeNpc(b.npcId) }; });
+route('POST', '/admin/npc/recharge', async (b) => { await requireAdmin(b.uid); return await npc.rechargeNpc(b.npcId, b.amount); });
+route('POST', '/admin/npc/insurance', async (b) => { await requireAdmin(b.uid); return await npc.setInsurance(b.npcId, b.enabled === true || b.enabled === 'true', b.premiumCoins || 20); });
+// Admin diagnose - check system health
+route('GET', '/admin/diagnose', async (b) => {
+  if (!b.uid) throw new GameError(Codes.UNAUTHORIZED, 'Login required');
+  await requireAdmin(b.uid);
+  const nowS = now();
+  const stuckRows = await store.pool.query("SELECT COUNT(*) as cnt FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
+  const activeRows = await store.pool.query("SELECT COUNT(*) as cnt FROM rounds WHERE state='active'");
+  const balRows = await store.pool.query("SELECT COALESCE(SUM(available),0) as avail, COALESCE(SUM(frozen),0) as frozen, COALESCE(SUM(premium),0) as premium FROM accounts");
+  const l = await store.getLedger();
+  const stuck = Array.isArray(stuckRows) ? (stuckRows[0] ? stuckRows[0][0] : stuckRows) : stuckRows;
+  const active = Array.isArray(activeRows) ? (activeRows[0] ? activeRows[0][0] : activeRows) : activeRows;
+  const bal = Array.isArray(balRows) ? (balRows[0] ? balRows[0][0] : balRows) : balRows;
+  return {
+    stuckRounds: Number(stuck.cnt || 0),
+    activeRounds: Number(active.cnt || 0),
+    totalAvailable: String(bal.avail || 0),
+    totalFrozen: String(bal.frozen || 0),
+    totalPremium: String(bal.premium || 0),
+    ledger: { issued: String(l.issued || 0), withdrawn: String(l.withdrawn || 0) },
+  };
+});
+
+// Admin user detail - check specific user balance
+route('GET', /^\/admin\/user\/(.+)$/, async (b, m) => {
+  if (!b.uid) throw new GameError(Codes.UNAUTHORIZED, 'Login required');
+  await requireAdmin(b.uid);
+  const targetUid = m[1];
+  const acc = await store.getAccount(targetUid);
+  const user = await store.getUser(targetUid);
+  const betRows = await store.pool.query("SELECT COUNT(*) as cnt, COALESCE(SUM(amount),0) as total FROM bets WHERE uid=? AND settled=0", [targetUid]);
+  const bets = Array.isArray(betRows) ? (betRows[0] ? betRows[0][0] : betRows) : betRows;
+  return {
+    uid: targetUid,
+    wallet: user ? user.wallet : null,
+    account: acc ? { available: String(acc.available || 0), frozen: String(acc.frozen || 0), premium: String(acc.premium || 0) } : null,
+    unsettledBets: Number(bets.cnt || 0),
+    unsettledAmount: String(bets.total || 0),
+  };
+});
+
+// Admin recharge user balance (for testing and manual top-up)
+route('POST', '/admin/recharge', async (b) => {
+  await requireAdmin(b.uid);
+  const RECHARGE_LIMIT = 10000n; // max 10000 coins per recharge
+  const amt = Math.floor(Number(b.amount));
+  if (!Number.isInteger(amt) || amt <= 0) throw new Error('Invalid amount');
+  if (BigInt(amt) > RECHARGE_LIMIT) throw new Error('Recharge exceeds limit of ' + RECHARGE_LIMIT + ' coins');
+  const amount = BigInt(amt) * 1000000n;
+  const adminUser = await store.getUser(b.uid);
+  await store.applyAccount(b.targetUid, { avail: amount });
+  await store.applyLedger({ issued: amount });
+  await store.addFlow(b.targetUid, 'ADMIN_RECHARGE', amount, { by: b.uid, adminWallet: adminUser.wallet, ts: Date.now() });
+  console.log('[admin-recharge] admin=' + b.uid + ' target=' + b.targetUid + ' amount=' + amt);
+  const a = await store.getAccount(b.targetUid);
+  return { targetUid: b.targetUid, available: a.available };
+});
+
+// User region info update (required for users without inviter before withdrawal)
+route('POST', '/user/region', async (b, _, req) => {
+  const uid = authUid(b, req);
+  if (!uid) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  const country = (b.country || '').trim();
+  const region = (b.region || '').trim();
+  const city = (b.city || '').trim();
+  if (!country || !region || !city) throw new GameError(Codes.BAD_INPUT, 'Country, region and city are all required');
+  if (country.length > 100 || region.length > 200 || city.length > 200) throw new GameError(Codes.BAD_INPUT, 'Input too long');
+  const user = await store.updateUserRegion(uid, country, region, city);
+  return { ok: true, user };
+});
+
+// Get inviter (direct referrer) info for current user
+route('POST', '/user/inviter', async (b, _, req) => {
+  const uid = authUid(b, req);
+  if (!uid) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  const user = await store.getUser(uid);
+  if (!user.inviterUid) return { wallet: null };
+  try {
+    const inviter = await store.getUser(user.inviterUid);
+    return { wallet: inviter.wallet.slice(0, 6) + '...' + inviter.wallet.slice(-4), uid: inviter.uid };
+  } catch {
+    return { wallet: null };
+  }
+});
+
+// Admin: set user's inviter (for legacy users or corrections)
+route('POST', '/admin/user/set-inviter', async (b, _, req) => {
+  const uid = authUid(b, req);
+  if (!uid) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  await requireAdmin(uid);
+  const targetUid = b.targetUid;
+  const inviterUid = b.inviterUid;
+  if (!targetUid || !inviterUid) throw new GameError(Codes.BAD_INPUT, 'targetUid and inviterUid are required');
+  // Verify both users exist
+  await store.getUser(targetUid);
+  await store.getUser(inviterUid);
+  await store.exec('UPDATE users SET inviter_uid=? WHERE uid=?', [inviterUid, targetUid]);
+  const user = await store.getUser(targetUid);
+  return { ok: true, user };
+});
+
+// #14 Withdraw cooldown: 60 seconds between withdrawals per user
+const WITHDRAW_COOLDOWN = new Map(); // uid -> lastWithdrawTs
+
+// Chain config (public, no private key)
+route('GET', '/chain/config', () => chain.publicConfig());
+// Withdrawal: auto on-chain payout if payout key configured, otherwise create pending order
+route('POST', '/withdraw/reap', async (b) => { await wallet.reconcileBroadcasted(b.uid).catch(() => {}); return await wallet.reapUnbroadcast(b.uid); });
+route('POST', '/withdraw', async (b, _, req) => {
+  const uid = authUid(b, req);
+  if (!uid) throw new GameError(Codes.UNAUTHORIZED, 'Authentication required');
+  await assertNotBanned(uid);
+  // #14 Withdraw cooldown check
+  const lastWd = WITHDRAW_COOLDOWN.get(uid);
+  if (lastWd && Date.now() - lastWd < 60000) {
+    throw new GameError(Codes.BAD_INPUT, 'Withdrawal cooldown: please wait 60 seconds between withdrawals');
+  }
+  WITHDRAW_COOLDOWN.set(uid, Date.now());
+  // Region requirement: ALL users must bind their address before withdrawal
+  const hasRegion = await store.hasRegionInfo(uid);
+  if (!hasRegion) {
+    throw new GameError(Codes.BAD_INPUT, 'Please complete your region information (country/region/city/district/town) before first withdrawal. Address binding is required for all users.');
+  }
+  if (chain.canPayout) {
+    try { await wallet.reconcileBroadcasted(b.uid); } catch { /* reconcile broadcasted orders, non-blocking */ }
+    try { await wallet.reapUnbroadcast(b.uid); } catch { /* recover unbroadcast leftover orders, never blocks this withdrawal */ }
+  }
+  const wd = await wallet.withdraw(b.uid, Number(b.amount));
+  if (chain.canPayout) {
+    try {
+      const pay = await chain.payout(wd.toWallet, wd.arrive, async (hash) => {
+        try { await store.updateWithdraw(wd.withdrawId, { txhash: hash }); } catch { /* logging failure non-blocking */ }
+      });
+      const done = await wallet.confirmWithdraw(wd.withdrawId, pay.txHash);
+      return { ...done, paid: true };
+    } catch (e) {
+      if (e.broadcast) {
+        // tx broadcasted but receipt timeout: money may have left, keep pending, reconcile by hash, never auto-refund
+        return { ...wd, paid: false, broadcast: true, txHash: e.txHash, payoutError: e.message };
+      }
+      // pre-broadcast failure (RPC down / insufficient gas / insufficient tokens): money not sent, auto-refund frozen balance, user can retry later
+      let refunded = wd;
+      try { refunded = await wallet.failWithdraw(wd.withdrawId); }
+      catch (re) { /* already paid/refunded etc: on idempotent conflict no second error, defer to on-chain and original order state */ }
+      return { ...refunded, paid: false, payoutError: e.message };
+    }
+  }
+  return wd;
+});
+route('POST', '/withdraw/confirm', (b) => wallet.confirmWithdraw(b.withdrawId, b.txhash));
+route('POST', '/withdraw/fail', (b) => wallet.failWithdraw(b.withdrawId));
+// Admin overview (operational status, no sensitive info)
+route('GET', '/admin/overview', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await requireAdmin(uid);
+  const users = await store.listUsers();
+  const rounds = await store.listRecentRounds(100000);
+  const posts = await store.listPosts(100000);
+  return { chain: chain.publicConfig(), ledger: await store.getLedger(), counts: { users: users.length, rounds: rounds.length, posts: posts.length } };
+});
+// System
+route('GET', '/ledger', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await requireAdmin(uid);
+  const inside = (await store.totalInside()) + voice.totalRoomBalance();
+  const source = await store.totalSource();
+  return { ...(await store.getLedger()), roomBalance: voice.totalRoomBalance(), storeKind: store.kind, balanced: inside === source, diff: inside - source };
+});
+// Charity relief projects
+route('GET', '/charity/projects', async (b) => {
+  const limit = parseInt(b.limit) || 50;
+  const offset = parseInt(b.offset) || 0;
+  return { list: await charity.listProjects(limit, offset) };
+});
+route('GET', /^\/charity\/project\/(.+)$/, async (_, m) => {
+  return await charity.getProject(m[1]);
+});
+route('POST', '/charity/create', async (b) => {
+  await assertNotBanned(b.uid);
+  return await charity.createProject(b.uid, b);
+});
+route('POST', '/charity/donate', async (b) => {
+  await assertNotBanned(b.uid);
+  return await charity.donate(b.uid, b.projectId, parseInt(b.amount));
+});
+route('POST', '/charity/vote', async (b) => {
+  await assertNotBanned(b.uid);
+  return await charity.vote(b.uid, b.projectId, b.support);
+});
+route('POST', '/charity/comment', async (b) => {
+  await assertNotBanned(b.uid);
+  return await charity.comment(b.uid, b.projectId, b.content);
+});
+route('GET', /^\/charity\/comments\/(.+)$/, async (_, m) => {
+  return { list: await charity.getComments(m[1]) };
+});
+route('POST', '/charity/update', async (b) => {
+  await assertNotBanned(b.uid);
+  const isAdmin = await isAdminWallet(b.uid);
+  return await charity.updateProject(b.uid, b.projectId, b, isAdmin);
+});
+route('POST', '/charity/delete', async (b) => {
+  await assertNotBanned(b.uid);
+  const isAdmin = await isAdminWallet(b.uid);
+  return await charity.deleteProject(b.uid, b.projectId, isAdmin);
+});
+route('POST', '/charity/dissolve', async (b) => {
+  await requireAdmin(b.uid);
+  return await charity.dissolve(b.projectId, b.reason);
+});
+route('POST', '/charity/upload', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await assertNotBanned(uid);
+  const dataUrl = b.photo || '';
+  if (!dataUrl.startsWith('data:image/')) throw new Error('Invalid image');
+  const matches = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+  if (!matches) throw new Error('Invalid image format');
+  const ext = matches[1].toLowerCase();
+  if (['svg', 'svgz', 'webp', 'avif', 'bmp', 'ico'].includes(ext)) throw new Error('Image format not allowed');
+  if (!['jpeg', 'jpg', 'png', 'gif'].includes(ext)) throw new Error('Only JPG/PNG/GIF allowed');
+  const buf = Buffer.from(matches[2], 'base64');
+  if (buf.length > 2 * 1024 * 1024) throw new Error('Image too large (max 2MB)');
+  const isJpeg = buf[0] === 0xff && buf[1] === 0xd8;
+  const isPng = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  const isGif = buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46;
+  if (!isJpeg && !isPng && !isGif) throw new Error('File content does not match image format');
+  const safeExt = ext === 'jpeg' ? 'jpg' : ext;
+  const filename = 'charity_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + safeExt;
+  fs.writeFileSync(path.join(PUBLIC_DIR, filename), buf);
+  return { url: '/' + filename };
+});
+
+// Task (Find the Right Person)
+route('GET', '/task/jobs', async (b) => {
+  const limit = parseInt(b.limit) || 50;
+  const offset = parseInt(b.offset) || 0;
+  const status = b.status || null;
+  return { list: await task.listJobs(limit, offset, status) };
+});
+route('GET', '/task/my', async (b) => {
+  await assertNotBanned(b.uid);
+  return { list: await task.myJobs(b.uid, parseInt(b.limit) || 50) };
+});
+route('GET', /^\/task\/job\/(.+)$/, async (_, m) => task.getJob(m[1]));
+route('POST', '/task/create', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.createJob(b.uid, b);
+});
+route('POST', '/task/apply', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.apply(b.uid, b.jobId, b.message);
+});
+route('GET', /^\/task\/applications\/(.+)$/, async (_, m) => ({ list: await task.listApplications(m[1]) }));
+route('POST', '/task/accept', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.acceptApplication(b.uid, b.jobId, b.applicationId);
+});
+route('POST', '/task/message', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.postMessage(b.uid, b.jobId, b.content);
+});
+route('GET', /^\/task\/messages\/(.+)$/, async (_, m) => ({ list: await task.listMessages(m[1]) }));
+route('POST', '/task/deliver', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.submitDelivery(b.uid, b.jobId, b.content, b.proof);
+});
+route('GET', /^\/task\/deliveries\/(.+)$/, async (_, m) => ({ list: await task.listDeliveries(m[1]) }));
+route('POST', '/task/confirm', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.confirmDelivery(b.uid, b.jobId, parseInt(b.rating), b.reviewContent);
+});
+route('POST', '/task/refund', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.requestRefund(b.uid, b.jobId, b.reason);
+});
+route('POST', '/task/refund/agree', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.agreeRefund(b.uid, b.jobId);
+});
+route('POST', '/task/refund/dispute', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.disputeRefund(b.uid, b.jobId, b.reason, b.proof);
+});
+route('POST', '/task/refuse', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.refusePayment(b.uid, b.jobId, b.reason, b.proof);
+});
+route('GET', /^\/task\/dispute\/(.+)$/, async (_, m) => task.store.getTaskDisputeByJob(m[1]));
+route('POST', '/task/vote', async (b) => {
+  await assertNotBanned(b.uid);
+  return await task.vote(b.uid, b.disputeId, b.support);
+});
+route('POST', '/task/admin/rule', async (b) => {
+  await requireAdmin(b.uid);
+  return await task.adminRule(b.uid, b.disputeId, b.decision);
+});
+route('GET', /^\/task\/reviews\/(.+)$/, async (_, m) => ({ list: await task.listReviews(m[1]) }));
+route('POST', '/task/upload', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await assertNotBanned(uid);
+  const dataUrl = b.photo || b.proof || '';
+  if (!dataUrl || !dataUrl.startsWith('data:image/')) throw new GameError(Codes.BAD_INPUT, 'Invalid image');
+  const m = dataUrl.match(/^data:image\/(png|jpeg|jpg|gif);base64,(.+)$/);
+  if (!m) throw new GameError(Codes.BAD_INPUT, 'Invalid image format');
+  const ext = m[1] === 'jpg' ? 'jpeg' : m[1];
+  const buf = Buffer.from(m[2], 'base64');
+  if (buf.length > 5 * 1024 * 1024) throw new GameError(Codes.BAD_INPUT, 'Image too large (max 5MB)');
+  const safeExt = ext === 'jpeg' ? 'jpg' : ext;
+  const filename = 'task_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + safeExt;
+  fs.writeFileSync(path.join(PUBLIC_DIR, filename), buf);
+  return { url: '/' + filename };
+});
+
+// Lottery
+route('GET', '/lottery/products', () => lottery.getProducts());
+route('GET', /^\/lottery\/current\/(.+)$/, async (_, m) => lottery.getCurrentRound(m[1]));
+route('GET', /^\/lottery\/mynumbers\/(.+)\/(.+)$/, async (_, m) => lottery.getMyNumbers(m[1], m[2]));
+route('GET', /^\/lottery\/history\/(.+)$/, async (_, m) => lottery.getHistory(m[1]));
+route('GET', /^\/lottery\/comments\/(.+)$/, async (_, m) => lottery.getComments(m[1]));
+route('POST', '/lottery/buy', async (b) => {
+  await assertNotBanned(b.uid);
+  return lottery.buy(b.uid, b.productId, parseInt(b.amount, 10));
+});
+route('POST', '/lottery/comment', async (b) => {
+  await assertNotBanned(b.uid);
+  return lottery.addComment(b.productId, b.uid, String(b.content || '').slice(0, 200));
+});
+route('GET', '/health', () => ({ ok: true, service: 'wish-game', build: BUILD, store: store.kind, chain: chain.enabled, ts: now() }));
+// Debug: NPC activity status
+route('GET', '/debug/npc', async (b, _, req) => {
+  const uid = authUid(b, req);
+  await requireAdmin(uid);
+  const npcs = await npc.listNpcs();
+  const nowTs = now();
+  // #17 NPC fund reconciliation
+  let npcTotalBalance = 0n;
+  for (const n of npcs) {
+    try {
+      const acc = await store.getAccount(n.uid);
+      npcTotalBalance += acc.available + acc.frozen;
+    } catch { /* account may not exist */ }
+  }
+  const npcFlows = await store.exec('SELECT SUM(amount) as total FROM flows WHERE type=?', ['NPC_FUND']).catch(() => [{ total: '0' }]);
+  const npcFunded = BigInt(npcFlows[0]?.total || '0');
+  const ledger = await store.getLedger();
+  return {
+    now: nowTs,
+    npcCount: npcs.length,
+    npcReconciliation: {
+      totalBalance: npcTotalBalance.toString(),
+      totalFunded: npcFunded.toString(),
+      ledgerIssued: ledger.issued.toString(),
+      warning: npcTotalBalance > 0n ? 'REMINDER: ensure withdrawal wallet has at least ' + (Number(npcTotalBalance) / Number(SCALE)) + ' coins to cover NPC losses' : 'OK',
+    },
+    rooms: (await voice.listRooms()).map(r => ({ id: r.roomId, name: r.name, type: r.type, members: r.memberCount })),
+    npcs: npcs.map(n => ({
+      id: n.npcId, uid: n.uid, wallet: n.wallet, lang: n.language,
+      bal: n.balance,
+      chatDue: n.nextChatAt <= nowTs, chatNextIn: Math.max(0, n.nextChatAt - nowTs),
+      postDue: n.nextPostAt <= nowTs, postNextIn: Math.max(0, n.nextPostAt - nowTs),
+      betDue: n.nextBetAt <= nowTs, betNextIn: Math.max(0, n.nextBetAt - nowTs),
+      lastChat: n.lastChatAt, lastPost: n.lastPostAt, lastBet: n.lastBetAt,
+    })),
+  };
+});
+  return routes;
+}

@@ -97,6 +97,9 @@ function readBody(req) {
 // Create two app instances: real and demo (separate databases)
 const appReal = await createApp();
 const appDemo = await createApp(undefined, process.env, 'railway_demo');
+// Override demo config: faster cycles for demonstration
+appDemo.cfg.payoutEverySec = 20 * 60; // 20 minutes insurance release
+appDemo.cfg.settleAfterSec = 60; // 1 minute wish settlement
 console.log('[demo] Demo app initialized with database: railway_demo');
 console.log('[config] Real payoutEverySec:', appReal.cfg.payoutEverySec, '(' + (appReal.cfg.payoutEverySec / 3600) + ' hours)');
 console.log('[config] Demo payoutEverySec:', appDemo.cfg.payoutEverySec, '(' + (appDemo.cfg.payoutEverySec / 60) + ' minutes)');

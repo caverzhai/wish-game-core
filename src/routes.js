@@ -433,6 +433,22 @@ route('POST', '/admin/fix-node-amounts', async (q) => {
   }
   return { fixed: results.filter(r => r.fixed).length, results };
 });
+
+// TEMPORARY: Emergency insurance rollback (real instance only)
+if (!isDemo) {
+  route('POST', '/admin/recovery/rollback-insurance', async (b, req) => {
+    const secret = b.secret || req.headers['x-recovery-secret'];
+    const RECOVERY_SECRET = process.env.RECOVERY_SECRET || 'wish-recovery-2026-emergency';
+    if (secret !== RECOVERY_SECRET) {
+      const uid = authUid(b, req);
+      await requireAdmin(uid);
+    }
+    if (!recovery) return { ok: false, error: 'recovery service not available' };
+    const result = await recovery.rollbackInsurance();
+    return { ok: true, result };
+  });
+}
+
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium
 route('POST', '/insurance/deposit/onchain', async (b) => {
   await assertNotBanned(b.uid);

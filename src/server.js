@@ -98,6 +98,9 @@ function readBody(req) {
 const appReal = await createApp();
 const appDemo = await createApp(undefined, process.env, 'railway_demo');
 console.log('[demo] Demo app initialized with database: railway_demo');
+console.log('[config] Real payoutEverySec:', appReal.cfg.payoutEverySec, '(' + (appReal.cfg.payoutEverySec / 3600) + ' hours)');
+console.log('[config] Demo payoutEverySec:', appDemo.cfg.payoutEverySec, '(' + (appDemo.cfg.payoutEverySec / 60) + ' minutes)');
+console.log('[config] Real settleAfterSec:', appReal.cfg.settleAfterSec, 'Demo settleAfterSec:', appDemo.cfg.settleAfterSec);
 
 // Setup routes for both instances
 const routesReal = setupRoutes(appReal, BUILD, false);

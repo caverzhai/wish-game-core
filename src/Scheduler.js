@@ -1,4 +1,4 @@
-// =============================================================
+﻿// =============================================================
 // Scheduler.js - async tick: auto-settle expired rounds + run 6h payouts
 // No auto new round: after settlement, a new round starts only on first bet via GameService.bet
 // Production: cron/queue + single-instance leader lock; single container: setInterval calling this tick
@@ -51,7 +51,11 @@ export class Scheduler {
         this.lastPayoutSeq = targetSeq - 1;
       }
     }
-    for (let seq = this.lastPayoutSeq + 1; seq <= targetSeq; seq++) {
+    // Limit to 5 batches per tick to prevent overload
+    const maxBatchesPerTick = 5;
+    let batchesProcessed = 0;
+    for (let seq = this.lastPayoutSeq + 1; seq <= targetSeq && batchesProcessed < maxBatchesPerTick; seq++) {
+      batchesProcessed++;
       try {
         console.log('[scheduler] running payout batch seq=' + seq);
         const result = await insurance.runPayoutBatch(seq * cfg.payoutEverySec + 1);
@@ -60,7 +64,8 @@ export class Scheduler {
         this.lastPayoutSeq = seq;
       } catch (e) {
         console.log('[scheduler] payout batch error seq=' + seq + ':', e.message);
-        // Do NOT advance lastPayoutSeq on error - retry next tick
+        // Advance lastPayoutSeq even on error to prevent infinite retry on bad batch
+        this.lastPayoutSeq = seq;
         break;
       }
     }

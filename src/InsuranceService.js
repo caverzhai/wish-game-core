@@ -97,9 +97,10 @@ export class InsuranceService {
   async runPayoutBatch(currentSec) {
     const s = this.store, cfg = this.cfg;
     const currentSeq = batchSeqAt(currentSec, cfg);
-    if (await s.hasPaidBatch(currentSeq)) return { status: 'skip', currentSeq };
 
     return await s.transaction(async () => {
+      // Check inside transaction to prevent race condition
+      if (await s.hasPaidBatch(currentSeq)) return { status: 'skip', currentSeq };
       const active = await s.listNodes({ active: true });
       let dueTotal = 0n;
       const dues = new Map();

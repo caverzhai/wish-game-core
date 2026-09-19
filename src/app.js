@@ -19,6 +19,8 @@ export function useMysql(env = process.env) {
 }
 
 export async function createApp(cfg = DEFAULT_CONFIG, env = process.env, databaseOverride = null) {
+  // Demo mode: apply faster config overrides
+  const effectiveCfg = databaseOverride ? { ...cfg, ...DEMO_CONFIG_OVERRIDES } : cfg;
   const store = useMysql(env) ? new MysqlStore(env, databaseOverride) : new MemoryStore();
   await store.init();
   const insurance = new InsuranceService(store, effectiveCfg);

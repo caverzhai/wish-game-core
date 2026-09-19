@@ -109,16 +109,14 @@ const routesDemo = setupRoutes(appDemo, BUILD, true);
 // Schedulers for both instances
 const schedulerReal = new Scheduler(appReal);
 const schedulerDemo = new Scheduler(appDemo);
-// EMERGENCY: scheduler disabled to prevent payout bug
-console.log('[EMERGENCY] Scheduler DISABLED - payout bug investigation');
 let tickRunning = false;
 setInterval(() => {
   if (tickRunning) return;
   tickRunning = true;
   Promise.all([
-    // schedulerReal.tick(now()).catch((e) => console.error('[tick-real]', e.message)),
+    schedulerReal.tick(now()).catch((e) => console.error('[tick-real]', e.message)),
     appReal.npc.tick(now()).catch((e) => console.error('[npc-tick-real]', e.message)),
-    // schedulerDemo.tick(now()).catch((e) => console.error('[tick-demo]', e.message)),
+    schedulerDemo.tick(now()).catch((e) => console.error('[tick-demo]', e.message)),
     appDemo.npc.tick(now()).catch((e) => console.error('[npc-tick-demo]', e.message)),
   ]).finally(() => { tickRunning = false; });
 }, 10000);

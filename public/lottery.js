@@ -9,7 +9,7 @@ const Lottery = (() => {
 
   async function loadProducts() {
     try {
-      const res = await fetch('/lottery/products');
+      const res = await fetch(demoUrl('/lottery/products'));
       const products = await res.json();
       renderProducts(products);
     } catch (e) {
@@ -53,7 +53,7 @@ const Lottery = (() => {
 
   async function openDetail(productId) {
     try {
-      const res = await fetch(`/lottery/current/${productId}`);
+      const res = await fetch(demoUrl(`/lottery/current/${productId}`));
       const data = await res.json();
       currentProduct = data;
       renderDetail(data);
@@ -279,7 +279,7 @@ async function topUpAndBuy(amount, totalCost) {
   async function loadMyNumbers(productId) {
     if (typeof state === 'undefined' || !state.uid) return;
     try {
-      const res = await fetch(`/lottery/mynumbers/${productId}/${state.uid}`);
+      const res = await fetch(demoUrl(`/lottery/mynumbers/${productId}/${state.uid}`));
       const numbers = await res.json();
       const list = document.getElementById('lotteryMyNumbersList');
       if (!list) return;
@@ -297,7 +297,7 @@ async function topUpAndBuy(amount, totalCost) {
 
   async function loadComments(productId) {
     try {
-      const res = await fetch(`/lottery/comments/${productId}`);
+      const res = await fetch(demoUrl(`/lottery/comments/${productId}`));
       const comments = await res.json();
       const list = document.getElementById('lotteryCommentList');
       if (!list) return;
@@ -332,7 +332,7 @@ async function topUpAndBuy(amount, totalCost) {
 
   async function loadHistory(productId) {
     try {
-      const res = await fetch(`/lottery/history/${productId}`);
+      const res = await fetch(demoUrl(`/lottery/history/${productId}`));
       const history = await res.json();
       const list = document.getElementById('lotteryHistoryList');
       if (!list) return;

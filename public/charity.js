@@ -6,7 +6,7 @@
 
   function t(k) { return (typeof window.t === 'function') ? window.t(k) : k; }
   function api(path, body) {
-    const doFetch = (opts) => fetch(path, opts).then(async r => {
+    const doFetch = (opts) => fetch((localStorage.getItem('demoMode') === '1' || location.pathname.startsWith('/demo')) && !path.startsWith('/demo/') && !path.startsWith('http') ? '/demo' + path : path, opts).then(async r => {
       const data = await r.json().catch(() => ({}));
       if (!r.ok || data.error) {
         throw new Error(data.error || data.message || ('HTTP ' + r.status));

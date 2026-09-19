@@ -10,7 +10,7 @@ export class RecoveryService {
       const report = { usersRolledBack: 0, totalRolledBack: 0, nodesReset: 0, batchesCleared: 0, logsCleared: 0, flowsCleared: 0 };
 
       // 1. Query all NODE_PAYOUT flows, group by uid
-      const [payoutFlows] = await s.exec(
+      const payoutFlows = await s.exec(
         "SELECT uid, SUM(amount) total FROM flows WHERE biz_type='NODE_PAYOUT' GROUP BY uid"
       );
       
@@ -30,21 +30,21 @@ export class RecoveryService {
       }
 
       // 3. Clear payout_batches
-      const [batchResult] = await s.exec('DELETE FROM payout_batches');
+      const batchResult = await s.exec('DELETE FROM payout_batches');
       report.batchesCleared = batchResult.affectedRows;
 
       // 4. Clear node_logs
-      const [logResult] = await s.exec('DELETE FROM node_logs');
+      const logResult = await s.exec('DELETE FROM node_logs');
       report.logsCleared = logResult.affectedRows;
 
       // 5. Reset all nodes
-      const [nodeResult] = await s.exec(
+      const nodeResult = await s.exec(
         "UPDATE nodes SET period_n=0, paid_amount=0, paid_to_user=0, forfeited=0, state='active' WHERE state != 'active' OR period_n > 0"
       );
       report.nodesReset = nodeResult.affectedRows;
 
       // 6. Delete NODE_PAYOUT and NODE_FORFEIT flows
-      const [flowResult] = await s.exec(
+      const flowResult = await s.exec(
         "DELETE FROM flows WHERE biz_type IN ('NODE_PAYOUT', 'NODE_FORFEIT')"
       );
       report.flowsCleared = flowResult.affectedRows;

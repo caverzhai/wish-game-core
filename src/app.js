@@ -46,5 +46,5 @@ export async function createApp(cfg = DEFAULT_CONFIG, env = process.env, databas
       console.log(`[ledger-fix] backfill voice room platform revenue diff=${diff} inside=${inside} source=${source}`);
     }
   } catch (e) { console.error('[ledger-fix] error', e.message); }
-  return { store, cfg: effectiveCfg, insurance, game, wallet, social, chain, voice, npc, lottery, charity, task, storeKind: store.kind };
+  return { store, cfg: effectiveCfg, insurance, game, wallet, social, chain, voice, npc, lottery, charity, task, recovery, storeKind: store.kind };
 }

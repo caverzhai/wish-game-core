@@ -403,7 +403,9 @@ async function api(url, body) {
   const token = localStorage.getItem('token');
   if (token) headers['Authorization'] = 'Bearer ' + token;
   const opt = body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers };
-  const r = await fetch(url, opt); const j = await r.json();
+  const isDemoMode = localStorage.getItem('demoMode') === '1' || location.pathname.startsWith('/demo');
+  const fullUrl = (isDemoMode && !url.startsWith('/demo/') && !url.startsWith('http')) ? '/demo' + url : url;
+  const r = await fetch(fullUrl, opt); const j = await r.json();
   if (!r.ok) { const err = new Error(j.message || j.error || 'error'); err.code = j.code; throw err; }
   return j;
 }

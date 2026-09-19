@@ -14,7 +14,7 @@ const now = () => Math.floor(Date.now() / 1000);
 const coinNum = (v) => Number(BigInt(v)) / Number(SCALE);
 
 export function setupRoutes(app, BUILD, isDemo = false) {
-  const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery, charity, task, recovery } = app;
+  const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery, charity, task, recovery, backup } = app;
   const routes = [];
   const route = (method, p, h) => routes.push({ method, p, h });
 

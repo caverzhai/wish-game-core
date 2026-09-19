@@ -225,7 +225,7 @@ export class MysqlStore {
     const e = this.env;
     const opts = { supportBigNumbers: true, bigNumberStrings: false, connectionLimit: 10, enableKeepAlive: true };
     const dbName = this.databaseOverride || e.MYSQLDATABASE || e.MYSQL_DATABASE || 'railway';
-    const url = e.DATABASE_URL || e.MYSQL_URL || e.MYSQL_PRIVATE_URL || e.MYSQL_PUBLIC_URL;
+    let url = e.DATABASE_URL || e.MYSQL_URL || e.MYSQL_PRIVATE_URL || e.MYSQL_PUBLIC_URL;
     if (url) {
       // Demo mode: replace database name in URL
       if (this.databaseOverride) { try { const u = new URL(url); u.pathname = '/' + this.databaseOverride; url = u.toString(); } catch (e) { console.error('[mysql] parse url failed:', e.message); } }

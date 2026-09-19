@@ -514,7 +514,7 @@ route('GET', '/admin/demo/scan', async (b, req) => {
     result.totalFlows = (await store.exec('SELECT COUNT(*) as cnt FROM flows WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
     result.totalBets = (await store.exec('SELECT COUNT(*) as cnt FROM bets WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
     result.totalAccounts = (await store.exec('SELECT COUNT(*) as cnt FROM accounts WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
-    result.totalNodes = (await store.exec('SELECT COUNT(*) as cnt FROM insurance_nodes WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
+    result.totalNodes = (await store.exec('SELECT COUNT(*) as cnt FROM nodes WHERE uid IN (' + placeholders + ')', demoUids))[0].cnt;
   }
   return result;
 });
@@ -531,7 +531,7 @@ route('POST', '/admin/demo/cleanup', async (b, req) => {
   deleted.flows = (await store.exec('DELETE FROM flows WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
   deleted.bets = (await store.exec('DELETE FROM bets WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
   deleted.accounts = (await store.exec('DELETE FROM accounts WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
-  deleted.insuranceNodes = (await store.exec('DELETE FROM insurance_nodes WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
+  deleted.insuranceNodes = (await store.exec('DELETE FROM nodes WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
   deleted.users = (await store.exec('DELETE FROM users WHERE uid IN (' + placeholders + ')', demoUids)).affectedRows;
   return { ok: true, deletedDemoUsers: demoUids.length, demoUids, deleted };
 });

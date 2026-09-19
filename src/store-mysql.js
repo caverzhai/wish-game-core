@@ -1,4 +1,4 @@
-﻿// =============================================================
+// =============================================================
 // store-mysql.js - MySQL persistent store, interface identical to MemoryStore
 // Railway injects MYSQLHOST/PORT/USER/PASSWORD/DATABASE when MySQL added, auto-enabled
 // Amount columns use BIGINT for 1e-6 min unit; write as string, read converts to BigInt
@@ -384,7 +384,7 @@ export class MysqlStore {
     const where = [], vals = [];
     if (uid) { where.push('uid=?'); vals.push(uid); }
     if (active != null) { where.push('state=?'); vals.push(active ? 'active' : 'done'); }
-    const sql = `SELECT * FROM nodes ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY id`;
+    const sql = `SELECT * FROM nodes ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY id DESC`;
     return (await this.exec(sql, vals)).map((r) => ({
       nodeId: r.node_id, uid: r.uid, total: B(r.total), periodN: r.period_n, paidAmount: B(r.paid_amount),
       paidToUserAmount: B(r.paid_to_user), forfeitedAmount: B(r.forfeited), state: r.state, createdAtSec: Number(r.created_at), batchSeq: r.batch_seq,

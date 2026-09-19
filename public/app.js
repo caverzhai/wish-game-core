@@ -403,7 +403,7 @@ async function api(url, body) {
   const token = localStorage.getItem('token');
   if (token) headers['Authorization'] = 'Bearer ' + token;
   const opt = body ? { method: 'POST', headers, body: JSON.stringify(body) } : { headers };
-  const isDemoMode = localStorage.getItem('demoMode') === '1' || location.pathname.startsWith('/demo');
+  const isDemoMode = window.DEMO_MODE === true || localStorage.getItem('demoMode') === '1';
   const fullUrl = (isDemoMode && !url.startsWith('/demo/') && !url.startsWith('http')) ? '/demo' + url : url;
   const r = await fetch(fullUrl, opt); const j = await r.json();
   if (!r.ok) { const err = new Error(j.message || j.error || 'error'); err.code = j.code; throw err; }
@@ -2139,7 +2139,7 @@ function init() {
   bindSwipe();
   $('disclaimerConfirm').onclick = confirmDisclaimer;
   // Auto demo mode detection: if URL contains /demo, auto login
-  if (location.pathname === '/demo' || location.pathname.startsWith('/demo/')) {
+  if (window.DEMO_MODE === true) {
     setTimeout(() => { demoEnter(); }, 500);
   }
 

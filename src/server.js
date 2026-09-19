@@ -94,48 +94,54 @@ function readBody(req) {
   });
 }
 
-// Create two app instances: real and demo (separate databases)
-const appReal = await createApp();
-const appDemo = await createApp(undefined, process.env, 'railway_demo');
-// Override demo config: faster cycles for demonstration
-appDemo.cfg.payoutEverySec = 20 * 60; // 20 minutes insurance release
-appDemo.cfg.settleAfterSec = 60; // 1 minute wish settlement
-console.log('[demo] Demo app initialized with database: railway_demo');
-console.log('[config] Real payoutEverySec:', appReal.cfg.payoutEverySec, '(' + (appReal.cfg.payoutEverySec / 3600) + ' hours)');
-console.log('[config] Demo payoutEverySec:', appDemo.cfg.payoutEverySec, '(' + (appDemo.cfg.payoutEverySec / 60) + ' minutes)');
-console.log('[config] Real settleAfterSec:', appReal.cfg.settleAfterSec, 'Demo settleAfterSec:', appDemo.cfg.settleAfterSec);
+// Determine mode: real (default) or demo
+const IS_DEMO_MODE = process.env.DEMO_MODE === 'true' || process.env.DEMO_MODE === '1';
+const DB_NAME = IS_DEMO_MODE ? 'railway_demo' : null;
 
-// Setup routes for both instances
-const routesReal = setupRoutes(appReal, BUILD, false);
-const routesDemo = setupRoutes(appDemo, BUILD, true);
+// Create single app instance based on mode
+const app = await createApp(undefined, process.env, DB_NAME);
 
-// Schedulers for both instances
-const schedulerReal = new Scheduler(appReal);
-const schedulerDemo = new Scheduler(appDemo);
+// Demo mode overrides: faster cycles for demonstration
+if (IS_DEMO_MODE) {
+  app.cfg.payoutEverySec = 20 * 60; // 20 minutes insurance release
+  app.cfg.settleAfterSec = 60; // 1 minute wish settlement
+  console.log('[demo] Running in DEMO mode with database: railway_demo');
+  console.log('[config] Demo payoutEverySec:', app.cfg.payoutEverySec, '(' + (app.cfg.payoutEverySec / 60) + ' minutes)');
+  console.log('[config] Demo settleAfterSec:', app.cfg.settleAfterSec, 'seconds');
+} else {
+  console.log('[real] Running in REAL mode with default database');
+  console.log('[config] Real payoutEverySec:', app.cfg.payoutEverySec, '(' + (app.cfg.payoutEverySec / 3600) + ' hours)');
+  console.log('[config] Real settleAfterSec:', app.cfg.settleAfterSec, 'seconds');
+}
+
+// Setup routes
+const routes = setupRoutes(app, BUILD, IS_DEMO_MODE);
+
+// Scheduler
+const scheduler = new Scheduler(app);
 let tickRunning = false;
 let lastAutoBackupDate = null;
 setInterval(() => {
   if (tickRunning) return;
   tickRunning = true;
   Promise.all([
-    schedulerReal.tick(now()).catch((e) => console.error('[tick-real]', e.message)),
+    scheduler.tick(now()).catch((e) => console.error('[tick]', e.message)),
     // Auto backup check (once per day, real instance only)
     (async () => {
+      if (IS_DEMO_MODE) return; // Skip auto backup in demo mode
       try {
         const today = new Date().toISOString().slice(0, 10);
         if (lastAutoBackupDate !== today) {
           lastAutoBackupDate = today;
           console.log('[auto-backup] Starting daily backup...');
-          const result = await appReal.backup.autoBackupDaily();
+          const result = await app.backup.autoBackupDaily();
           console.log('[auto-backup] Completed:', JSON.stringify(result));
         }
       } catch (e) {
         console.error('[auto-backup] Error:', e.message);
       }
     })(),
-    appReal.npc.tick(now()).catch((e) => console.error('[npc-tick-real]', e.message)),
-    schedulerDemo.tick(now()).catch((e) => console.error('[tick-demo]', e.message)),
-    appDemo.npc.tick(now()).catch((e) => console.error('[npc-tick-demo]', e.message)),
+    app.npc.tick(now()).catch((e) => console.error('[npc-tick]', e.message)),
   ]).finally(() => { tickRunning = false; });
 }, 10000);
 
@@ -157,10 +163,7 @@ const server = http.createServer(async (req, res) => {
     return res.end(jstr({ error: 'RateLimit', message: 'Too many requests, please slow down' }));
   }
   const url = new URL(req.url, 'http://localhost');
-  // Determine if this is a demo request and strip /demo prefix
-  const isDemo = url.pathname === '/demo' || url.pathname.startsWith('/demo/');
-  const routePath = isDemo ? (url.pathname === '/demo' ? '/' : url.pathname.slice(5)) : url.pathname;
-  const routes = isDemo ? routesDemo : routesReal;
+  const routePath = url.pathname;
   try {
     if (routes.some((r) => (typeof r.p === 'string' ? r.p === routePath : r.p.test(routePath)))) {
       const body = req.method === 'POST' ? await readBody(req) : Object.fromEntries(url.searchParams.entries());
@@ -174,15 +177,17 @@ const server = http.createServer(async (req, res) => {
         }
       }
     }
-    // Demo mode: serve index.html for /demo, strip /demo/ prefix for static assets
     let staticPath = url.pathname;
-    if (staticPath === '/demo' || staticPath === '/demo/') staticPath = '/index.html';
-    else if (staticPath.startsWith('/demo/')) staticPath = staticPath.slice(5);
     let file = staticPath === '/' ? 'index.html' : staticPath.replace(/^\/+/, '');
     const fp = path.join(PUBLIC_DIR, file);
     if (fp.startsWith(PUBLIC_DIR) && fs.existsSync(fp) && fs.statSync(fp).isFile()) {
+      let fileContent = fs.readFileSync(fp);
+      // Demo mode: inject DEMO_MODE flag into index.html
+      if (IS_DEMO_MODE && file === 'index.html') {
+        fileContent = fileContent.toString().replace('<head>', '<head><script>window.DEMO_MODE = true;</script>');
+      }
       res.writeHead(200, { 'content-type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-cache, must-revalidate' });
-      return res.end(fs.readFileSync(fp));
+      return res.end(fileContent);
     }
     res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' }).end(jstr({ error: 'not found' }));
   } catch (e) {
@@ -197,12 +202,12 @@ const server = http.createServer(async (req, res) => {
 });
 
 // Voice room WebSocket + per-minute billing
-const wss = createWSServer(server, appReal.voice);
+const wss = createWSServer(server, app.voice);
 setInterval(async () => {
   try {
-    const destroyed = await appReal.voice.tick();
-    for (const rid of destroyed) if (appReal.voice._broadcastClosed) appReal.voice._broadcastClosed(rid);
-    await appReal.voice.flushPersistence();
+    const destroyed = await app.voice.tick();
+    for (const rid of destroyed) if (app.voice._broadcastClosed) app.voice._broadcastClosed(rid);
+    await app.voice.flushPersistence();
   } catch (e) { console.error('[voice-tick]', e.message); }
 }, 60000);
 
@@ -211,55 +216,55 @@ setInterval(async () => {
   try {
     // Migration: add region fields to users table if not exist
     try {
-      const cols = await appReal.store.pool.query("SHOW COLUMNS FROM users LIKE 'country'");
+      const cols = await app.store.pool.query("SHOW COLUMNS FROM users LIKE 'country'");
       if (cols[0].length === 0) {
-        await appReal.store.pool.query('ALTER TABLE users ADD COLUMN country VARCHAR(100) NULL, ADD COLUMN region VARCHAR(200) NULL, ADD COLUMN city VARCHAR(200) NULL');
+        await app.store.pool.query('ALTER TABLE users ADD COLUMN country VARCHAR(100) NULL, ADD COLUMN region VARCHAR(200) NULL, ADD COLUMN city VARCHAR(200) NULL');
         console.log('[migration] added country/region/city columns to users table');
       }
     } catch (e) { console.error('[migration] region fields:', e.message); }
     const nowS = now();
-    const [stuck] = await appReal.store.pool.query("SELECT round_id FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
+    const [stuck] = await app.store.pool.query("SELECT round_id FROM rounds WHERE state IN ('active','locked') AND settle_at < ?", [nowS - 60]);
     for (const row of stuck) {
       try {
-        await appReal.game.settle(nowS); // settle will handle refund/cancellation properly
+        await app.game.settle(nowS); // settle will handle refund/cancellation properly
         console.log('[startup-repair] settled stuck round', row.round_id);
       } catch (e) {
         console.error('[startup-repair] failed to settle round', row.round_id, e.message);
       }
     }
-    const inside = await appReal.store.totalInside();
-    const l = await appReal.store.getLedger();
+    const inside = await app.store.totalInside();
+    const l = await app.store.getLedger();
     const source = l.issued - l.withdrawn;
     const delta = inside - source;
     if (delta !== 0n) {
-      await appReal.store.pool.query('UPDATE ledger SET issued=issued+? WHERE id=1', [delta.toString()]);
+      await app.store.pool.query('UPDATE ledger SET issued=issued+? WHERE id=1', [delta.toString()]);
       console.log('[startup-repair] ledger fixed, delta=', delta.toString());
     }
   // Assign languages and initial funding to existing NPCs (created before v2.5.0)
   try {
-    const npcs = await appReal.store.listNpcs();
+    const npcs = await app.store.listNpcs();
     const langs = ['en', 'zh-TW', 'ja', 'ar', 'id', 'ko', 'ru', 'hi', 'ur'];
     const COIN = 1000000n;
     const START_BAL = 100n * COIN;
     let langIdx = 0, funded = 0;
     for (const n of npcs) {
       if (!n.language || n.language === 'en') {
-        await appReal.store.updateNpc(n.npcId, { language: langs[langIdx % langs.length] });
+        await app.store.updateNpc(n.npcId, { language: langs[langIdx % langs.length] });
         langIdx++;
       }
       // Set initial bet time if not set
       if (!n.nextBetAt || n.nextBetAt === 0) {
         const nextBet = Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1800) + 1800;
-        await appReal.store.updateNpc(n.npcId, { nextBetAt: nextBet });
+        await app.store.updateNpc(n.npcId, { nextBetAt: nextBet });
       }
       // Fund with 100 coins if balance is 0 (from platform account)
       try {
-        const acc = await appReal.store.getAccount(n.uid);
+        const acc = await app.store.getAccount(n.uid);
         if (acc.available < START_BAL / 2n) {
-          await appReal.store.transaction(async () => {
-            await appReal.store.applyLedger({ plat: -START_BAL });
-            await appReal.store.applyAccount(n.uid, { avail: START_BAL });
-            await appReal.store.addFlow(n.uid, 'NPC_FUND', START_BAL, { note: 'startup repair initial funding' });
+          await app.store.transaction(async () => {
+            await app.store.applyLedger({ plat: -START_BAL });
+            await app.store.applyAccount(n.uid, { avail: START_BAL });
+            await app.store.addFlow(n.uid, 'NPC_FUND', START_BAL, { note: 'startup repair initial funding' });
           }, 'npc-startup-fund');
           funded++;
         }
@@ -272,11 +277,11 @@ setInterval(async () => {
     const gen0x = () => '0x' + Array.from({length: 40}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
     for (const n of npcs) {
       try {
-        const u = await appReal.store.getUser(n.uid);
+        const u = await app.store.getUser(n.uid);
         if (u && (u.wallet.startsWith('NPC_') || u.wallet.startsWith('NPC-') || n.wallet.startsWith('NPC_'))) {
           const newWallet = gen0x();
-          await appReal.store.exec('UPDATE users SET wallet = ? WHERE uid = ?', [newWallet, n.uid]);
-          await appReal.store.exec('UPDATE npcs SET wallet = ? WHERE npc_id = ?', [newWallet, n.npcId]);
+          await app.store.exec('UPDATE users SET wallet = ? WHERE uid = ?', [newWallet, n.uid]);
+          await app.store.exec('UPDATE npcs SET wallet = ? WHERE npc_id = ?', [newWallet, n.npcId]);
           walletFixed++;
         }
       } catch { /* user may not exist */ }
@@ -287,4 +292,4 @@ setInterval(async () => {
 })();
 
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, '0.0.0.0', () => console.log(`wish-game listening 0.0.0.0:${PORT} store=${appReal.store.kind} chain=${appReal.chain.enabled}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`wish-game listening 0.0.0.0:${PORT} store=${app.store.kind} chain=${app.chain.enabled}`));

@@ -14,7 +14,7 @@ const now = () => Math.floor(Date.now() / 1000);
 const coinNum = (v) => Number(BigInt(v)) / Number(SCALE);
 
 export function setupRoutes(app, BUILD, isDemo = false) {
-  const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery, charity, task } = app;
+  const { game, wallet, insurance, social, chain, store, cfg, voice, npc, lottery, charity, task, recovery } = app;
   const routes = [];
   const route = (method, p, h) => routes.push({ method, p, h });
 
@@ -50,6 +50,16 @@ export function setupRoutes(app, BUILD, isDemo = false) {
       if (payload && payload.uid) return payload.uid;
     }
     return b.uid || null;
+  }
+
+  // TEMPORARY: Emergency insurance rollback (real instance only, admin only)
+  if (!isDemo && recovery) {
+    route('POST', '/admin/recovery/rollback-insurance', async (b, req) => {
+      const uid = authUid(b, req);
+      await requireAdmin(uid);
+      const result = await recovery.rollbackInsurance();
+      return { ok: true, result };
+    });
   }
 
   // Demo mode: auto-login with browser fingerprint (no wallet signature required)

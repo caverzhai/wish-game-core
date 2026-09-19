@@ -12,6 +12,7 @@ import { NpcService } from './NpcService.js';
 import { LotteryService } from './LotteryService.js';
 import { CharityService } from './CharityService.js';
 import { TaskService } from './TaskService.js';
+import { RecoveryService } from './RecoveryService.js';
 
 const MYSQL_KEYS = ['DATABASE_URL', 'MYSQL_URL', 'MYSQL_PUBLIC_URL', 'MYSQL_PRIVATE_URL', 'MYSQLHOST', 'MYSQL_HOST', 'MYSQLDATABASE', 'MYSQL_DATABASE'];
 export function useMysql(env = process.env) {
@@ -33,6 +34,7 @@ export async function createApp(cfg = DEFAULT_CONFIG, env = process.env, databas
   const lottery = new LotteryService(store);
   const charity = new CharityService(store, effectiveCfg, insurance);
   const task = new TaskService(store, effectiveCfg, insurance);
+  const recovery = new RecoveryService(store);
   // Fix historical voice room unrecorded platform revenue (pre-v2.2.5 room creation deducted user balance but not platform, causing ledger imbalance)
   try {
     const inside = await store.totalInside();

@@ -448,6 +448,58 @@ if (!isDemo) {
     return { ok: true, result };
   });
 }
+// Backup management endpoints
+if (!isDemo) {
+  route('POST', '/admin/backup/create', async (b, req) => {
+    const secret = b.secret || req.headers['x-backup-secret'];
+    const BACKUP_SECRET = process.env.BACKUP_SECRET || 'wish-backup-2026-secure';
+    if (secret !== BACKUP_SECRET) {
+      const uid = authUid(b, req);
+      await requireAdmin(uid);
+    }
+    if (!backup) return { ok: false, error: 'backup service not available' };
+    const result = await backup.createBackup(b.name || null, 'manual', b.retainDays || null);
+    return { ok: true, result };
+  });
+
+  route('GET', '/admin/backup/list', async (b, req) => {
+    const secret = b.secret || req.headers['x-backup-secret'];
+    const BACKUP_SECRET = process.env.BACKUP_SECRET || 'wish-backup-2026-secure';
+    if (secret !== BACKUP_SECRET) {
+      const uid = authUid(b, req);
+      await requireAdmin(uid);
+    }
+    if (!backup) return { ok: false, error: 'backup service not available' };
+    const list = await backup.listBackups(b.limit || 20);
+    return { ok: true, list };
+  });
+
+  route('POST', '/admin/backup/restore/:id', async (b, req) => {
+    const secret = b.secret || req.headers['x-backup-secret'];
+    const BACKUP_SECRET = process.env.BACKUP_SECRET || 'wish-backup-2026-secure';
+    if (secret !== BACKUP_SECRET) {
+      const uid = authUid(b, req);
+      await requireAdmin(uid);
+    }
+    if (!backup) return { ok: false, error: 'backup service not available' };
+    const backupId = req.params.id;
+    const result = await backup.restoreBackup(backupId);
+    return { ok: true, result };
+  });
+
+  route('POST', '/admin/backup/delete/:id', async (b, req) => {
+    const secret = b.secret || req.headers['x-backup-secret'];
+    const BACKUP_SECRET = process.env.BACKUP_SECRET || 'wish-backup-2026-secure';
+    if (secret !== BACKUP_SECRET) {
+      const uid = authUid(b, req);
+      await requireAdmin(uid);
+    }
+    if (!backup) return { ok: false, error: 'backup service not available' };
+    const backupId = req.params.id;
+    await backup.deleteBackup(backupId);
+    return { ok: true, backupId };
+  });
+}
 
 // Premium on-chain top-up: in-site balance first and fully used, wallet covers rest, then available->premium
 route('POST', '/insurance/deposit/onchain', async (b) => {

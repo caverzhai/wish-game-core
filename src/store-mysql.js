@@ -954,6 +954,43 @@ export class MysqlStore {
     await this.exec('DELETE FROM admins WHERE wallet=?', [String(wallet).toLowerCase()]);
     return true;
   }
+  // -------- Backup --------
+  async createBackup(b) {
+    await this.exec('INSERT INTO backups(backup_id,name,type,data,size,table_count,created_at,expires_at) VALUES(?,?,?,?,?,?,?,?)',
+      [b.backupId, b.name, b.type, b.data, b.size, b.tableCount, b.createdAt, b.expiresAt || null]);
+    return b.backupId;
+  }
+  async listBackups(limit = 20, offset = 0) {
+    return await this.exec('SELECT backup_id,name,type,size,table_count,created_at,expires_at FROM backups ORDER BY id DESC LIMIT ? OFFSET ?', [limit, offset]);
+  }
+  async getBackup(backupId) {
+    const rows = await this.exec('SELECT * FROM backups WHERE backup_id=? LIMIT 1', [backupId]);
+    return rows[0] || null;
+  }
+  async deleteBackup(backupId) {
+    await this.exec('DELETE FROM backups WHERE backup_id=?', [backupId]);
+    return true;
+  }
+  async cleanupExpiredBackups(now = Date.now()) {
+    const r = await this.exec('DELETE FROM backups WHERE expires_at IS NOT NULL AND expires_at < ?', [now]);
+    return r.affectedRows;
+  }
+  async getTableData(tableName) {
+    return await this.exec('SELECT * FROM ' + tableName);
+  }
+  async clearTable(tableName) {
+    await this.exec('DELETE FROM ' + tableName);
+  }
+  async insertRows(tableName, rows) {
+    if (!rows || rows.length === 0) return 0;
+    const cols = Object.keys(rows[0]);
+    const placeholders = cols.map(() => '?').join(',');
+    const sql = 'INSERT INTO ' + tableName + '(' + cols.join(',') + ') VALUES(' + placeholders + ')';
+    for (const row of rows) {
+      await this.exec(sql, cols.map(c => row[c]));
+    }
+    return rows.length;
+  }
   async isAdminWallet(wallet) {
     if (!wallet) return false;
     const rows = await this.exec('SELECT id FROM admins WHERE wallet=? LIMIT 1', [String(wallet).toLowerCase()]);

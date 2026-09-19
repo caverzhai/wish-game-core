@@ -110,11 +110,26 @@ const routesDemo = setupRoutes(appDemo, BUILD, true);
 const schedulerReal = new Scheduler(appReal);
 const schedulerDemo = new Scheduler(appDemo);
 let tickRunning = false;
+let lastAutoBackupDate = null;
 setInterval(() => {
   if (tickRunning) return;
   tickRunning = true;
   Promise.all([
     schedulerReal.tick(now()).catch((e) => console.error('[tick-real]', e.message)),
+    // Auto backup check (once per day, real instance only)
+    (async () => {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        if (lastAutoBackupDate !== today) {
+          lastAutoBackupDate = today;
+          console.log('[auto-backup] Starting daily backup...');
+          const result = await appReal.backup.autoBackupDaily();
+          console.log('[auto-backup] Completed:', JSON.stringify(result));
+        }
+      } catch (e) {
+        console.error('[auto-backup] Error:', e.message);
+      }
+    })(),
     appReal.npc.tick(now()).catch((e) => console.error('[npc-tick-real]', e.message)),
     schedulerDemo.tick(now()).catch((e) => console.error('[tick-demo]', e.message)),
     appDemo.npc.tick(now()).catch((e) => console.error('[npc-tick-demo]', e.message)),

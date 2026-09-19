@@ -148,7 +148,11 @@ const server = http.createServer(async (req, res) => {
         }
       }
     }
-    let file = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\/+/, '');
+    // Demo mode: serve index.html for /demo, strip /demo/ prefix for static assets
+    let staticPath = url.pathname;
+    if (staticPath === '/demo' || staticPath === '/demo/') staticPath = '/index.html';
+    else if (staticPath.startsWith('/demo/')) staticPath = staticPath.slice(5);
+    let file = staticPath === '/' ? 'index.html' : staticPath.replace(/^\/+/, '');
     const fp = path.join(PUBLIC_DIR, file);
     if (fp.startsWith(PUBLIC_DIR) && fs.existsSync(fp) && fs.statSync(fp).isFile()) {
       res.writeHead(200, { 'content-type': MIME[path.extname(fp)] || 'application/octet-stream', 'Cache-Control': 'no-cache, must-revalidate' });

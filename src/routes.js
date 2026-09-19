@@ -52,6 +52,38 @@ export function setupRoutes(app, BUILD, isDemo = false) {
     return b.uid || null;
   }
 
+  // Demo mode: auto-login with browser fingerprint (no wallet signature required)
+  if (isDemo) {
+    route('POST', '/demo-login', async (b) => {
+      const fingerprint = String(b.fingerprint || '').trim();
+      if (!fingerprint || fingerprint.length < 8) throw new GameError(Codes.BAD_INPUT, 'Browser fingerprint required');
+      // Generate deterministic demo wallet from fingerprint
+      let hash = 0;
+      for (let i = 0; i < fingerprint.length; i++) {
+        hash = ((hash << 5) - hash + fingerprint.charCodeAt(i)) | 0;
+      }
+      const hex = Math.abs(hash).toString(16).padStart(8, '0') + Math.abs(hash * 31).toString(16).padStart(8, '0') + Math.abs(hash * 17).toString(16).padStart(8, '0') + Math.abs(hash * 7).toString(16).padStart(8, '0') + Math.abs(hash * 3).toString(16).padStart(8, '0');
+      const wallet = '0x' + hex.slice(0, 40);
+      const ex = await store.getUserByWallet(wallet);
+      const isNew = !ex;
+      const u = ex || await game.register(wallet, b.inviterUid ?? null, now());
+      // New demo users get 9999 coins bonus
+      if (isNew) {
+        try {
+          const COIN = 1000000n;
+          const BONUS = 9999n * COIN;
+          await store.transaction(async () => {
+            await store.applyLedger({ plat: -BONUS });
+            await store.applyAccount(u.uid, { avail: BONUS });
+            await store.addFlow(u.uid, 'DEMO_BONUS', BONUS, { note: 'demo new user bonus 9999' });
+          }, 'demo-bonus');
+          console.log('[demo] new user bonus granted:', u.uid, wallet);
+        } catch (e) { console.error('[demo] bonus failed:', e.message); }
+      }
+      const token = signJwt({ uid: u.uid, wallet: u.wallet });
+      return { ...u, isAdmin: false, token, isNew, demoMode: true };
+    });
+  }
   // Auth: nonce endpoint for wallet signature login
 route('GET', '/auth/nonce', async (b, _, req) => {
   const wallet = (b.wallet || '').trim();

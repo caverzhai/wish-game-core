@@ -7,7 +7,7 @@ export class RecoveryService {
   async rollbackInsurance() {
     const s = this.store;
     return await s.transaction(async () => {
-      const report = { usersRolledBack: 0, totalRolledBack: 0n, nodesReset: 0, batchesCleared: 0, logsCleared: 0, flowsCleared: 0 };
+      const report = { usersRolledBack: 0, totalRolledBack: 0, nodesReset: 0, batchesCleared: 0, logsCleared: 0, flowsCleared: 0 };
 
       // 1. Query all NODE_PAYOUT flows, group by uid
       const [payoutFlows] = await s.exec(
@@ -18,7 +18,6 @@ export class RecoveryService {
       for (const row of payoutFlows) {
         const amount = BigInt(row.total);
         if (amount <= 0n) continue;
-        // Deduct from user account (allow negative)
         await s.applyAccount(row.uid, { avail: -amount });
         totalRollback += amount;
         report.usersRolledBack++;
@@ -34,13 +33,13 @@ export class RecoveryService {
       const [batchResult] = await s.exec('DELETE FROM payout_batches');
       report.batchesCleared = batchResult.affectedRows;
 
-      // 4. Clear insurance_node_logs
-      const [logResult] = await s.exec('DELETE FROM insurance_node_logs');
+      // 4. Clear node_logs
+      const [logResult] = await s.exec('DELETE FROM node_logs');
       report.logsCleared = logResult.affectedRows;
 
-      // 5. Reset all insurance nodes
+      // 5. Reset all nodes
       const [nodeResult] = await s.exec(
-        "UPDATE insurance_nodes SET period_n=0, paid_amount=0, paid_to_user_amount=0, forfeited_amount=0, state='active' WHERE state != 'active' OR period_n > 0"
+        "UPDATE nodes SET period_n=0, paid_amount=0, paid_to_user=0, forfeited=0, state='active' WHERE state != 'active' OR period_n > 0"
       );
       report.nodesReset = nodeResult.affectedRows;
 
